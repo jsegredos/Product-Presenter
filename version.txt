@@ -1,1 +1,1 @@
-1.4.2 - barcode scanning fix and hybrid scanner improvements
+1.5.0 - comprehensive iOS scanner optimizations and enhancements
