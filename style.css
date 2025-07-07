@@ -338,11 +338,28 @@ body {
   backface-visibility: hidden;
 }
 
-/* Reduce canvas scaling artifacts for scanner viewport */
+/* iOS Safari specific optimizations for scanner viewport */
 #scanner-viewport {
+  /* iOS Safari specific optimizations */
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
+  
+  /* Prevent iOS zoom on double-tap */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#scanner-viewport video {
+  /* iOS video optimizations */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
 }
 
 #scanner-viewport canvas {
