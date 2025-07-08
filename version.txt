@@ -1,2 +1,3 @@
 0.0.2 - PDF and CSV download
 0.0.3 - Form fields now optional & desktop-friendly styling
+0.0.4 - Image optimization DISABLED for testing (larger PDF files)

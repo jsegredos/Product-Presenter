@@ -323,69 +323,100 @@ export function showPdfFormScreen(userDetails) {
             return;
           }
           
+          // *** IMAGE OPTIMIZATION TEMPORARILY DISABLED FOR TESTING ***
           // Optimize the image for PDF use with reasonable quality
-          optimizeImageForPDF(imgUrl, 400, 0.7) // 400px max, 70% quality for technical detail
-            .then(optimizedUrl => {
-              if (!optimizedUrl || optimizedUrl === 'assets/no-image.png') { 
-                console.log(`⏭️ Skipping failed image: ${imgUrl}`);
-                imageOptimizationStats.failedImages++;
-                if (cb) cb(); 
-                return; 
-              }
-              
-              // If it's a data URL (base64), use it directly
-              if (optimizedUrl.startsWith('data:')) {
-                try {
-                  // Check base64 size - allow reasonable sizes for technical images
-                  const base64Data = optimizedUrl.split(',')[1];
-                  const sizeInBytes = base64Data ? (base64Data.length * 0.75) : 0;
-                  const sizeInKB = Math.round(sizeInBytes / 1024);
-                  
-                  if (sizeInBytes > 1048576) { // 1MB limit per image (very generous)
-                    console.warn(`🚫 Image too large: ${sizeInKB} KB, skipping: ${imgUrl}`);
-                    imageOptimizationStats.failedImages++;
-                    if (cb) cb();
-                    return;
-                  }
-                  
-                  const img = new window.Image();
-                  img.onload = function() {
-                    try {
-                      // Use reasonable dimensions for technical diagrams
-                      const pdfMaxW = Math.min(maxW, 120); // Larger display size
-                      const pdfMaxH = Math.min(maxH, 120);
-                      doc.addImage(optimizedUrl, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-                      console.log(`✅ Added technical image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH}, ${sizeInKB} KB)`);
-                      imageOptimizationStats.optimizedImages++;
-                    } catch (e) {
-                      console.warn('Failed to add optimized image to PDF:', e);
-                      imageOptimizationStats.failedImages++;
-                    }
-                    if (cb) cb();
-                  };
-                  img.onerror = function() {
-                    console.warn('Failed to load optimized data URL');
-                    imageOptimizationStats.failedImages++;
-                    if (cb) cb();
-                  };
-                  img.src = optimizedUrl;
-                } catch (e) {
-                  console.warn('Failed to create image from data URL:', e);
-                  imageOptimizationStats.failedImages++;
-                  if (cb) cb();
-                }
-              } else {
-                // For other URLs, skip them to avoid CORS issues
-                console.log(`⏭️ Skipping non-data URL to reduce file size: ${imgUrl}`);
-                imageOptimizationStats.failedImages++;
-                if (cb) cb();
-              }
-            })
-            .catch(error => {
-              console.warn('Image optimization failed:', error);
+          // optimizeImageForPDF(imgUrl, 400, 0.7) // 400px max, 70% quality for technical detail
+          //   .then(optimizedUrl => {
+          //     if (!optimizedUrl || optimizedUrl === 'assets/no-image.png') { 
+          //       console.log(`⏭️ Skipping failed image: ${imgUrl}`);
+          //       imageOptimizationStats.failedImages++;
+          //       if (cb) cb(); 
+          //       return; 
+          //     }
+          //     
+          //     // If it's a data URL (base64), use it directly
+          //     if (optimizedUrl.startsWith('data:')) {
+          //       try {
+          //         // Check base64 size - allow reasonable sizes for technical images
+          //         const base64Data = optimizedUrl.split(',')[1];
+          //         const sizeInBytes = base64Data ? (base64Data.length * 0.75) : 0;
+          //         const sizeInKB = Math.round(sizeInBytes / 1024);
+          //         
+          //         if (sizeInBytes > 1048576) { // 1MB limit per image (very generous)
+          //           console.warn(`🚫 Image too large: ${sizeInKB} KB, skipping: ${imgUrl}`);
+          //           imageOptimizationStats.failedImages++;
+          //           if (cb) cb();
+          //           return;
+          //         }
+          //         
+          //         const img = new window.Image();
+          //         img.onload = function() {
+          //           try {
+          //             // Use reasonable dimensions for technical diagrams
+          //             const pdfMaxW = Math.min(maxW, 120); // Larger display size
+          //             const pdfMaxH = Math.min(maxH, 120);
+          //             doc.addImage(optimizedUrl, 'JPEG', x, y, pdfMaxW, pdfMaxH);
+          //             console.log(`✅ Added technical image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH}, ${sizeInKB} KB)`);
+          //             imageOptimizationStats.optimizedImages++;
+          //           } catch (e) {
+          //             console.warn('Failed to add optimized image to PDF:', e);
+          //             imageOptimizationStats.failedImages++;
+          //           }
+          //           if (cb) cb();
+          //         };
+          //         img.onerror = function() {
+          //           console.warn('Failed to load optimized data URL');
+          //           imageOptimizationStats.failedImages++;
+          //           if (cb) cb();
+          //         };
+          //         img.src = optimizedUrl;
+          //       } catch (e) {
+          //         console.warn('Failed to create image from data URL:', e);
+          //         imageOptimizationStats.failedImages++;
+          //         if (cb) cb();
+          //       }
+          //     } else {
+          //       // For other URLs, skip them to avoid CORS issues
+          //       console.log(`⏭️ Skipping non-data URL to reduce file size: ${imgUrl}`);
+          //       imageOptimizationStats.failedImages++;
+          //       if (cb) cb();
+          //     }
+          //   })
+          //   .catch(error => {
+          //     console.warn('Image optimization failed:', error);
+          //     imageOptimizationStats.failedImages++;
+          //     if (cb) cb();
+          //   });
+          
+          // *** TEMPORARY: USE ORIGINAL IMAGES WITHOUT OPTIMIZATION ***
+          console.log(`🔍 TEST MODE: Using original image without optimization: ${imgUrl}`);
+          
+          // Try to use the original image directly
+          const img = new window.Image();
+          img.crossOrigin = 'Anonymous';
+          
+          img.onload = function() {
+            try {
+              // Use original image dimensions (up to reasonable PDF limits)
+              const pdfMaxW = Math.min(maxW, 120);
+              const pdfMaxH = Math.min(maxH, 120);
+              doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
+              console.log(`✅ Added UNOPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
+              imageOptimizationStats.optimizedImages++; // Keep stats for comparison
+            } catch (e) {
+              console.warn('Failed to add unoptimized image to PDF:', e);
               imageOptimizationStats.failedImages++;
-              if (cb) cb();
-            });
+            }
+            if (cb) cb();
+          };
+          
+          img.onerror = function() {
+            console.warn('Failed to load original image, skipping:', imgUrl);
+            imageOptimizationStats.failedImages++;
+            if (cb) cb();
+          };
+          
+          img.src = imgUrl;
         };
         // Restore rowsToDraw definition and initialization before drawNextRow
         let rowsToDraw = [];
@@ -1208,117 +1239,127 @@ function attemptStandardDownload(blob, filename) {
       resolve(false);
     }
   });
-}
-
-// File Optimization Features
-export function optimizeImageForPDF(imageUrl, maxWidth = 400, quality = 0.9) {
-  return new Promise((resolve) => {
-    // CORS proxy services for image loading (updated for reliability)
-    const proxies = [
-      'https://api.codetabs.com/v1/proxy?quest=',
-      'https://corsproxy.io/?',
-      // Removed problematic proxies: allorigins.win (QUIC errors) and thingproxy (502 errors)
-    ];
-    
-    let proxyIndex = 0;
-    
-    function tryLoadImage() {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
+  }
+  
+  // *** IMAGE OPTIMIZATION FUNCTION TEMPORARILY DISABLED FOR TESTING ***
+  /* 
+  ORIGINAL FUNCTION COMMENTED OUT FOR TESTING - RESTORE BY UNCOMMENTING:
+  
+  export function optimizeImageForPDF(imageUrl, maxWidth = 400, quality = 0.9) {
+    return new Promise((resolve) => {
+      // CORS proxy services for image loading (updated for reliability)
+      const proxies = [
+        'https://api.codetabs.com/v1/proxy?quest=',
+        'https://corsproxy.io/?',
+        // Removed problematic proxies: allorigins.win (QUIC errors) and thingproxy (502 errors)
+      ];
       
-      img.onload = function() {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+      let proxyIndex = 0;
+      
+      function tryLoadImage() {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        
+        img.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Reasonable compression for technical images
+            let width = Math.min(maxWidth, 400);  // Max 400px width for good detail
+            let height = Math.min(maxWidth, 400); // Max 400px height
+            
+            // Maintain aspect ratio for technical accuracy
+            if (img.width > img.height) {
+              height = Math.round((width * img.height) / img.width);
+            } else {
+              width = Math.round((height * img.width) / img.height);
+            }
+            
+            // Ensure minimum readable size for technical diagrams
+            if (img.width > 100 || img.height > 100) {
+              width = Math.max(width, 200);  // Minimum 200px for readability
+              height = Math.max(height, 200);
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Enable smoothing for better image quality
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Draw and compress image with reasonable quality
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert with quality suitable for technical images
+            const reasonableQuality = Math.max(quality, 0.6); // Minimum 60% quality for technical details
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', reasonableQuality);
+            
+            // Check if data URL is reasonable size (under 500KB for technical images)
+            const sizeInBytes = optimizedDataUrl.length * 0.75;
+            if (sizeInBytes > 512000) { // ~500KB limit
+              console.warn(`📊 Image large but acceptable for technical detail: ${(sizeInBytes/1024).toFixed(0)} KB - ${imageUrl}`);
+              // Still use it - technical images need detail
+            }
+            
+            console.log(`✅ Technical image optimized: ${img.width}x${img.height} -> ${width}x${height} (${Math.round(reasonableQuality*100)}% quality, ${(sizeInBytes/1024).toFixed(0)} KB)`);
+            resolve(optimizedDataUrl);
+            
+          } catch (error) {
+            console.warn('Image optimization failed:', error);
+            resolve('assets/no-image.png');
+          }
+        };
+        
+        img.onerror = function() {
+          console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imageUrl}`);
           
-          // Reasonable compression for technical images
-          let width = Math.min(maxWidth, 400);  // Max 400px width for good detail
-          let height = Math.min(maxWidth, 400); // Max 400px height
-          
-          // Maintain aspect ratio for technical accuracy
-          if (img.width > img.height) {
-            height = Math.round((width * img.height) / img.width);
+          // Try next proxy
+          proxyIndex++;
+          if (proxyIndex < proxies.length) {
+            setTimeout(() => {
+              tryLoadImage();
+            }, 200);
           } else {
-            width = Math.round((height * img.width) / img.height);
+            console.warn('All proxies failed, using placeholder');
+            resolve('assets/no-image.png');
           }
-          
-          // Ensure minimum readable size for technical diagrams
-          if (img.width > 100 || img.height > 100) {
-            width = Math.max(width, 200);  // Minimum 200px for readability
-            height = Math.max(height, 200);
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          // Enable smoothing for better image quality
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          
-          // Draw and compress image with reasonable quality
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Convert with quality suitable for technical images
-          const reasonableQuality = Math.max(quality, 0.6); // Minimum 60% quality for technical details
-          const optimizedDataUrl = canvas.toDataURL('image/jpeg', reasonableQuality);
-          
-          // Check if data URL is reasonable size (under 500KB for technical images)
-          const sizeInBytes = optimizedDataUrl.length * 0.75;
-          if (sizeInBytes > 512000) { // ~500KB limit
-            console.warn(`📊 Image large but acceptable for technical detail: ${(sizeInBytes/1024).toFixed(0)} KB - ${imageUrl}`);
-            // Still use it - technical images need detail
-          }
-          
-          console.log(`✅ Technical image optimized: ${img.width}x${img.height} -> ${width}x${height} (${Math.round(reasonableQuality*100)}% quality, ${(sizeInBytes/1024).toFixed(0)} KB)`);
-          resolve(optimizedDataUrl);
-          
-        } catch (error) {
-          console.warn('Image optimization failed:', error);
-          resolve('assets/no-image.png');
-        }
-      };
-      
-      img.onerror = function() {
-        console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imageUrl}`);
+        };
         
-        // Try next proxy
-        proxyIndex++;
-        if (proxyIndex < proxies.length) {
-          setTimeout(() => {
+        // Reasonable timeout for quality images (reduced for failed proxies)
+        setTimeout(() => {
+          console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imageUrl}`);
+          
+          proxyIndex++;
+          if (proxyIndex < proxies.length) {
             tryLoadImage();
-          }, 200);
-        } else {
-          console.warn('All proxies failed, using placeholder');
-          resolve('assets/no-image.png');
-        }
-      };
-      
-      // Reasonable timeout for quality images (reduced for failed proxies)
-      setTimeout(() => {
-        console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imageUrl}`);
+          } else {
+            console.warn('All proxies timed out, using placeholder');
+            resolve('assets/no-image.png');
+          }
+        }, 3000); // 3 second timeout - faster fallback for failing proxies
         
-        proxyIndex++;
+        // Set the image source with current proxy
+        let proxiedUrl = imageUrl;
         if (proxyIndex < proxies.length) {
-          tryLoadImage();
-        } else {
-          console.warn('All proxies timed out, using placeholder');
-          resolve('assets/no-image.png');
+          proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imageUrl);
         }
-      }, 3000); // 3 second timeout - faster fallback for failing proxies
-      
-      // Set the image source with current proxy
-      let proxiedUrl = imageUrl;
-      if (proxyIndex < proxies.length) {
-        proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imageUrl);
+        
+        console.log(`🔄 Loading technical image ${proxyIndex}: ${proxiedUrl}`);
+        img.src = proxiedUrl;
       }
       
-      console.log(`🔄 Loading technical image ${proxyIndex}: ${proxiedUrl}`);
-      img.src = proxiedUrl;
-    }
-    
-    tryLoadImage();
-  });
-}
+      tryLoadImage();
+    });
+  }
+  */
+  
+  // *** TEMPORARY PLACEHOLDER FUNCTION FOR TESTING ***
+  export function optimizeImageForPDF(imageUrl, maxWidth = 400, quality = 0.9) {
+    console.log(`🔍 TEST MODE: Optimization disabled, returning original URL: ${imageUrl}`);
+    return Promise.resolve(imageUrl);
+  }
 
 function calculateOptimizedDimensions(originalWidth, originalHeight, maxWidth) {
   if (originalWidth <= maxWidth) {
@@ -2009,17 +2050,17 @@ export function generateCsvForEmailJS(userDetails, csvFilename) {
     const excludePrice = userDetails.excludePrice;
     
     return {
-      Code: cleanString(item.OrderCode || ''),
-      Description: cleanString(item.Description || ''),
+      Code: sanitizeCSVField(item.OrderCode || ''),
+      Description: sanitizeCSVField(item.Description || ''),
       Quantity: item.Quantity || 1,
       'Price ea inc GST': excludePrice ? '0.00' : (item.RRP_INCGST || ''),
       'Price Total inc GST': excludePrice ? '0.00' : total,
-      Notes: cleanString(item.Notes || ''),
-      Room: cleanString(item.Room || ''),
-      'Image URL': cleanString(item.Image_URL || ''),
-      'Diagram URL': cleanString(item.Diagram_URL || ''),
-      'Datasheet URL': cleanString(item.Datasheet_URL || ''),
-      'Website URL': cleanString(item.Website_URL || '')
+      Notes: sanitizeCSVField(item.Notes || ''),
+      Room: sanitizeCSVField(item.Room || ''),
+      'Image URL': sanitizeCSVField(item.Image_URL || ''),
+      'Diagram URL': sanitizeCSVField(item.Diagram_URL || ''),
+      'Datasheet URL': sanitizeCSVField(item.Datasheet_URL || ''),
+      'Website URL': sanitizeCSVField(item.Website_URL || '')
     };
   });
   
@@ -2040,17 +2081,19 @@ export function generateCsvForEmailJS(userDetails, csvFilename) {
 }
 
 // Clean string function to remove problematic characters
-function cleanString(str) {
-  if (typeof str !== 'string') {
-    str = String(str);
+function sanitizeCSVField(field) {
+  if (typeof field !== 'string') {
+    field = String(field);
   }
   
-  // Remove non-printable ASCII characters that cause corruption
-  return str
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
-    .replace(/[\u0080-\uFFFF]/g, '') // Remove non-ASCII characters
-    .replace(/"/g, '""') // Escape quotes properly
-    .trim();
+  // Remove problematic characters and normalize line breaks
+  field = field
+    .replace(/\0/g, '')                    // Remove null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // Remove control characters
+    .replace(/\r?\n|\r/g, ' ')             // Replace line breaks with spaces
+    .trim();                               // Remove leading/trailing whitespace
+  
+  return field;
 }
 
 // Generate CSV with strict ASCII compliance
@@ -2063,7 +2106,7 @@ function generateCleanCSVString(data) {
   
   // Create header row - clean headers
   const headerRow = headers.map(header => {
-    const cleaned = cleanString(header);
+    const cleaned = sanitizeCSVField(header);
     return `"${cleaned}"`;
   }).join(',');
   
@@ -2071,7 +2114,7 @@ function generateCleanCSVString(data) {
   const dataRows = data.map(row => {
     return headers.map(header => {
       const value = row[header];
-      const cleaned = cleanString(String(value || ''));
+      const cleaned = sanitizeCSVField(String(value || ''));
       return `"${cleaned}"`;
     }).join(',');
   });
@@ -2116,11 +2159,11 @@ export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
   
   // Data rows - NO newlines, use double space as row separator
   selection.forEach(item => {
-    const code = cleanFieldForCSV(item.OrderCode || '');
-    const desc = cleanFieldForCSV(item.Description || '');
+    const code = sanitizeCSVField(item.OrderCode || '');
+    const desc = sanitizeCSVField(item.Description || '');
     const qty = item.Quantity || 1;
-    const room = cleanFieldForCSV(item.Room || '');
-    const notes = cleanFieldForCSV(item.Notes || '');
+    const room = sanitizeCSVField(item.Room || '');
+    const notes = sanitizeCSVField(item.Notes || '');
     
     csvContent += `${code}|${desc}|${qty}|${room}|${notes}  `;
   });
@@ -2144,7 +2187,7 @@ export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
 }
 
 // Ultra-aggressive field cleaning for CSV
-function cleanFieldForCSV(field) {
+function sanitizeCSVField(field) {
   if (!field) return '';
   
   // Convert to string and clean aggressively
@@ -2287,11 +2330,11 @@ export function generateUltraCleanCsv(userDetails, csvFilename) {
   // Data rows (append with space separator instead of \n)
   selection.forEach(item => {
     // Clean ALL strings to remove ANY control characters
-    const code = cleanForEmail(item.OrderCode || '');
-    const desc = cleanForEmail(item.Description || '');
-    const qty = item.Quantity || 1;
-    const room = cleanForEmail(item.Room || '');
-    const notes = cleanForEmail(item.Notes || '');
+    const code = sanitizeCSVField(item.OrderCode || '');
+    const desc = sanitizeCSVField(item.Description || '');
+    const qty = sanitizeCSVField(item.Quantity || 1);
+    const room = sanitizeCSVField(item.Room || '');
+    const notes = sanitizeCSVField(item.Notes || '');
     
     // Use pipe separator instead of newline to avoid control chars
     csvText += ` | ${code},${desc},${qty},${room},${notes}`;
@@ -2313,26 +2356,22 @@ export function generateUltraCleanCsv(userDetails, csvFilename) {
 }
 
 // Even more aggressive cleaning function
-function cleanForEmail(str) {
-  if (typeof str !== 'string') {
-    str = String(str);
+function sanitizeCSVField(field) {
+  if (!field) return '';
+  
+  // Convert to string and clean aggressively
+  let cleaned = String(field)
+    .replace(/[\x00-\x1F\x7F-\xFF]/g, ' ')    // Remove ALL control chars and non-ASCII
+    .replace(/[|,\r\n\t]/g, ' ')              // Replace separators with spaces
+    .replace(/\s+/g, ' ')                     // Normalize whitespace
+    .trim();                                  // Remove leading/trailing spaces
+  
+  // Limit length to prevent issues
+  if (cleaned.length > 50) {
+    cleaned = cleaned.substring(0, 50) + '...';
   }
   
-  return str
-    // Remove ALL control characters (0-31, 127-159)
-    .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
-    // Remove ALL non-ASCII characters 
-    .replace(/[^\x20-\x7E]/g, '')
-    // Remove commas to prevent CSV parsing issues
-    .replace(/,/g, ' ')
-    // Remove quotes
-    .replace(/"/g, '')
-    // Remove pipes (we're using them as separators)
-    .replace(/\|/g, '')
-    // Collapse multiple spaces
-    .replace(/\s+/g, ' ')
-    // Trim
-    .trim();
+  return cleaned;
 }
 
 // Alternative: Send as JSON string instead of CSV
@@ -2358,11 +2397,11 @@ export function generateJsonForEmail(userDetails, filename) {
   
   // Create clean JSON data
   const cleanData = selection.map(item => ({
-    Code: cleanForEmail(item.OrderCode || ''),
-    Description: cleanForEmail(item.Description || ''),
-    Quantity: item.Quantity || 1,
-    Room: cleanForEmail(item.Room || ''),
-    Notes: cleanForEmail(item.Notes || '')
+    Code: sanitizeCSVField(item.OrderCode || ''),
+    Description: sanitizeCSVField(item.Description || ''),
+    Quantity: sanitizeCSVField(item.Quantity || 1),
+    Room: sanitizeCSVField(item.Room || ''),
+    Notes: sanitizeCSVField(item.Notes || '')
   }));
   
   // Convert to JSON string (no control characters in JSON)
@@ -2406,10 +2445,10 @@ export function generateSpaceSeparatedData(userDetails, filename) {
   let dataText = 'SEIMA_PRODUCT_SELECTION ';
   
   selection.forEach((item, index) => {
-    const code = cleanForEmail(item.OrderCode || '');
-    const desc = cleanForEmail(item.Description || '');
-    const qty = item.Quantity || 1;
-    const room = cleanForEmail(item.Room || '');
+    const code = sanitizeCSVField(item.OrderCode || '');
+    const desc = sanitizeCSVField(item.Description || '');
+    const qty = sanitizeCSVField(item.Quantity || 1);
+    const room = sanitizeCSVField(item.Room || '');
     
     dataText += `ITEM${index + 1} CODE:${code} DESC:${desc} QTY:${qty} ROOM:${room} `;
   });
