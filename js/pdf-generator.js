@@ -323,100 +323,43 @@ export function showPdfFormScreen(userDetails) {
             return;
           }
           
-          // *** IMAGE OPTIMIZATION TEMPORARILY DISABLED FOR TESTING ***
-          // Optimize the image for PDF use with reasonable quality
-          // optimizeImageForPDF(imgUrl, 400, 0.7) // 400px max, 70% quality for technical detail
-          //   .then(optimizedUrl => {
-          //     if (!optimizedUrl || optimizedUrl === 'assets/no-image.png') { 
-          //       console.log(`⏭️ Skipping failed image: ${imgUrl}`);
-          //       imageOptimizationStats.failedImages++;
-          //       if (cb) cb(); 
-          //       return; 
-          //     }
-          //     
-          //     // If it's a data URL (base64), use it directly
-          //     if (optimizedUrl.startsWith('data:')) {
-          //       try {
-          //         // Check base64 size - allow reasonable sizes for technical images
-          //         const base64Data = optimizedUrl.split(',')[1];
-          //         const sizeInBytes = base64Data ? (base64Data.length * 0.75) : 0;
-          //         const sizeInKB = Math.round(sizeInBytes / 1024);
-          //         
-          //         if (sizeInBytes > 1048576) { // 1MB limit per image (very generous)
-          //           console.warn(`🚫 Image too large: ${sizeInKB} KB, skipping: ${imgUrl}`);
-          //           imageOptimizationStats.failedImages++;
-          //           if (cb) cb();
-          //           return;
-          //         }
-          //         
-          //         const img = new window.Image();
-          //         img.onload = function() {
-          //           try {
-          //             // Use reasonable dimensions for technical diagrams
-          //             const pdfMaxW = Math.min(maxW, 120); // Larger display size
-          //             const pdfMaxH = Math.min(maxH, 120);
-          //             doc.addImage(optimizedUrl, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-          //             console.log(`✅ Added technical image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH}, ${sizeInKB} KB)`);
-          //             imageOptimizationStats.optimizedImages++;
-          //           } catch (e) {
-          //             console.warn('Failed to add optimized image to PDF:', e);
-          //             imageOptimizationStats.failedImages++;
-          //           }
-          //           if (cb) cb();
-          //         };
-          //         img.onerror = function() {
-          //           console.warn('Failed to load optimized data URL');
-          //           imageOptimizationStats.failedImages++;
-          //           if (cb) cb();
-          //         };
-          //         img.src = optimizedUrl;
-          //       } catch (e) {
-          //         console.warn('Failed to create image from data URL:', e);
-          //         imageOptimizationStats.failedImages++;
-          //         if (cb) cb();
-          //       }
-          //     } else {
-          //       // For other URLs, skip them to avoid CORS issues
-          //       console.log(`⏭️ Skipping non-data URL to reduce file size: ${imgUrl}`);
-          //       imageOptimizationStats.failedImages++;
-          //       if (cb) cb();
-          //     }
-          //   })
-          //   .catch(error => {
-          //     console.warn('Image optimization failed:', error);
-          //     imageOptimizationStats.failedImages++;
-          //     if (cb) cb();
-          //   });
-          
           // *** TEMPORARY: USE ORIGINAL IMAGES WITHOUT OPTIMIZATION ***
           console.log(`🔍 TEST MODE: Using original image without optimization: ${imgUrl}`);
           
-          // Try to use the original image directly
-          const img = new window.Image();
-          img.crossOrigin = 'Anonymous';
+          // Skip email mode image filtering for testing
+          if (userDetails.emailCompatible) {
+            console.log(`📧 Email mode: Including image for testing: ${imgUrl}`);
+          }
           
-          img.onload = function() {
+          // Use the proxy loading mechanism but without optimization
+          let callbackCalled = false; // Prevent multiple callback calls
+          
+          // Use light image optimization for better file size while maintaining print quality
+          optimizeImageForPDF(imgUrl, 120, 0.85).then(optimizedUrl => {
+            if (callbackCalled) return;
+            callbackCalled = true;
+            
             try {
-              // Use original image dimensions (up to reasonable PDF limits)
               const pdfMaxW = Math.min(maxW, 120);
               const pdfMaxH = Math.min(maxH, 120);
-              doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-              console.log(`✅ Added UNOPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
-              imageOptimizationStats.optimizedImages++; // Keep stats for comparison
+              
+              // Add optimized image to PDF
+              doc.addImage(optimizedUrl, 'JPEG', x, y, pdfMaxW, pdfMaxH);
+              console.log(`✅ Added LIGHTLY OPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
+              imageOptimizationStats.optimizedImages++;
             } catch (e) {
-              console.warn('Failed to add unoptimized image to PDF:', e);
+              console.warn('Failed to add optimized image to PDF:', e);
               imageOptimizationStats.failedImages++;
             }
             if (cb) cb();
-          };
-          
-          img.onerror = function() {
-            console.warn('Failed to load original image, skipping:', imgUrl);
+          }).catch(error => {
+            if (callbackCalled) return;
+            callbackCalled = true;
+            
+            console.warn('Image optimization failed, skipping image:', error);
             imageOptimizationStats.failedImages++;
             if (cb) cb();
-          };
-          
-          img.src = imgUrl;
+          });
         };
         // Restore rowsToDraw definition and initialization before drawNextRow
         let rowsToDraw = [];
@@ -517,10 +460,10 @@ export function showPdfFormScreen(userDetails) {
             
             // Enhanced PDF download with Samsung compatibility and optimization
             try {
-              // Configure jsPDF for smaller file size
+              // Configure jsPDF for high quality text (compression disabled for testing)
               const pdfOptions = {
-                compress: true,
-                precision: 2,
+                compress: false,    // Disabled for crisp text quality during size testing
+                precision: 16,      // High precision for sharp text rendering
                 userUnit: 1.0
               };
               
@@ -1241,17 +1184,15 @@ function attemptStandardDownload(blob, filename) {
   });
   }
   
-  // *** IMAGE OPTIMIZATION FUNCTION TEMPORARILY DISABLED FOR TESTING ***
-  /* 
-  ORIGINAL FUNCTION COMMENTED OUT FOR TESTING - RESTORE BY UNCOMMENTING:
+      // *** IMAGE OPTIMIZATION RESTORED WITH LIGHT COMPRESSION FOR PRINT QUALITY ***
   
-  export function optimizeImageForPDF(imageUrl, maxWidth = 400, quality = 0.9) {
+  // *** LIGHT COMPRESSION FOR PRINT QUALITY ***
+  export function optimizeImageForPDF(imageUrl, maxWidth = 450, quality = 0.85) {
     return new Promise((resolve) => {
-      // CORS proxy services for image loading (updated for reliability)
+      // CORS proxy services for image loading
       const proxies = [
         'https://api.codetabs.com/v1/proxy?quest=',
         'https://corsproxy.io/?',
-        // Removed problematic proxies: allorigins.win (QUIC errors) and thingproxy (502 errors)
       ];
       
       let proxyIndex = 0;
@@ -1265,9 +1206,9 @@ function attemptStandardDownload(blob, filename) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Reasonable compression for technical images
-            let width = Math.min(maxWidth, 400);  // Max 400px width for good detail
-            let height = Math.min(maxWidth, 400); // Max 400px height
+            // VERY LIGHT compression for high print quality
+            let width = Math.min(maxWidth, 450);  // Increased max width for better print quality
+            let height = Math.min(maxWidth, 450); // Increased max height
             
             // Maintain aspect ratio for technical accuracy
             if (img.width > img.height) {
@@ -1276,34 +1217,33 @@ function attemptStandardDownload(blob, filename) {
               width = Math.round((height * img.width) / img.height);
             }
             
-            // Ensure minimum readable size for technical diagrams
-            if (img.width > 100 || img.height > 100) {
-              width = Math.max(width, 200);  // Minimum 200px for readability
-              height = Math.max(height, 200);
+            // Ensure good print size for technical diagrams
+            if (img.width > 150 || img.height > 150) {
+              width = Math.max(width, 250);  // Higher minimum for print quality
+              height = Math.max(height, 250);
             }
             
             canvas.width = width;
             canvas.height = height;
             
-            // Enable smoothing for better image quality
+            // Maximum quality smoothing for print
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
-            // Draw and compress image with reasonable quality
+            // Draw image with high quality
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Convert with quality suitable for technical images
-            const reasonableQuality = Math.max(quality, 0.6); // Minimum 60% quality for technical details
-            const optimizedDataUrl = canvas.toDataURL('image/jpeg', reasonableQuality);
+            // High quality compression (85% minimum for print quality)
+            const printQuality = Math.max(quality, 0.85); // 85% minimum for excellent print quality
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', printQuality);
             
-            // Check if data URL is reasonable size (under 500KB for technical images)
+            // Less aggressive size limits for print quality
             const sizeInBytes = optimizedDataUrl.length * 0.75;
-            if (sizeInBytes > 512000) { // ~500KB limit
-              console.warn(`📊 Image large but acceptable for technical detail: ${(sizeInBytes/1024).toFixed(0)} KB - ${imageUrl}`);
-              // Still use it - technical images need detail
+            if (sizeInBytes > 800000) { // 800KB limit - more generous for print quality
+              console.warn(`📊 Large image for print quality: ${(sizeInBytes/1024).toFixed(0)} KB - ${imageUrl}`);
             }
             
-            console.log(`✅ Technical image optimized: ${img.width}x${img.height} -> ${width}x${height} (${Math.round(reasonableQuality*100)}% quality, ${(sizeInBytes/1024).toFixed(0)} KB)`);
+            console.log(`✅ Light compression applied: ${img.width}x${img.height} -> ${width}x${height} (${Math.round(printQuality*100)}% quality, ${(sizeInBytes/1024).toFixed(0)} KB)`);
             resolve(optimizedDataUrl);
             
           } catch (error) {
@@ -1327,7 +1267,7 @@ function attemptStandardDownload(blob, filename) {
           }
         };
         
-        // Reasonable timeout for quality images (reduced for failed proxies)
+        // Timeout for loading
         setTimeout(() => {
           console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imageUrl}`);
           
@@ -1338,7 +1278,7 @@ function attemptStandardDownload(blob, filename) {
             console.warn('All proxies timed out, using placeholder');
             resolve('assets/no-image.png');
           }
-        }, 3000); // 3 second timeout - faster fallback for failing proxies
+        }, 3000);
         
         // Set the image source with current proxy
         let proxiedUrl = imageUrl;
@@ -1346,19 +1286,12 @@ function attemptStandardDownload(blob, filename) {
           proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imageUrl);
         }
         
-        console.log(`🔄 Loading technical image ${proxyIndex}: ${proxiedUrl}`);
+        console.log(`🔄 Loading image for light compression ${proxyIndex}: ${proxiedUrl}`);
         img.src = proxiedUrl;
       }
       
       tryLoadImage();
     });
-  }
-  */
-  
-  // *** TEMPORARY PLACEHOLDER FUNCTION FOR TESTING ***
-  export function optimizeImageForPDF(imageUrl, maxWidth = 400, quality = 0.9) {
-    console.log(`🔍 TEST MODE: Optimization disabled, returning original URL: ${imageUrl}`);
-    return Promise.resolve(imageUrl);
   }
 
 function calculateOptimizedDimensions(originalWidth, originalHeight, maxWidth) {
