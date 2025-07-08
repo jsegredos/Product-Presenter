@@ -2195,7 +2195,7 @@ body {
 }
 
 .left-panel {
-  width: 40%;
+  width: 60%;
   background: #fff;
   border-right: 1px solid #e0e0e0;
   display: flex;
@@ -2204,7 +2204,7 @@ body {
 }
 
 .right-panel {
-  width: 60%;
+  width: 40%;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -2305,7 +2305,7 @@ body {
 
 .table-header {
   display: grid;
-  grid-template-columns: 3fr 1.5fr 80px 100px 80px;
+  grid-template-columns: 60px 4fr 1.5fr 80px 100px 40px;
   gap: 12px;
   padding: 12px 16px;
   background: #f9fafb;
@@ -2324,7 +2324,7 @@ body {
 
 .table-row {
   display: grid;
-  grid-template-columns: 3fr 1.5fr 80px 100px 80px;
+  grid-template-columns: 60px 4fr 1.5fr 80px 100px 40px;
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid #f3f4f6;
@@ -2394,6 +2394,15 @@ body {
 
 .table-row .remove-btn:hover {
   background: #fecaca;
+}
+
+.table-product-image {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
 /* Search Panel Styles */
@@ -2659,20 +2668,26 @@ body {
   }
   
   .table-header {
-    grid-template-columns: 2fr 1fr 60px 60px;
+    grid-template-columns: 40px 2fr 1fr 60px 60px;
     gap: 8px;
     padding: 8px 12px;
     font-size: 0.75rem;
   }
   
   .table-row {
-    grid-template-columns: 2fr 1fr 60px 60px;
+    grid-template-columns: 40px 2fr 1fr 60px 60px;
     gap: 8px;
     padding: 8px 12px;
   }
   
-  .col-price {
+  .col-price,
+  .col-actions {
     display: none;
+  }
+  
+  .table-product-image {
+    width: 35px;
+    height: 35px;
   }
   
   .product-details {

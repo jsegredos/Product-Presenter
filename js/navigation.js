@@ -278,7 +278,8 @@ export class NavigationManager {
     
     // Populate product details
     if (productImage) {
-      productImage.src = product.Image || 'assets/no-image.png';
+      const imageUrl = product.Image || product.Image_URL || product.imageUrl || 'assets/no-image.png';
+      productImage.src = imageUrl;
       productImage.alt = product.Description || product.ProductName || product['Product Name'] || 'Product Image';
     }
     
@@ -291,7 +292,8 @@ export class NavigationManager {
     }
     
     if (productPrice) {
-      productPrice.textContent = product.Price ? `$${parseFloat(product.Price).toFixed(2)}` : 'Price not available';
+      const price = product.Price || product.RRP_INCGST || product.rrpIncGst || 0;
+      productPrice.textContent = price ? `$${parseFloat(price).toFixed(2)}` : 'Price not available';
     }
     
     // Setup room dropdown
@@ -620,8 +622,9 @@ export class NavigationManager {
     
     selectedProducts.forEach(item => {
       itemCount += item.quantity;
-      if (item.product.Price) {
-        totalPrice += parseFloat(item.product.Price) * item.quantity;
+      const price = item.product.Price || item.product.RRP_INCGST || item.product.rrpIncGst || 0;
+      if (price) {
+        totalPrice += parseFloat(price) * item.quantity;
       }
     });
 
@@ -631,11 +634,15 @@ export class NavigationManager {
     // Render table rows
     tableBody.innerHTML = selectedProducts.map((item, index) => {
       const product = item.product;
-      const price = product.Price ? parseFloat(product.Price) : 0;
-      const lineTotal = price * item.quantity;
+      const price = product.Price || product.RRP_INCGST || product.rrpIncGst || 0;
+      const lineTotal = parseFloat(price) * item.quantity;
+      const imageUrl = product.Image || product.Image_URL || product.imageUrl || 'assets/no-image.png';
       
       return `
         <div class="table-row" data-index="${index}">
+          <div class="col-image">
+            <img class="table-product-image" src="${imageUrl}" alt="Product" onerror="this.src='assets/no-image.png';">
+          </div>
           <div class="col-product">
             <div class="product-info">
               <div class="product-name">${Utils.sanitizeInput(product.Description || product.ProductName || product['Product Name'] || '')}</div>
@@ -652,7 +659,7 @@ export class NavigationManager {
             <input type="number" class="quantity-input" data-index="${index}" value="${item.quantity}" min="1" step="1">
           </div>
           <div class="col-price">
-            <div class="price-display">$${lineTotal.toFixed(2)}</div>
+            <div class="price-display">${price ? `$${lineTotal.toFixed(2)}` : 'N/A'}</div>
           </div>
           <div class="col-actions">
             <button class="remove-btn" data-index="${index}" title="Remove">×</button>
