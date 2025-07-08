@@ -635,7 +635,8 @@ export class NavigationManager {
     tableBody.innerHTML = selectedProducts.map((item, index) => {
       const product = item.product;
       const price = product.Price || product.RRP_INCGST || product.rrpIncGst || 0;
-      const lineTotal = parseFloat(price) * item.quantity;
+      const unitPrice = parseFloat(price) || 0;
+      const lineTotal = unitPrice * item.quantity;
       const imageUrl = product.Image || product.Image_URL || product.imageUrl || 'assets/no-image.png';
       
       return `
@@ -655,11 +656,14 @@ export class NavigationManager {
               ${this.getRoomOptions(item.room)}
             </select>
           </div>
+          <div class="col-price-ea">
+            <div class="price-display">${unitPrice ? `$${unitPrice.toFixed(2)}` : 'N/A'}</div>
+          </div>
           <div class="col-qty">
             <input type="number" class="quantity-input" data-index="${index}" value="${item.quantity}" min="1" step="1">
           </div>
-          <div class="col-price">
-            <div class="price-display">${price ? `$${lineTotal.toFixed(2)}` : 'N/A'}</div>
+          <div class="col-total">
+            <div class="price-display">${unitPrice ? `$${lineTotal.toFixed(2)}` : 'N/A'}</div>
           </div>
           <div class="col-actions">
             <button class="remove-btn" data-index="${index}" title="Remove">×</button>
