@@ -102,12 +102,66 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script type="module" src="js/app.js"></script>
   <script nomodule src="app.js"></script>
-  <div id="version-info" style="position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:0.98rem;color:#888;z-index:10;pointer-events:none;">Ver: <span id="version-number">1.0.0</span></div>
+  <div id="version-info" style="position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:0.98rem;color:#888;z-index:10;">
+    Ver: <span id="version-number" style="cursor:pointer;text-decoration:underline;color:#2563eb;" title="Click to view version history">1.0.0</span>
+  </div>
+  
+  <!-- Version History Modal -->
+  <div id="version-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px;">
+        <h3 style="margin: 0; color: #1f2937; font-size: 1.4rem;">Version History</h3>
+        <button id="close-version-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 4px;" title="Close">&times;</button>
+      </div>
+      <div id="version-history" style="font-family: 'SF Pro Display', 'Segoe UI', sans-serif; line-height: 1.6;">
+        <!-- Version history will be loaded here -->
+      </div>
+    </div>
+  </div>
+
   <script>
+    let fullVersionContent = '';
+    
     fetch('version.txt').then(r => r.text()).then(v => {
-      const lines = v.trim().split('\n').filter(line => line.trim() !== '');
+      fullVersionContent = v.trim();
+      const lines = fullVersionContent.split('\n').filter(line => line.trim() !== '');
       const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
-      document.getElementById('version-number').textContent = latestVersion;
+      
+      // Extract just the version number (before the first dash)
+      const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
+      document.getElementById('version-number').textContent = versionNumber;
+      
+      // Populate version history modal
+      const historyDiv = document.getElementById('version-history');
+      if (historyDiv) {
+        historyDiv.innerHTML = lines.reverse().map(line => {
+          const [version, ...descParts] = line.split(' - ');
+          const description = descParts.join(' - ');
+          return `
+            <div style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">${version}</div>
+              <div style="color: #374151; font-size: 0.95rem;">${description}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    });
+    
+    // Show version modal when version number is clicked
+    document.getElementById('version-number').addEventListener('click', () => {
+      document.getElementById('version-modal').style.display = 'flex';
+    });
+    
+    // Close modal when close button is clicked
+    document.getElementById('close-version-modal').addEventListener('click', () => {
+      document.getElementById('version-modal').style.display = 'none';
+    });
+    
+    // Close modal when clicking outside the modal content
+    document.getElementById('version-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'version-modal') {
+        document.getElementById('version-modal').style.display = 'none';
+      }
     });
   </script>
 </body>

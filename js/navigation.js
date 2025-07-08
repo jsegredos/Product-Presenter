@@ -52,7 +52,9 @@ export class NavigationManager {
       if (versionElement) {
         const lines = version.trim().split('\n').filter(line => line.trim() !== '');
         const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
-        versionElement.textContent = latestVersion;
+        // Extract just the version number (before the first dash)
+        const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
+        versionElement.textContent = versionNumber;
       }
     } catch (error) {
       console.warn('Could not load version:', error);
