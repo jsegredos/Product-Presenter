@@ -1,0 +1,151 @@
+<div class="split-container">
+  <!-- Left Panel: Review Selection Table (40%) -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <button class="back-btn" id="back-to-home" aria-label="Back to Home">&#60;</button>
+      <div class="header-content">
+        <img src="assets/seima-logo.png" alt="SEIMA Logo" class="panel-logo">
+        <h2>Review Selection</h2>
+        <div class="selection-summary">
+          <span id="total-items">0 items</span> • <span id="total-value">$0.00</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="download-btn" class="primary-btn">Download</button>
+        <button id="clear-all-btn" class="secondary-btn">Clear</button>
+      </div>
+    </div>
+    
+    <div class="review-table-container">
+      <div id="review-table-empty" class="empty-state">
+        <p>No products selected yet.</p>
+        <p class="subtitle">Use the search panel to find and add products.</p>
+      </div>
+      
+      <div id="review-table" class="review-table" style="display: none;">
+        <div class="table-header">
+          <div class="col-product">Product</div>
+          <div class="col-room">Room</div>
+          <div class="col-qty">Qty</div>
+          <div class="col-price">Price</div>
+          <div class="col-actions">Actions</div>
+        </div>
+        <div id="review-table-body" class="table-body">
+          <!-- Table rows will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Product Search & Details (60%) -->
+  <div class="right-panel">
+    <div class="panel-header">
+      <div class="header-content">
+        <h2>Product Search</h2>
+        <p class="subtitle">Find products by code, name, description, or barcode</p>
+      </div>
+    </div>
+    
+    <div class="search-section">
+      <div class="search-input-container">
+        <input type="text" id="product-search-input" maxlength="60" placeholder="Type to search for products...">
+        <div class="search-icon">🔍</div>
+      </div>
+      
+      <div id="search-results" class="search-results">
+        <div id="search-loading" class="loading-state">Loading products...</div>
+        <div id="search-no-results" class="no-results" style="display: none;">
+          <p>No products found</p>
+          <p class="subtitle">Try a different search term</p>
+        </div>
+        <div id="search-results-list" class="results-list">
+          <!-- Search results will be populated here -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Product Details Panel -->
+    <div id="product-details" class="product-details" style="display: none;">
+      <div class="product-header">
+        <button id="close-details" class="close-btn" aria-label="Close Details">&times;</button>
+        <div class="product-image-container">
+          <img id="product-image" src="assets/no-image.png" alt="Product Image" class="product-image">
+        </div>
+        <div class="product-info">
+          <h3 id="product-name" class="product-name"></h3>
+          <p id="product-code" class="product-code"></p>
+          <p id="product-price" class="product-price"></p>
+        </div>
+      </div>
+      
+      <div class="product-form">
+        <div class="form-group">
+          <label for="product-room">Room:</label>
+          <select id="product-room" class="room-select">
+            <option value="Blank">Blank</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="product-quantity">Quantity:</label>
+          <input type="number" id="product-quantity" value="1" min="1" class="quantity-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="product-notes">Notes (optional):</label>
+          <textarea id="product-notes" class="notes-input" placeholder="Add any additional notes..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button id="add-product-btn" class="primary-btn">Add to Selection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download Modal -->
+  <div id="pdf-email-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <form id="pdf-email-form" autocomplete="off">
+        <h3>Download Product List</h3>
+        <label for="user-name">Name <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-name" name="user-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-project">Project <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-project" name="user-project" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-address">Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-address" name="user-address" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-email">Email Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="email" id="user-email" name="user-email" maxlength="80" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-telephone">Telephone <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="tel" id="user-telephone" name="user-telephone" maxlength="20" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <div style="margin: 12px 0 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 20px;">
+          <span style="display: flex; align-items: center;">
+            <input type="checkbox" id="exclude-price-checkbox" name="exclude-price" style="margin-right: 8px;">
+            <label for="exclude-price-checkbox" style="font-size:1.05rem; color:#222; cursor:pointer;">Exclude price</label>
+          </span>
+        </div>
+        
+        <div style="display:flex;gap:16px;justify-content:flex-end;margin-top:10px;">
+          <button type="button" id="pdf-email-cancel" class="secondary-btn cancel-btn">Cancel</button>
+          <button type="submit" id="pdf-email-send" class="primary-btn send-btn">Download</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Clear Selection Modal -->
+  <div id="clear-selection-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <p style="margin-bottom: 24px;">Are you sure you want to clear all product and room selections?</p>
+      <div style="display: flex; gap: 16px; justify-content: flex-end;">
+        <button id="modal-cancel-btn" class="secondary-btn">Cancel</button>
+        <button id="modal-confirm-btn" class="primary-btn" style="background: #b91c1c; color: #fff;">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div> 

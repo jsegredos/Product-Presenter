@@ -25,7 +25,6 @@ export class NavigationManager {
   setupWelcomeScreen() {
     const startBtn = document.getElementById('start-btn');
     const editRoomsBtn = document.getElementById('edit-rooms-btn');
-    const viewSelectionBtn = document.getElementById('view-selection-btn');
     const clearSelectionBtn = document.getElementById('clear-selection-btn');
 
     if (startBtn) {
@@ -33,9 +32,6 @@ export class NavigationManager {
     }
     if (editRoomsBtn) {
       editRoomsBtn.onclick = () => this.showRoomSelection();
-    }
-    if (viewSelectionBtn) {
-      viewSelectionBtn.onclick = () => this.showReviewScreen();
     }
     if (clearSelectionBtn) {
       clearSelectionBtn.onclick = () => this.showClearConfirmModal();
@@ -121,82 +117,214 @@ export class NavigationManager {
 
   async showProductLookupScreen() {
     try {
-      const response = await fetch('screens/product-lookup.html');
+      const response = await fetch('screens/split-interface.html');
       const html = await response.text();
       document.body.innerHTML = html;
-      this.currentScreen = 'product-lookup';
+      this.currentScreen = 'split-interface';
       this.updateSelectionCount();
-      this.setupProductSearch();
-      // Setup Review button
-      const reviewBtn = document.getElementById('review-btn');
-      if (reviewBtn) {
-        reviewBtn.onclick = () => this.showReviewScreen();
-      }
-      // Setup Back button
-      const backBtn = document.getElementById('back-to-rooms');
-      if (backBtn) {
-        backBtn.onclick = () => location.reload(); // Go to welcome screen
-      }
+      
+      // Setup split interface
+      this.setupSplitInterface();
     } catch (error) {
-      console.error('Failed to load product lookup screen:', error);
+      console.error('Failed to load split interface screen:', error);
     }
   }
 
-  setupProductSearch() {
+  setupSplitInterface() {
+    // Setup back button
+    const backBtn = document.getElementById('back-to-home');
+    if (backBtn) {
+      backBtn.onclick = () => location.reload(); // Go to home screen
+    }
+
+    // Setup action buttons
+    const downloadBtn = document.getElementById('download-btn');
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    
+    if (downloadBtn) {
+      downloadBtn.onclick = () => this.showDownloadFormModal();
+    }
+    
+    if (clearAllBtn) {
+      clearAllBtn.onclick = () => this.showClearConfirmModal();
+    }
+
+    // Setup product search
+    this.setupSplitProductSearch();
+    
+    // Setup review table
+    this.setupReviewTable();
+    
+    // Load initial data and render
+    this.renderReviewTable();
+    this.loadInitialSearchResults();
+  }
+
+  setupSplitProductSearch() {
     const input = document.getElementById('product-search-input');
-    const dropdown = document.getElementById('product-search-dropdown');
-    if (!input || !dropdown) return;
+    const resultsList = document.getElementById('search-results-list');
+    const loadingState = document.getElementById('search-loading');
+    const noResultsState = document.getElementById('search-no-results');
+    
+    if (!input || !resultsList) return;
+    
     let matches = [];
+    
     // Debounced search function
     const debouncedSearch = Utils.debounce((query) => {
-      this.performProductSearch(query, dropdown, matches);
+      this.performSplitProductSearch(query, resultsList, matches, loadingState, noResultsState);
     }, 200);
+    
     input.addEventListener('input', () => {
       const query = input.value.trim();
       if (query) {
         debouncedSearch(query);
       } else {
-        dropdown.innerHTML = '';
-        dropdown.classList.remove('visible');
+        // Show all products when search is empty
+        this.loadInitialSearchResults();
       }
     });
-    input.addEventListener('focus', () => {
-      if (input.value.trim()) debouncedSearch(input.value.trim());
-    });
-    dropdown.onclick = (e) => {
-      const li = e.target.closest('li[data-idx]');
-      if (!li) return;
-      const idx = parseInt(li.getAttribute('data-idx'), 10);
-      if (!isNaN(idx) && matches[idx]) {
-        this.showProductDetailsScreen(matches[idx]);
-      }
-      dropdown.classList.remove('visible');
-      input.value = '';
-    };
-    // Hide dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!dropdown.contains(e.target) && e.target !== input) {
-        dropdown.classList.remove('visible');
+    
+    // Show product details when clicking on a result
+    resultsList.addEventListener('click', (e) => {
+      const item = e.target.closest('.result-item');
+      if (!item) return;
+      
+      const idx = parseInt(item.getAttribute('data-idx'), 10);
+      const currentResults = matches.length > 0 ? matches : (this.currentSearchResults || []);
+      
+      if (!isNaN(idx) && currentResults[idx]) {
+        this.showSplitProductDetails(currentResults[idx]);
       }
     });
   }
 
-  performProductSearch(query, dropdown, matches) {
+  performSplitProductSearch(query, resultsList, matches, loadingState, noResultsState) {
     if (!dataLayer.isLoaded) {
-      dropdown.innerHTML = '<li>Loading catalog...</li>';
-      dropdown.classList.add('visible');
+      loadingState.style.display = 'flex';
+      noResultsState.style.display = 'none';
+      resultsList.innerHTML = '';
       return;
     }
+    
     matches.length = 0;
     matches.push(...dataLayer.searchProducts(query));
+    
+    loadingState.style.display = 'none';
+    
     if (matches.length === 0) {
-      dropdown.innerHTML = '<li>No products found</li>';
+      noResultsState.style.display = 'flex';
+      resultsList.innerHTML = '';
     } else {
-      dropdown.innerHTML = matches
-        .map((p, i) => `<li data-idx="${i}">${Utils.sanitizeInput(p.Description || p.OrderCode || p.ProductName || p['Product Name'] || '')}</li>`)
+      noResultsState.style.display = 'none';
+      resultsList.innerHTML = matches
+        .map((p, i) => `
+          <div class="result-item" data-idx="${i}">
+            <div class="result-name">${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}</div>
+            <div class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</div>
+            <div class="result-price">${p.Price ? `$${parseFloat(p.Price).toFixed(2)}` : ''}</div>
+          </div>
+        `)
         .join('');
     }
-    dropdown.classList.add('visible');
+  }
+
+  async loadInitialSearchResults() {
+    const resultsList = document.getElementById('search-results-list');
+    const loadingState = document.getElementById('search-loading');
+    const noResultsState = document.getElementById('search-no-results');
+    
+    if (!resultsList) return;
+    
+    if (!dataLayer.isLoaded) {
+      loadingState.style.display = 'flex';
+      noResultsState.style.display = 'none';
+      resultsList.innerHTML = '';
+      
+      // Wait for data to load and try again
+      setTimeout(() => this.loadInitialSearchResults(), 500);
+      return;
+    }
+    
+    // Show first 50 products initially
+    const allProducts = dataLayer.getAllProducts().slice(0, 50);
+    
+    loadingState.style.display = 'none';
+    noResultsState.style.display = 'none';
+    
+    resultsList.innerHTML = allProducts
+      .map((p, i) => `
+        <div class="result-item" data-idx="${i}">
+          <div class="result-name">${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}</div>
+          <div class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</div>
+          <div class="result-price">${p.Price ? `$${parseFloat(p.Price).toFixed(2)}` : ''}</div>
+        </div>
+      `)
+      .join('');
+      
+         // Store for click handling
+     this.currentSearchResults = allProducts;
+   }
+
+  showSplitProductDetails(product) {
+    const detailsPanel = document.getElementById('product-details');
+    const productImage = document.getElementById('product-image');
+    const productName = document.getElementById('product-name');
+    const productCode = document.getElementById('product-code');
+    const productPrice = document.getElementById('product-price');
+    const productRoom = document.getElementById('product-room');
+    const productQuantity = document.getElementById('product-quantity');
+    const productNotes = document.getElementById('product-notes');
+    const addBtn = document.getElementById('add-product-btn');
+    const closeBtn = document.getElementById('close-details');
+    
+    if (!detailsPanel) return;
+    
+    // Populate product details
+    if (productImage) {
+      productImage.src = product.Image || 'assets/no-image.png';
+      productImage.alt = product.Description || product.ProductName || product['Product Name'] || 'Product Image';
+    }
+    
+    if (productName) {
+      productName.textContent = product.Description || product.ProductName || product['Product Name'] || '';
+    }
+    
+    if (productCode) {
+      productCode.textContent = product.OrderCode || product.Code || '';
+    }
+    
+    if (productPrice) {
+      productPrice.textContent = product.Price ? `$${parseFloat(product.Price).toFixed(2)}` : 'Price not available';
+    }
+    
+    // Setup room dropdown
+    this.populateRoomSelect(productRoom);
+    
+    // Reset form
+    if (productQuantity) productQuantity.value = 1;
+    if (productNotes) productNotes.value = '';
+    
+    // Setup event handlers
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        detailsPanel.style.display = 'none';
+      };
+    }
+    
+    if (addBtn) {
+      addBtn.onclick = () => {
+        const room = productRoom ? productRoom.value : 'Blank';
+        const quantity = productQuantity ? parseInt(productQuantity.value) || 1 : 1;
+        const notes = productNotes ? productNotes.value.trim() : '';
+        
+        this.addProductToSplitSelection(product, room, quantity, notes);
+        detailsPanel.style.display = 'none';
+      };
+    }
+    
+    // Show panel
+    detailsPanel.style.display = 'block';
   }
 
   async showProductDetailsScreen(product, options = {}) {
@@ -278,11 +406,11 @@ export class NavigationManager {
     }
   }
 
-  populateRoomSelect() {
-    const select = document.getElementById('room-select');
+  populateRoomSelect(roomSelect = null) {
+    const select = roomSelect || document.getElementById('room-select');
     if (!select) return;
 
-    select.innerHTML = '';
+    select.innerHTML = '<option value="Blank">Blank</option>';
     
     // Add predefined rooms
     CONFIG.ROOMS.PREDEFINED.forEach(room => {
@@ -306,6 +434,11 @@ export class NavigationManager {
       }
       select.appendChild(option);
     });
+
+    // Default to "Blank" if no room is selected
+    if (!this.selectedRoom) {
+      select.value = 'Blank';
+    }
   }
 
   setupQuantitySelect() {
@@ -428,6 +561,167 @@ export class NavigationManager {
       this.showReviewScreen();
     } else {
       alert('Failed to add product to selection');
+    }
+  }
+
+  addProductToSplitSelection(product, room, quantity, notes) {
+    if (StorageManager.addProductToSelection(product, notes, room, quantity)) {
+      // Update the review table in the split interface
+      this.renderReviewTable();
+      this.updateSelectionCount();
+    } else {
+      alert('Failed to add product to selection');
+    }
+  }
+
+  setupReviewTable() {
+    // Setup event delegation for inline editing and removal
+    const tableBody = document.getElementById('review-table-body');
+    if (!tableBody) return;
+
+    // Handle quantity and room changes
+    tableBody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('quantity-input')) {
+        this.handleQuantityChange(e.target);
+      } else if (e.target.classList.contains('room-select')) {
+        this.handleRoomChange(e.target);
+      }
+    });
+
+    // Handle remove buttons
+    tableBody.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-btn')) {
+        this.handleRemoveProduct(e.target);
+      }
+    });
+  }
+
+  renderReviewTable() {
+    const tableContainer = document.getElementById('review-table');
+    const emptyState = document.getElementById('review-table-empty');
+    const tableBody = document.getElementById('review-table-body');
+    const totalItems = document.getElementById('total-items');
+    const totalValue = document.getElementById('total-value');
+    
+    if (!tableContainer || !emptyState || !tableBody) return;
+
+    const selectedProducts = StorageManager.getSelectedProducts();
+    
+    if (selectedProducts.length === 0) {
+      tableContainer.style.display = 'none';
+      emptyState.style.display = 'flex';
+      if (totalItems) totalItems.textContent = '0 items';
+      if (totalValue) totalValue.textContent = '$0.00';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    tableContainer.style.display = 'flex';
+
+    // Calculate totals
+    let itemCount = 0;
+    let totalPrice = 0;
+    
+    selectedProducts.forEach(item => {
+      itemCount += item.quantity;
+      if (item.product.Price) {
+        totalPrice += parseFloat(item.product.Price) * item.quantity;
+      }
+    });
+
+    if (totalItems) totalItems.textContent = `${itemCount} items`;
+    if (totalValue) totalValue.textContent = `$${totalPrice.toFixed(2)}`;
+
+    // Render table rows
+    tableBody.innerHTML = selectedProducts.map((item, index) => {
+      const product = item.product;
+      const price = product.Price ? parseFloat(product.Price) : 0;
+      const lineTotal = price * item.quantity;
+      
+      return `
+        <div class="table-row" data-index="${index}">
+          <div class="col-product">
+            <div class="product-info">
+              <div class="product-name">${Utils.sanitizeInput(product.Description || product.ProductName || product['Product Name'] || '')}</div>
+              <div class="product-code">${Utils.sanitizeInput(product.OrderCode || product.Code || '')}</div>
+              ${item.notes ? `<div class="product-notes">${Utils.sanitizeInput(item.notes)}</div>` : ''}
+            </div>
+          </div>
+          <div class="col-room">
+            <select class="room-select" data-index="${index}">
+              ${this.getRoomOptions(item.room)}
+            </select>
+          </div>
+          <div class="col-qty">
+            <input type="number" class="quantity-input" data-index="${index}" value="${item.quantity}" min="1" step="1">
+          </div>
+          <div class="col-price">
+            <div class="price-display">$${lineTotal.toFixed(2)}</div>
+          </div>
+          <div class="col-actions">
+            <button class="remove-btn" data-index="${index}" title="Remove">×</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  getRoomOptions(selectedRoom) {
+    let options = '<option value="Blank"' + (selectedRoom === 'Blank' ? ' selected' : '') + '>Blank</option>';
+    
+    CONFIG.ROOMS.PREDEFINED.forEach(room => {
+      options += `<option value="${room.name}"${selectedRoom === room.name ? ' selected' : ''}>${room.name}</option>`;
+    });
+
+    const customRooms = StorageManager.getCustomRooms();
+    customRooms.forEach(room => {
+      options += `<option value="${room.name}"${selectedRoom === room.name ? ' selected' : ''}>${room.name}</option>`;
+    });
+
+    return options;
+  }
+
+  handleQuantityChange(input) {
+    const index = parseInt(input.getAttribute('data-index'));
+    const newQuantity = Math.max(1, parseInt(input.value) || 1);
+    
+    // Update storage
+    const selectedProducts = StorageManager.getSelectedProducts();
+    if (selectedProducts[index]) {
+      selectedProducts[index].quantity = newQuantity;
+      StorageManager.setSelectedProducts(selectedProducts);
+      
+      // Re-render to update totals
+      this.renderReviewTable();
+      this.updateSelectionCount();
+    }
+  }
+
+  handleRoomChange(select) {
+    const index = parseInt(select.getAttribute('data-index'));
+    const newRoom = select.value;
+    
+    // Update storage
+    const selectedProducts = StorageManager.getSelectedProducts();
+    if (selectedProducts[index]) {
+      selectedProducts[index].room = newRoom;
+      StorageManager.setSelectedProducts(selectedProducts);
+      this.updateSelectionCount();
+    }
+  }
+
+  handleRemoveProduct(button) {
+    const index = parseInt(button.getAttribute('data-index'));
+    
+    // Remove from storage
+    const selectedProducts = StorageManager.getSelectedProducts();
+    if (selectedProducts[index]) {
+      selectedProducts.splice(index, 1);
+      StorageManager.setSelectedProducts(selectedProducts);
+      
+      // Re-render table
+      this.renderReviewTable();
+      this.updateSelectionCount();
     }
   }
 
@@ -667,6 +961,11 @@ export class NavigationManager {
           StorageManager.clearAllSelections();
           modal.style.display = 'none';
           this.updateSelectionCount();
+          
+          // Also re-render the table if we're in the split interface
+          if (this.currentScreen === 'split-interface') {
+            this.renderReviewTable();
+          }
         };
       }
     }

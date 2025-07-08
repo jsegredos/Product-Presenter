@@ -49,7 +49,7 @@ export class StorageManager {
       product: Utils.deepClone(product),
       notes: Utils.sanitizeInput(notes, CONFIG.UI.ANNOTATION_MAX_LENGTH),
       room: Utils.sanitizeInput(room, 50),
-      quantity: Math.max(1, Math.min(10, parseInt(quantity) || 1)),
+      quantity: Math.max(1, parseInt(quantity) || 1),
       timestamp: Date.now()
     };
     
@@ -62,7 +62,7 @@ export class StorageManager {
     const productIndex = selectedProducts.findIndex(p => p.id === productId);
     
     if (productIndex !== -1) {
-      selectedProducts[productIndex].quantity = Math.max(1, Math.min(10, parseInt(newQuantity) || 1));
+      selectedProducts[productIndex].quantity = Math.max(1, parseInt(newQuantity) || 1);
       return this.setSelectedProducts(selectedProducts);
     }
     return false;
