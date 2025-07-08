@@ -220,9 +220,7 @@ export class NavigationManager {
       resultsList.innerHTML = matches
         .map((p, i) => `
           <div class="result-item" data-idx="${i}">
-            <div class="result-name">${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}</div>
-            <div class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</div>
-            <div class="result-price">${p.Price ? `$${parseFloat(p.Price).toFixed(2)}` : ''}</div>
+            <span class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</span> - ${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}
           </div>
         `)
         .join('');
@@ -255,9 +253,7 @@ export class NavigationManager {
     resultsList.innerHTML = allProducts
       .map((p, i) => `
         <div class="result-item" data-idx="${i}">
-          <div class="result-name">${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}</div>
-          <div class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</div>
-          <div class="result-price">${p.Price ? `$${parseFloat(p.Price).toFixed(2)}` : ''}</div>
+          <span class="result-code">${Utils.sanitizeInput(p.OrderCode || p.Code || '')}</span> - ${Utils.sanitizeInput(p.Description || p.ProductName || p['Product Name'] || '')}
         </div>
       `)
       .join('');

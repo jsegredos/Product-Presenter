@@ -2402,7 +2402,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 16px 20px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .search-section .search-input-container {
@@ -2436,10 +2436,7 @@ body {
 }
 
 .search-results {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 16px;
 }
 
 .loading-state,
@@ -2448,49 +2445,48 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  height: 240px;
   padding: 40px 20px;
   text-align: center;
   color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
 }
 
 .results-list {
-  flex: 1;
   overflow-y: auto;
+  max-height: 240px; /* Fixed height for exactly 5 lines (48px per line) */
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
 }
 
 .result-item {
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: background-color 0.2s;
   background: #fff;
+  font-size: 0.9rem;
+  color: #1f2937;
+  line-height: 1.4;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.result-item:last-child {
+  border-bottom: none;
 }
 
 .result-item:hover {
   background: #f9fafb;
-  border-color: #3b82f6;
-}
-
-.result-item .result-name {
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 4px;
-  font-size: 0.95rem;
 }
 
 .result-item .result-code {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.result-item .result-price {
-  font-size: 0.9rem;
-  color: #059669;
-  font-weight: 500;
-  margin-top: 4px;
+  font-weight: 600;
+  color: #2563eb;
 }
 
 /* Product Details Panel */
@@ -2533,14 +2529,21 @@ body {
 
 .product-image-container {
   flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
 .product-details .product-image {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .product-details .product-info {
