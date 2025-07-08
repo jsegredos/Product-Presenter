@@ -5,3 +5,4 @@
 0.0.6 - Image optimization COMPLETELY REMOVED - maximum quality uncompressed images
 0.0.7 - PERFORMANCE FIX: Async CSV generation to prevent UI blocking (fixes 56ms setTimeout violation)
 0.0.8 - UX IMPROVEMENTS: Centered popup notification + desktop-friendly search page with "Search for Product" title
+0.0.9 - LAYOUT FIXES: Remove empty space at bottom, improve header button alignment and responsive design
