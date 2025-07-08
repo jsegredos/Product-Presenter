@@ -3,3 +3,4 @@
 0.0.4 - Image optimization DISABLED for testing (larger PDF files)
 0.0.5 - LIGHT image compression restored (85% quality, 450px max, print-friendly)
 0.0.6 - Image optimization COMPLETELY REMOVED - maximum quality uncompressed images
+0.0.7 - PERFORMANCE FIX: Async CSV generation to prevent UI blocking (fixes 56ms setTimeout violation)

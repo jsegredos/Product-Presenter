@@ -588,21 +588,39 @@ export function showPdfFormScreen(userDetails) {
               
               // Check if user wants to email the PDF
               if (userDetails.sendEmail && userDetails.email) {
-                // Generate CSV if requested
-                let csvBlob = null;
+                // Generate CSV asynchronously if requested, then send email
                 if (userDetails.exportCsv) {
                   const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
-                  csvBlob = generateCsvBlob(userDetails, csvFilename);
+                  generateCsvBlobAsync(userDetails, csvFilename).then(csvBlob => {
+                    // Trigger email sending with CSV
+                    window.dispatchEvent(new CustomEvent('sendEmail', {
+                      detail: {
+                        userDetails: userDetails,
+                        pdfBlob: optimizedBlob,
+                        csvBlob: csvBlob
+                      }
+                    }));
+                  }).catch(error => {
+                    console.error('Async CSV generation for email failed:', error);
+                    // Send email without CSV
+                    window.dispatchEvent(new CustomEvent('sendEmail', {
+                      detail: {
+                        userDetails: userDetails,
+                        pdfBlob: optimizedBlob,
+                        csvBlob: null
+                      }
+                    }));
+                  });
+                } else {
+                  // Send email without CSV
+                  window.dispatchEvent(new CustomEvent('sendEmail', {
+                    detail: {
+                      userDetails: userDetails,
+                      pdfBlob: optimizedBlob,
+                      csvBlob: null
+                    }
+                  }));
                 }
-                
-                // Trigger email sending
-                window.dispatchEvent(new CustomEvent('sendEmail', {
-                  detail: {
-                    userDetails: userDetails,
-                    pdfBlob: optimizedBlob,
-                    csvBlob: csvBlob
-                  }
-                }));
               } else {
                 // Standard download
                 downloadWithFallback(optimizedBlob, pdfFilename, 'PDF');
@@ -610,13 +628,16 @@ export function showPdfFormScreen(userDetails) {
                 // Generate and download CSV if requested
                 if (userDetails.exportCsv) {
                   const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
-                  const csvBlob = generateCsvBlob(userDetails, csvFilename);
-                  if (csvBlob) {
-                    // Small delay to ensure PDF download starts first
-                    setTimeout(() => {
-                      downloadWithFallback(csvBlob, csvFilename, 'CSV');
-                    }, 1000);
-                  }
+                  // Generate CSV asynchronously to avoid blocking main thread
+                  setTimeout(() => {
+                    generateCsvBlobAsync(userDetails, csvFilename).then(csvBlob => {
+                      if (csvBlob) {
+                        downloadWithFallback(csvBlob, csvFilename, 'CSV');
+                      }
+                    }).catch(error => {
+                      console.error('Async CSV generation failed:', error);
+                    });
+                  }, 1000);
                 }
               }
             } catch (error) {
@@ -855,6 +876,112 @@ export function ensurePdfSpinner() {
 }
 
 // --- CSV GENERATION AND DOWNLOAD ---
+// ASYNC VERSION: Non-blocking CSV generation to prevent performance violations
+export async function generateCsvBlobAsync(userDetails, csvFilename) {
+  return new Promise((resolve) => {
+    // Break processing into chunks to avoid blocking main thread
+    
+    // Step 1: Load data (lightweight)
+    const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
+    const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
+    
+    let selection = [];
+    if (selectedProducts.length > 0) {
+      // New format: convert to old format for CSV generation
+      selection = selectedProducts.map(item => ({
+        ...item.product,
+        Room: item.room,
+        Notes: item.notes,
+        Quantity: item.quantity,
+        Timestamp: new Date(item.timestamp).toISOString()
+      }));
+    } else {
+      // Old format: use directly
+      selection = storedSelection;
+    }
+    
+    if (!selection.length) {
+      resolve(null);
+      return;
+    }
+    
+    // Step 2: Process data in next tick to avoid blocking
+    setTimeout(() => {
+      const csvData = selection.map(item => {
+        const priceStr = (item.RRP_INCGST || '').toString().replace(/,/g, '');
+        const priceNum = parseFloat(priceStr);
+        const total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
+        const excludePrice = userDetails.excludePrice;
+        
+        return {
+          Code: sanitizeCSVField(item.OrderCode || ''),
+          Description: sanitizeCSVField(item.Description || ''),
+          Quantity: item.Quantity || 1,
+          'Price ea inc GST': excludePrice ? '0.00' : (item.RRP_INCGST || ''),
+          'Price Total inc GST': excludePrice ? '0.00' : total,
+          Notes: sanitizeCSVField(item.Notes || ''),
+          Room: sanitizeCSVField(item.Room || ''),
+          'Image URL': sanitizeCSVField(item.Image_URL || ''),
+          'Diagram URL': sanitizeCSVField(item.Diagram_URL || ''),
+          'Datasheet URL': sanitizeCSVField(item.Datasheet_URL || ''),
+          'Website URL': sanitizeCSVField(item.Website_URL || '')
+        };
+      });
+      
+      // Step 3: Generate CSV string in next tick
+      setTimeout(() => {
+        const csvString = window.Papa.unparse(csvData, {
+          quotes: true,
+          quoteChar: '"',
+          delimiter: ',',
+          header: true,
+          newline: '\r\n',
+          skipEmptyLines: false,
+          escapeChar: '"',
+          transform: {
+            value: function(value, field) {
+              if (typeof value === 'string') {
+                return value.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+              }
+              return value;
+            }
+          }
+        });
+        
+        console.log('📊 Async CSV generated:', {
+          length: csvString.length,
+          preview: csvString.substring(0, 200)
+        });
+        
+        // Step 4: Handle encoding in next tick for emails
+        if (userDetails.sendEmail) {
+          setTimeout(() => {
+            try {
+              const base64Data = btoa(unescape(encodeURIComponent(csvString)));
+              console.log('📧 CSV converted to base64 for EmailJS (length:', base64Data.length, ')');
+              
+              resolve({
+                name: csvFilename,
+                data: base64Data,
+                contentType: 'text/csv',
+                originalSize: csvString.length,
+                base64Size: base64Data.length
+              });
+            } catch (error) {
+              console.error('❌ CSV base64 encoding failed:', error);
+              resolve(new Blob([csvString], { type: 'text/csv' }));
+            }
+          }, 0);
+        } else {
+          // For downloads: Return standard blob
+          resolve(new Blob([csvString], { type: 'text/csv' }));
+        }
+      }, 0);
+    }, 0);
+  });
+}
+
+// SYNCHRONOUS VERSION: Keep for backward compatibility
 export function generateCsvBlob(userDetails, csvFilename) {
   // Use same logic as PDF generation to handle both storage formats
   const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
@@ -971,22 +1098,24 @@ function sanitizeCSVField(field) {
   return field;
 }
 
-export function generateAndDownloadCsv(userDetails, csvFilename) {
+export async function generateAndDownloadCsv(userDetails, csvFilename) {
   const spinner = document.getElementById('pdf-spinner');
   
-  const csvBlob = generateCsvBlob(userDetails, csvFilename);
-  if (!csvBlob) {
-    if (spinner) spinner.style.display = 'none';
-    return;
-  }
-  // Download CSV with enhanced error handling
   try {
+    const csvBlob = await generateCsvBlobAsync(userDetails, csvFilename);
+    if (!csvBlob) {
+      if (spinner) spinner.style.display = 'none';
+      return;
+    }
+    
+    // Download CSV with enhanced error handling
     const fileInfo = showFileSizeInfo(csvBlob, csvFilename);
     downloadWithFallback(csvBlob, csvFilename, 'CSV');
   } catch (error) {
-    console.error('CSV generation failed:', error);
+    console.error('Async CSV generation failed:', error);
     showDetailedErrorMessage(error, 'generating CSV', csvFilename);
   }
+  
   if (spinner) spinner.style.display = 'none';
 }
 
