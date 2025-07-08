@@ -1,1 +1,2 @@
 0.0.2 - PDF and CSV download
+0.0.3 - Form fields now optional & desktop-friendly styling
