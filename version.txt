@@ -9,3 +9,4 @@
 0.1.0 - UI IMPROVEMENTS: Redesigned search page layout with proper back button, moved Review below search, removed redundant text, and show only latest version on home page
 0.1.1 - VERSION DISPLAY: Show only version number on home page with clickable popup for full version history
 0.2.0 - SPLIT INTERFACE: Complete desktop workflow redesign with left panel review table (40%) and right panel search/details (60%), inline editing, unlimited quantities, mobile-responsive stacked layout
+0.2.1 - LAYOUT IMPROVEMENTS: Flipped panel widths (60%/40%), added product images to review table, fixed price display, improved search results, moved product details below search
