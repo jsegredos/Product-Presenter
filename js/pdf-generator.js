@@ -145,9 +145,10 @@ export function showPdfFormScreen(userDetails) {
     const processingNotification = document.createElement('div');
     processingNotification.id = 'pdf-processing-notification';
     processingNotification.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 10001;
-      background: #dbeafe; border: 1px solid #3b82f6; border-radius: 6px;
-      padding: 16px; max-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10001;
+      background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px;
+      padding: 20px; max-width: 400px; min-width: 320px; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      text-align: center;
     `;
     
     const isEmailCompatible = userDetails.emailCompatible;
