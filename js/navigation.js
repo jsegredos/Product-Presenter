@@ -50,7 +50,9 @@ export class NavigationManager {
       const version = await response.text();
       const versionElement = document.getElementById('version-number');
       if (versionElement) {
-        versionElement.textContent = version.trim();
+        const lines = version.trim().split('\n').filter(line => line.trim() !== '');
+        const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
+        versionElement.textContent = latestVersion;
       }
     } catch (error) {
       console.warn('Could not load version:', error);

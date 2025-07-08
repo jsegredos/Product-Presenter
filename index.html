@@ -105,7 +105,9 @@
   <div id="version-info" style="position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:0.98rem;color:#888;z-index:10;pointer-events:none;">Ver: <span id="version-number">1.0.0</span></div>
   <script>
     fetch('version.txt').then(r => r.text()).then(v => {
-      document.getElementById('version-number').textContent = v.trim();
+      const lines = v.trim().split('\n').filter(line => line.trim() !== '');
+      const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
+      document.getElementById('version-number').textContent = latestVersion;
     });
   </script>
 </body>
