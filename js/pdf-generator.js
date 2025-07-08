@@ -334,32 +334,93 @@ export function showPdfFormScreen(userDetails) {
           // Use the proxy loading mechanism but without optimization
           let callbackCalled = false; // Prevent multiple callback calls
           
-          // Use light image optimization for better file size while maintaining print quality
-          optimizeImageForPDF(imgUrl, 120, 0.85).then(optimizedUrl => {
+          // Load images directly with NO optimization for maximum quality
+          const proxies = [
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://corsproxy.io/?',
+          ];
+          
+          let proxyIndex = 0;
+          
+          function tryLoadOriginalImage() {
             if (callbackCalled) return;
-            callbackCalled = true;
             
-            try {
-              const pdfMaxW = Math.min(maxW, 120);
-              const pdfMaxH = Math.min(maxH, 120);
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            let timeoutId = null;
+            
+            img.onload = function() {
+              if (callbackCalled) return;
+              callbackCalled = true;
               
-              // Add optimized image to PDF
-              doc.addImage(optimizedUrl, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-              console.log(`✅ Added LIGHTLY OPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
-              imageOptimizationStats.optimizedImages++;
-            } catch (e) {
-              console.warn('Failed to add optimized image to PDF:', e);
-              imageOptimizationStats.failedImages++;
-            }
-            if (cb) cb();
-          }).catch(error => {
-            if (callbackCalled) return;
-            callbackCalled = true;
+              if (timeoutId) clearTimeout(timeoutId);
+              
+              try {
+                const pdfMaxW = Math.min(maxW, 120);
+                const pdfMaxH = Math.min(maxH, 120);
+                
+                // Add original unprocessed image directly to PDF
+                doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
+                console.log(`✅ Added ORIGINAL UNCOMPRESSED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
+                imageOptimizationStats.optimizedImages++; // Count as processed
+              } catch (e) {
+                console.warn('Failed to add original image to PDF:', e);
+                imageOptimizationStats.failedImages++;
+              }
+              if (cb) cb();
+            };
             
-            console.warn('Image optimization failed, skipping image:', error);
-            imageOptimizationStats.failedImages++;
-            if (cb) cb();
-          });
+            img.onerror = function() {
+              if (callbackCalled) return;
+              if (timeoutId) clearTimeout(timeoutId);
+              
+              console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imgUrl}`);
+              
+              proxyIndex++;
+              if (proxyIndex < proxies.length) {
+                setTimeout(() => {
+                  tryLoadOriginalImage();
+                }, 200);
+              } else {
+                callbackCalled = true;
+                console.warn('All proxies failed, skipping image');
+                imageOptimizationStats.failedImages++;
+                if (cb) cb();
+              }
+            };
+            
+            timeoutId = setTimeout(() => {
+              if (callbackCalled) return;
+              
+              console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imgUrl}`);
+              
+              img.src = '';
+              img.onload = null;
+              img.onerror = null;
+              
+              proxyIndex++;
+              if (proxyIndex < proxies.length) {
+                setTimeout(() => {
+                  tryLoadOriginalImage();
+                }, 200);
+              } else {
+                callbackCalled = true;
+                console.warn('All proxies timed out, skipping image');
+                imageOptimizationStats.failedImages++;
+                if (cb) cb();
+              }
+            }, 3000);
+            
+            let proxiedUrl = imgUrl;
+            if (proxyIndex < proxies.length) {
+              proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imgUrl);
+            }
+            
+            console.log(`🔄 Loading ORIGINAL image ${proxyIndex}: ${proxiedUrl}`);
+            img.src = proxiedUrl;
+          }
+          
+          tryLoadOriginalImage();
         };
         // Restore rowsToDraw definition and initialization before drawNextRow
         let rowsToDraw = [];
@@ -1184,114 +1245,10 @@ function attemptStandardDownload(blob, filename) {
   });
   }
   
-      // *** IMAGE OPTIMIZATION RESTORED WITH LIGHT COMPRESSION FOR PRINT QUALITY ***
-  
-  // *** LIGHT COMPRESSION FOR PRINT QUALITY ***
+          // *** IMAGE OPTIMIZATION COMPLETELY DISABLED - MAXIMUM QUALITY ***
   export function optimizeImageForPDF(imageUrl, maxWidth = 450, quality = 0.85) {
-    return new Promise((resolve) => {
-      // CORS proxy services for image loading
-      const proxies = [
-        'https://api.codetabs.com/v1/proxy?quest=',
-        'https://corsproxy.io/?',
-      ];
-      
-      let proxyIndex = 0;
-      
-      function tryLoadImage() {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        
-        img.onload = function() {
-          try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // VERY LIGHT compression for high print quality
-            let width = Math.min(maxWidth, 450);  // Increased max width for better print quality
-            let height = Math.min(maxWidth, 450); // Increased max height
-            
-            // Maintain aspect ratio for technical accuracy
-            if (img.width > img.height) {
-              height = Math.round((width * img.height) / img.width);
-            } else {
-              width = Math.round((height * img.width) / img.height);
-            }
-            
-            // Ensure good print size for technical diagrams
-            if (img.width > 150 || img.height > 150) {
-              width = Math.max(width, 250);  // Higher minimum for print quality
-              height = Math.max(height, 250);
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Maximum quality smoothing for print
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            // Draw image with high quality
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // High quality compression (85% minimum for print quality)
-            const printQuality = Math.max(quality, 0.85); // 85% minimum for excellent print quality
-            const optimizedDataUrl = canvas.toDataURL('image/jpeg', printQuality);
-            
-            // Less aggressive size limits for print quality
-            const sizeInBytes = optimizedDataUrl.length * 0.75;
-            if (sizeInBytes > 800000) { // 800KB limit - more generous for print quality
-              console.warn(`📊 Large image for print quality: ${(sizeInBytes/1024).toFixed(0)} KB - ${imageUrl}`);
-            }
-            
-            console.log(`✅ Light compression applied: ${img.width}x${img.height} -> ${width}x${height} (${Math.round(printQuality*100)}% quality, ${(sizeInBytes/1024).toFixed(0)} KB)`);
-            resolve(optimizedDataUrl);
-            
-          } catch (error) {
-            console.warn('Image optimization failed:', error);
-            resolve('assets/no-image.png');
-          }
-        };
-        
-        img.onerror = function() {
-          console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imageUrl}`);
-          
-          // Try next proxy
-          proxyIndex++;
-          if (proxyIndex < proxies.length) {
-            setTimeout(() => {
-              tryLoadImage();
-            }, 200);
-          } else {
-            console.warn('All proxies failed, using placeholder');
-            resolve('assets/no-image.png');
-          }
-        };
-        
-        // Timeout for loading
-        setTimeout(() => {
-          console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imageUrl}`);
-          
-          proxyIndex++;
-          if (proxyIndex < proxies.length) {
-            tryLoadImage();
-          } else {
-            console.warn('All proxies timed out, using placeholder');
-            resolve('assets/no-image.png');
-          }
-        }, 3000);
-        
-        // Set the image source with current proxy
-        let proxiedUrl = imageUrl;
-        if (proxyIndex < proxies.length) {
-          proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imageUrl);
-        }
-        
-        console.log(`🔄 Loading image for light compression ${proxyIndex}: ${proxiedUrl}`);
-        img.src = proxiedUrl;
-      }
-      
-      tryLoadImage();
-    });
+    console.log(`🔍 NO OPTIMIZATION: Returning original URL for maximum quality: ${imageUrl}`);
+    return Promise.resolve(imageUrl);
   }
 
 function calculateOptimizedDimensions(originalWidth, originalHeight, maxWidth) {
