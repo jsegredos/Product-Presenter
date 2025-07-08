@@ -571,6 +571,18 @@ export function showPdfFormScreen(userDetails) {
               } else {
                 // Standard download
                 downloadWithFallback(optimizedBlob, pdfFilename, 'PDF');
+                
+                // Generate and download CSV if requested
+                if (userDetails.exportCsv) {
+                  const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
+                  const csvBlob = generateCsvBlob(userDetails, csvFilename);
+                  if (csvBlob) {
+                    // Small delay to ensure PDF download starts first
+                    setTimeout(() => {
+                      downloadWithFallback(csvBlob, csvFilename, 'CSV');
+                    }, 1000);
+                  }
+                }
               }
             } catch (error) {
               console.error('PDF generation failed:', error);
@@ -583,7 +595,7 @@ export function showPdfFormScreen(userDetails) {
               }
             }
             // --- CSV EXPORT LOGIC ---
-            // CSV is now handled via email attachment only, no separate download
+            // CSV is now supported for both email attachments and direct downloads
             if (spinner) spinner.style.display = 'none';
             return;
           }

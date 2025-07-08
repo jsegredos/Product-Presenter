@@ -6,7 +6,7 @@
   <div id="review-list"></div>
   <div class="review-actions row-actions-responsive">
     <button id="add-more-btn" class="secondary-btn small-btn left-btn">Add More</button>
-    <button id="quick-pdf-btn" class="primary-btn small-btn right-btn">Email</button>
+    <button id="quick-pdf-btn" class="primary-btn small-btn right-btn">Download</button>
   </div>
   <div id="review-empty" class="empty-state" style="display:none;">No products selected yet.</div>
   <div id="pdf-email-modal" class="modal" style="display:none;">
@@ -27,14 +27,10 @@
             <input type="checkbox" id="exclude-price-checkbox" name="exclude-price" style="margin-right: 8px;">
             <label for="exclude-price-checkbox" style="font-size:1.05rem; color:#222; cursor:pointer;">Exclude price</label>
           </span>
-          <span style="display: flex; align-items: center;">
-            <input type="checkbox" id="export-csv-checkbox" name="export-csv" style="margin-right: 8px;">
-            <label for="export-csv-checkbox" style="font-size:1.05rem; color:#222; cursor:pointer;">Export CSV</label>
-          </span>
         </div>
         <div style="display:flex;gap:16px;justify-content:flex-end;margin-top:10px;">
           <button type="button" id="pdf-email-cancel" class="secondary-btn cancel-btn">Cancel</button>
-          <button type="submit" id="pdf-email-send" class="primary-btn send-btn">Send</button>
+          <button type="submit" id="pdf-email-send" class="primary-btn send-btn">Download</button>
         </div>
       </form>
     </div>

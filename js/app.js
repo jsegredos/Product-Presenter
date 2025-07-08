@@ -1,5 +1,5 @@
 import { NavigationManager } from './navigation.js';
-import { moduleCoordinator, emailService, pdfGenerator, CONFIG } from './modules.js';
+import { moduleCoordinator, pdfGenerator, CONFIG } from './modules.js';
 import { showPdfFormScreen, ensurePdfSpinner, downloadWithFallback } from './pdf-generator.js';
 import { StorageManager } from './storage.js';
 import { FileImportManager } from './file-import.js';
@@ -22,9 +22,6 @@ class SeimaScanner {
         this.showCompatibilityWarning();
       }
 
-      // Initialize email service
-      await this.initializeEmailService();
-
       // Initialize navigation manager
       this.navigationManager = new NavigationManager();
       await this.navigationManager.init();
@@ -35,11 +32,17 @@ class SeimaScanner {
       // Setup global event listeners
       this.setupGlobalEventListeners();
 
+      // Setup main menu button event listeners
+      document.getElementById('start-btn').onclick = () => {
+        this.navigationManager.showProductLookupScreen();
+      };
+      document.getElementById('edit-rooms-btn').onclick = () => {
+        this.navigationManager.showRoomSelection();
+      };
+
       // Make services globally available for compatibility
-      window.scannerController = this.navigationManager.scannerController;
       window.navigationManager = this.navigationManager;
       window.browserCompatibility = browserCompatibility;
-      window.emailService = emailService;
       window.downloadWithFallback = downloadWithFallback;
 
       // Log Samsung device detection for debugging
@@ -50,35 +53,6 @@ class SeimaScanner {
       console.log('Seima Scanner initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Seima Scanner:', error);
-    }
-  }
-
-  async initializeEmailService() {
-    try {
-      const emailConfig = {
-        publicKey: CONFIG.EMAIL.PUBLIC_KEY,
-        serviceId: CONFIG.EMAIL.SERVICE_ID,
-        templateId: CONFIG.EMAIL.TEMPLATE_ID
-      };
-
-      // Only initialize if we have valid configuration
-      if (emailConfig.publicKey !== 'YOUR_EMAILJS_PUBLIC_KEY' && 
-          emailConfig.publicKey !== 'your_emailjs_public_key_here' &&
-          emailConfig.serviceId !== 'YOUR_EMAILJS_SERVICE_ID' &&
-          emailConfig.templateId !== 'YOUR_EMAILJS_TEMPLATE_ID') {
-        const initialized = await emailService.init(emailConfig);
-        if (initialized) {
-          console.log('Email service initialized successfully');
-        } else {
-          console.warn('Email service initialization failed - will use mailto fallback');
-        }
-      } else {
-        console.log('Email service not configured - using mailto fallback only');
-        console.log('ℹ️  To enable automatic email sending, configure EmailJS credentials in js/config.js');
-        console.log('   See EmailJS-Setup-Guide.md for detailed setup instructions');
-      }
-    } catch (error) {
-      console.warn('Email service initialization error:', error);
     }
   }
 
@@ -166,16 +140,6 @@ class SeimaScanner {
       showPdfFormScreen(userDetails);
     });
 
-    // Listen for email requests
-    window.addEventListener('sendEmail', async (event) => {
-      const { userDetails, pdfBlob, csvBlob } = event.detail;
-      try {
-        await this.handleEmailRequest(userDetails, pdfBlob, csvBlob);
-      } catch (error) {
-        console.error('Email sending failed:', error);
-      }
-    });
-
     // Handle window unload to stop scanner
     window.addEventListener('beforeunload', () => {
       if (this.navigationManager?.scannerController) {
@@ -202,17 +166,6 @@ class SeimaScanner {
           console.warn('High memory usage detected:', memoryInfo);
         }
       }, 60000); // Check every minute
-    }
-  }
-
-  async handleEmailRequest(userDetails, pdfBlob, csvBlob = null) {
-    try {
-      console.log('📧 Using RESTORED original working EmailJS approach...');
-      // RESTORED: Use original working base64 template variable approach
-      await emailService.sendEmailWithPDF(userDetails, pdfBlob);
-    } catch (error) {
-      console.error('Email sending error:', error);
-      // The solution has its own error handling, but we'll log here too
     }
   }
 

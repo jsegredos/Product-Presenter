@@ -1,6 +1,5 @@
 import { StorageManager } from './storage.js';
 import { CONFIG, dataLayer } from './modules.js';
-import { ScannerController } from './scanner.js';
 import { Utils } from './utils.js';
 
 // Navigation and screen management
@@ -8,35 +7,6 @@ export class NavigationManager {
   constructor() {
     this.currentScreen = 'welcome';
     this.selectedRoom = null;
-    this.scannerController = new ScannerController();
-    this.setupScannerCallback();
-  }
-
-  setupScannerCallback() {
-    this.scannerController.setOnScanCallback((code) => {
-      if (!dataLayer.isLoaded) {
-        this.showScanFeedback('Product data loading, please wait...');
-        return;
-      }
-      
-      // Show detected barcode in feedback
-      this.showScanFeedback(`Detected: ${code}`);
-      
-      // Find product by barcode
-      const product = dataLayer.findProductByCode(code);
-      
-      if (product) {
-        this.showProductDetailsScreen(product, { scannedCode: code });
-      } else {
-        this.showScanFeedback(`Barcode not found: ${code}`);
-        // Restart scanning after delay like the original
-        setTimeout(() => {
-          if (this.scannerController) {
-            this.scannerController.startScanning();
-          }
-        }, 1500);
-      }
-    });
   }
 
   async init() {
@@ -54,21 +24,22 @@ export class NavigationManager {
 
   setupWelcomeScreen() {
     const startBtn = document.getElementById('start-btn');
+    const editRoomsBtn = document.getElementById('edit-rooms-btn');
     const viewSelectionBtn = document.getElementById('view-selection-btn');
     const clearSelectionBtn = document.getElementById('clear-selection-btn');
 
     if (startBtn) {
-      startBtn.onclick = () => this.showRoomSelection();
+      startBtn.onclick = () => this.showProductLookupScreen();
     }
-
+    if (editRoomsBtn) {
+      editRoomsBtn.onclick = () => this.showRoomSelection();
+    }
     if (viewSelectionBtn) {
       viewSelectionBtn.onclick = () => this.showReviewScreen();
     }
-
     if (clearSelectionBtn) {
       clearSelectionBtn.onclick = () => this.showClearConfirmModal();
     }
-
     // Load version
     this.loadVersion();
   }
@@ -141,109 +112,41 @@ export class NavigationManager {
 
   selectRoom(roomName) {
     this.selectedRoom = roomName;
-    this.showScannerScreen();
+    this.showProductLookupScreen();
   }
 
-  async showScannerScreen() {
+  async showProductLookupScreen() {
     try {
-      // Stop any active scanning first
-      this.scannerController.stopScanning();
-      
-      const response = await fetch('screens/scanner.html');
+      const response = await fetch('screens/product-lookup.html');
       const html = await response.text();
       document.body.innerHTML = html;
-      
-      this.currentScreen = 'scanner';
-      
-      // Setup UI
-      const roomBadge = document.getElementById('current-room-badge');
-      if (roomBadge) {
-        roomBadge.textContent = this.selectedRoom;
-      }
-
-      // Setup event handlers
-      this.setupScannerScreenHandlers();
-      
-      // Start scanning after a small delay to ensure DOM is ready
-      setTimeout(async () => {
-        try {
-          await this.scannerController.startScanning();
-        } catch (error) {
-          console.error('Failed to start scanner:', error);
-          this.showScanFeedback('Scanner initialization failed. Please refresh the page.');
-        }
-      }, 100);
-      
+      this.currentScreen = 'product-lookup';
       this.updateSelectionCount();
+      this.setupProductSearch();
+      // Setup Review button
+      const reviewBtn = document.getElementById('review-btn');
+      if (reviewBtn) {
+        reviewBtn.onclick = () => this.showReviewScreen();
+      }
+      // Setup Back button
+      const backBtn = document.getElementById('back-to-rooms');
+      if (backBtn) {
+        backBtn.onclick = () => location.reload(); // Go to welcome screen
+      }
     } catch (error) {
-      console.error('Failed to load scanner screen:', error);
+      console.error('Failed to load product lookup screen:', error);
     }
-  }
-
-  setupScannerScreenHandlers() {
-    const backBtn = document.getElementById('back-to-rooms');
-    const reviewBtn = document.getElementById('review-btn');
-    const engineToggle = document.getElementById('scanner-engine-toggle');
-
-    if (backBtn) {
-      backBtn.onclick = () => {
-        this.scannerController.stopScanning();
-        this.showRoomSelection();
-      };
-    }
-
-    if (reviewBtn) {
-      reviewBtn.onclick = () => {
-        this.scannerController.stopScanning();
-        this.showReviewScreen();
-      };
-    }
-
-    if (engineToggle) {
-      engineToggle.value = this.scannerController.scannerEngine;
-      engineToggle.onchange = () => {
-        this.scannerController.setScannerEngine(engineToggle.value);
-        this.scannerController.stopScanning();
-        setTimeout(() => {
-          if (this.currentScreen === 'scanner') {
-            this.scannerController.startScanning();
-          }
-        }, 100);
-      };
-    }
-
-    // Setup product search
-    this.setupProductSearch();
   }
 
   setupProductSearch() {
     const input = document.getElementById('product-search-input');
     const dropdown = document.getElementById('product-search-dropdown');
-    
     if (!input || !dropdown) return;
-
     let matches = [];
-
     // Debounced search function
     const debouncedSearch = Utils.debounce((query) => {
       this.performProductSearch(query, dropdown, matches);
-    }, 300);
-
-    input.addEventListener('focus', () => {
-      this.scannerController.stopScanning();
-      setTimeout(() => {
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    });
-
-    input.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (this.currentScreen === 'scanner') {
-          this.scannerController.startScanning();
-        }
-      }, 100);
-    });
-
+    }, 200);
     input.addEventListener('input', () => {
       const query = input.value.trim();
       if (query) {
@@ -253,25 +156,19 @@ export class NavigationManager {
         dropdown.classList.remove('visible');
       }
     });
-
+    input.addEventListener('focus', () => {
+      if (input.value.trim()) debouncedSearch(input.value.trim());
+    });
     dropdown.onclick = (e) => {
       const li = e.target.closest('li[data-idx]');
       if (!li) return;
-      
       const idx = parseInt(li.getAttribute('data-idx'), 10);
       if (!isNaN(idx) && matches[idx]) {
         this.showProductDetailsScreen(matches[idx]);
       }
-      
       dropdown.classList.remove('visible');
       input.value = '';
-      setTimeout(() => {
-        if (this.currentScreen === 'scanner') {
-          this.scannerController.startScanning();
-        }
-      }, 100);
     };
-
     // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
       if (!dropdown.contains(e.target) && e.target !== input) {
@@ -286,18 +183,15 @@ export class NavigationManager {
       dropdown.classList.add('visible');
       return;
     }
-
     matches.length = 0;
     matches.push(...dataLayer.searchProducts(query));
-
     if (matches.length === 0) {
       dropdown.innerHTML = '<li>No products found</li>';
     } else {
       dropdown.innerHTML = matches
-        .map((p, i) => `<li data-idx="${i}">${p.Description}</li>`)
+        .map((p, i) => `<li data-idx="${i}">${Utils.sanitizeInput(p.Description || p.OrderCode || p.ProductName || p['Product Name'] || '')}</li>`)
         .join('');
     }
-    
     dropdown.classList.add('visible');
   }
 
@@ -508,7 +402,7 @@ export class NavigationManager {
     const addBtn = document.getElementById('add-to-room-btn');
 
     if (backBtn) {
-      backBtn.onclick = () => this.showScannerScreen();
+      backBtn.onclick = () => this.showProductLookupScreen();
     }
 
     if (addBtn) {
@@ -553,15 +447,15 @@ export class NavigationManager {
     const quickPdfBtn = document.getElementById('quick-pdf-btn');
 
     if (backBtn) {
-      backBtn.onclick = () => this.showScannerScreen();
+      backBtn.onclick = () => this.showProductLookupScreen();
     }
 
     if (addMoreBtn) {
-      addMoreBtn.onclick = () => this.showScannerScreen();
+      addMoreBtn.onclick = () => this.showProductLookupScreen();
     }
 
     if (quickPdfBtn) {
-      quickPdfBtn.onclick = () => this.showPdfFormModal();
+      quickPdfBtn.onclick = () => this.showDownloadFormModal();
     }
   }
 
@@ -687,34 +581,36 @@ export class NavigationManager {
 
   // Removed unused setupQuantityControls and handleQuantityAction methods
 
-  showPdfFormModal() {
+  showDownloadFormModal() {
     const modal = document.getElementById('pdf-email-modal');
     if (modal) {
       modal.style.display = 'flex';
-      
       const form = document.getElementById('pdf-email-form');
       const cancelBtn = document.getElementById('pdf-email-cancel');
-      
+      const downloadBtn = document.getElementById('pdf-email-send');
+      // Remove Export CSV checkbox
+      const exportCsvRow = form.querySelector('label[for="export-csv"]')?.parentElement;
+      if (exportCsvRow) exportCsvRow.style.display = 'none';
+      // Change button text
+      if (downloadBtn) downloadBtn.textContent = 'Download';
       if (cancelBtn) {
         cancelBtn.onclick = () => {
           modal.style.display = 'none';
         };
       }
-      
       if (form) {
         form.onsubmit = (e) => {
           e.preventDefault();
-          this.handlePdfFormSubmit();
+          this.handleDownloadFormSubmit();
           modal.style.display = 'none';
         };
       }
     }
   }
 
-  handlePdfFormSubmit() {
+  handleDownloadFormSubmit() {
     const form = document.getElementById('pdf-email-form');
     if (!form) return;
-
     const formData = new FormData(form);
     const userDetails = {
       name: formData.get('user-name'),
@@ -723,18 +619,11 @@ export class NavigationManager {
       email: formData.get('user-email'),
       telephone: formData.get('user-telephone'),
       excludePrice: formData.get('exclude-price') === 'on',
-      exportCsv: formData.get('export-csv') === 'on',
-      sendEmail: true // Always true since we're in the email flow
+      exportCsv: true // Always true
     };
-
-    // Validate email address is provided
-    if (!userDetails.email) {
-      alert('Please enter an email address.');
-      return;
-    }
-
-    // Show PDF generation (handled by separate PDF module)
+    // Generate and download PDF and CSV
     window.dispatchEvent(new CustomEvent('generatePdf', { detail: userDetails }));
+    // CSV download is handled in the PDF generator module
   }
 
   handleAddCustomRoom() {

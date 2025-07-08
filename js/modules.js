@@ -5,7 +5,6 @@
 
 import { CONFIG } from './config.js';
 import { dataLayer } from './data-layer.js';
-import { emailService } from './email-unified.js';
 import { pdfGenerator } from './pdf-unified.js';
 import { pdfCore } from './pdf-core.js';
 import { pdfLayouts } from './pdf-layouts.js';
@@ -16,7 +15,6 @@ export class ModuleCoordinator {
   constructor() {
     this.modules = {
       dataLayer,
-      emailService,
       pdfGenerator,
       pdfCore,
       pdfLayouts,
@@ -33,7 +31,6 @@ export class ModuleCoordinator {
       
       const initPromises = [
         this.initModule('dataLayer', this.modules.dataLayer),
-        this.initModule('emailService', this.modules.emailService),
         this.initModule('pdfGenerator', this.modules.pdfGenerator)
       ];
 
@@ -41,7 +38,7 @@ export class ModuleCoordinator {
       
       // Check results
       results.forEach((result, index) => {
-        const moduleName = ['dataLayer', 'emailService', 'pdfGenerator'][index];
+        const moduleName = ['dataLayer', 'pdfGenerator'][index];
         if (result.status === 'rejected') {
           console.error(`❌ Failed to initialize ${moduleName}:`, result.reason);
           this.initStatus[moduleName] = false;
@@ -182,7 +179,6 @@ export const moduleCoordinator = new ModuleCoordinator();
 
 // Backward compatibility exports
 export { dataLayer } from './data-layer.js';
-export { emailService } from './email-unified.js';
 export { pdfGenerator } from './pdf-unified.js';
 export { CONFIG } from './config.js';
 export { StorageManager } from './storage.js';

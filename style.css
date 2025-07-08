@@ -1,13 +1,13 @@
 /* Responsive Design Variables */
 :root {
-  --container-max-width: 420px;
+  --container-max-width: 1200px;
   --container-padding: 24px;
-  --border-radius: 24px;
+  --border-radius: 12px;
   --font-size-base: 16px;
-  --font-size-large: 1.2rem;
+  --font-size-large: 1.1rem;
   --font-size-small: 0.9rem;
   --spacing-unit: 8px;
-  --logo-size: 220px;
+  --logo-size: 180px;
 }
 
 /* Base responsive styles */
@@ -35,6 +35,7 @@
 body {
   margin: 0;
   padding: 0;
+  min-width: 100vw;
   min-height: 100vh;
   background: #f8f8fa;
   font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', Arial, sans-serif;
@@ -63,6 +64,9 @@ body {
   padding: calc(var(--spacing-unit) * 4) calc(var(--spacing-unit) * 2);
   box-sizing: border-box;
   transition: box-shadow 0.3s;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.08);
 }
 
 .logo {
@@ -136,6 +140,9 @@ body {
   box-sizing: border-box;
   position: relative;
   position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.08);
 }
 
 
@@ -992,6 +999,9 @@ body {
   box-sizing: border-box;
   position: relative;
   justify-content: flex-start;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.08);
 }
 
 
@@ -2030,5 +2040,179 @@ body {
     min-width: 90px;
     font-size: 1rem;
     padding: 8px 0 8px 0;
+  }
+}
+
+/* Product Lookup Desktop Styles */
+.product-lookup-container {
+  max-width: 520px;
+  margin: 60px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.08);
+  padding: 48px 56px 40px 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.lookup-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.lookup-header .back-btn {
+  margin-right: 16px;
+}
+.lookup-header .room-badge {
+  font-size: 1.1rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+.lookup-content {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+.search-section {
+  flex: 2;
+}
+.search-section h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.search-description {
+  color: #888;
+  font-size: 0.98rem;
+  margin-bottom: 16px;
+}
+.search-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+#product-search-input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  transition: border 0.2s;
+}
+#product-search-input:focus {
+  border-color: #2563eb;
+}
+.search-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.search-btn:hover {
+  background: #1d4ed8;
+}
+.search-options {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+.search-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.98rem;
+}
+#product-search-dropdown {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+}
+#product-search-dropdown li {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#product-search-dropdown li:hover, #product-search-dropdown li.active {
+  background: #e0e7ef;
+}
+.recent-products {
+  flex: 1;
+  min-width: 220px;
+}
+.recent-products h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.recent-list {
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 10px 8px;
+  min-height: 80px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.98rem;
+}
+.quick-actions {
+  flex: 1;
+  min-width: 220px;
+}
+.quick-actions h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #e0e7ef;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.action-btn:hover {
+  background: #c7d2fe;
+}
+.action-icon {
+  font-size: 1.2rem;
+}
+.lookup-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+#lookup-feedback {
+  margin-top: 18px;
+  color: #c33;
+  font-size: 1rem;
+  min-height: 24px;
+}
+@media (max-width: 1000px) {
+  .product-lookup-container {
+    padding: 24px 8px;
+  }
+  .lookup-content {
+    flex-direction: column;
+    gap: 24px;
   }
 } 
