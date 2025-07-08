@@ -2081,7 +2081,7 @@ export function generateCsvForEmailJS(userDetails, csvFilename) {
 }
 
 // Clean string function to remove problematic characters
-function sanitizeCSVField(field) {
+function cleanString(field) {
   if (typeof field !== 'string') {
     field = String(field);
   }
@@ -2106,7 +2106,7 @@ function generateCleanCSVString(data) {
   
   // Create header row - clean headers
   const headerRow = headers.map(header => {
-    const cleaned = sanitizeCSVField(header);
+    const cleaned = cleanString(header);
     return `"${cleaned}"`;
   }).join(',');
   
@@ -2114,7 +2114,7 @@ function generateCleanCSVString(data) {
   const dataRows = data.map(row => {
     return headers.map(header => {
       const value = row[header];
-      const cleaned = sanitizeCSVField(String(value || ''));
+      const cleaned = cleanString(String(value || ''));
       return `"${cleaned}"`;
     }).join(',');
   });
@@ -2159,11 +2159,11 @@ export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
   
   // Data rows - NO newlines, use double space as row separator
   selection.forEach(item => {
-    const code = sanitizeCSVField(item.OrderCode || '');
-    const desc = sanitizeCSVField(item.Description || '');
+    const code = cleanFieldForCSV(item.OrderCode || '');
+    const desc = cleanFieldForCSV(item.Description || '');
     const qty = item.Quantity || 1;
-    const room = sanitizeCSVField(item.Room || '');
-    const notes = sanitizeCSVField(item.Notes || '');
+    const room = cleanFieldForCSV(item.Room || '');
+    const notes = cleanFieldForCSV(item.Notes || '');
     
     csvContent += `${code}|${desc}|${qty}|${room}|${notes}  `;
   });
@@ -2187,7 +2187,7 @@ export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
 }
 
 // Ultra-aggressive field cleaning for CSV
-function sanitizeCSVField(field) {
+function cleanFieldForCSV(field) {
   if (!field) return '';
   
   // Convert to string and clean aggressively
@@ -2330,11 +2330,11 @@ export function generateUltraCleanCsv(userDetails, csvFilename) {
   // Data rows (append with space separator instead of \n)
   selection.forEach(item => {
     // Clean ALL strings to remove ANY control characters
-    const code = sanitizeCSVField(item.OrderCode || '');
-    const desc = sanitizeCSVField(item.Description || '');
-    const qty = sanitizeCSVField(item.Quantity || 1);
-    const room = sanitizeCSVField(item.Room || '');
-    const notes = sanitizeCSVField(item.Notes || '');
+    const code = cleanForEmail(item.OrderCode || '');
+    const desc = cleanForEmail(item.Description || '');
+    const qty = cleanForEmail(item.Quantity || 1);
+    const room = cleanForEmail(item.Room || '');
+    const notes = cleanForEmail(item.Notes || '');
     
     // Use pipe separator instead of newline to avoid control chars
     csvText += ` | ${code},${desc},${qty},${room},${notes}`;
@@ -2356,7 +2356,7 @@ export function generateUltraCleanCsv(userDetails, csvFilename) {
 }
 
 // Even more aggressive cleaning function
-function sanitizeCSVField(field) {
+function cleanForEmail(field) {
   if (!field) return '';
   
   // Convert to string and clean aggressively
@@ -2397,11 +2397,11 @@ export function generateJsonForEmail(userDetails, filename) {
   
   // Create clean JSON data
   const cleanData = selection.map(item => ({
-    Code: sanitizeCSVField(item.OrderCode || ''),
-    Description: sanitizeCSVField(item.Description || ''),
-    Quantity: sanitizeCSVField(item.Quantity || 1),
-    Room: sanitizeCSVField(item.Room || ''),
-    Notes: sanitizeCSVField(item.Notes || '')
+    Code: cleanForEmail(item.OrderCode || ''),
+    Description: cleanForEmail(item.Description || ''),
+    Quantity: cleanForEmail(item.Quantity || 1),
+    Room: cleanForEmail(item.Room || ''),
+    Notes: cleanForEmail(item.Notes || '')
   }));
   
   // Convert to JSON string (no control characters in JSON)
@@ -2445,10 +2445,10 @@ export function generateSpaceSeparatedData(userDetails, filename) {
   let dataText = 'SEIMA_PRODUCT_SELECTION ';
   
   selection.forEach((item, index) => {
-    const code = sanitizeCSVField(item.OrderCode || '');
-    const desc = sanitizeCSVField(item.Description || '');
-    const qty = sanitizeCSVField(item.Quantity || 1);
-    const room = sanitizeCSVField(item.Room || '');
+    const code = cleanForEmail(item.OrderCode || '');
+    const desc = cleanForEmail(item.Description || '');
+    const qty = cleanForEmail(item.Quantity || 1);
+    const room = cleanForEmail(item.Room || '');
     
     dataText += `ITEM${index + 1} CODE:${code} DESC:${desc} QTY:${qty} ROOM:${room} `;
   });
