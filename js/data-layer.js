@@ -161,7 +161,7 @@ export class DataLayer {
     return product;
   }
 
-  searchProducts(query, limit = 10) {
+  searchProducts(query) {
     if (!query || query.length < 2) return [];
     
     const queryLower = query.toLowerCase();
@@ -175,8 +175,6 @@ export class DataLayer {
     
     // Search in descriptions, order codes, and barcodes
     this.products.forEach(product => {
-      if (results.size >= limit) return;
-      
       const description = (product.Description || '').toLowerCase();
       const orderCode = (product.OrderCode || '').toLowerCase();
       const barcode = (product.BARCODE || '').toLowerCase();
@@ -186,7 +184,7 @@ export class DataLayer {
       }
     });
     
-    return Array.from(results).slice(0, limit);
+    return Array.from(results);
   }
 
   getAllProducts() {
