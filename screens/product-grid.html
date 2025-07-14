@@ -1,0 +1,172 @@
+<div class="grid-container">
+  <!-- Header Section -->
+  <div class="grid-header">
+    <button class="back-btn" id="back-to-home" aria-label="Back to Home">&#60;</button>
+    <div class="header-content">
+      <img src="assets/seima-logo.png" alt="SEIMA Logo" class="panel-logo">
+      <h2>Product Selection Grid</h2>
+      <div class="selection-summary">
+        <span id="total-items">0 items</span> • <span id="total-value">$0.00</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="sort-controls">
+        <label for="sort-by">Sort by:</label>
+        <select id="sort-by" class="sort-select">
+          <option value="room">Room</option>
+          <option value="order">Entry Order</option>
+          <option value="product">Product Name</option>
+          <option value="code">Product Code</option>
+        </select>
+      </div>
+      <button id="import-file-btn" class="secondary-btn">Import File</button>
+      <button id="download-btn" class="primary-btn">Download</button>
+      <button id="clear-all-btn" class="secondary-btn">Clear All</button>
+    </div>
+  </div>
+
+  <!-- Grid Section -->
+  <div class="grid-content">
+    <div id="product-grid-empty" class="empty-state">
+      <p>Start by searching for products in the grid below.</p>
+      <p class="subtitle">Type product codes or descriptions to add items to your selection.</p>
+    </div>
+
+    <div id="product-grid-container" class="grid-table-container">
+      <div class="grid-table">
+        <div class="grid-header-row">
+          <div class="col-image">Image</div>
+          <div class="col-product">Product</div>
+          <div class="col-room">Room</div>
+          <div class="col-qty">Qty</div>
+          <div class="col-price">Price</div>
+          <div class="col-notes">Notes</div>
+          <div class="col-actions">Actions</div>
+        </div>
+        <div id="grid-body" class="grid-body">
+          <!-- Grid rows will be dynamically added here -->
+        </div>
+      </div>
+      
+      <div class="grid-footer">
+        <button id="add-row-btn" class="add-row-btn">+ Add Row</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Selection Modal for bulk assignment -->
+<div id="room-assignment-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Assign to Room</h3>
+    <p>Select a room for the selected products:</p>
+    <select id="bulk-room-select">
+      <option value="Blank">Blank</option>
+    </select>
+    <div class="modal-actions">
+      <button id="room-assign-cancel" class="secondary-btn">Cancel</button>
+      <button id="room-assign-confirm" class="primary-btn">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- File Import Modal (reused from existing) -->
+<div id="file-import-modal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width: 600px;">
+    <h3 style="margin: 0 0 20px 0; color: #333;">Import Product File</h3>
+    
+    <!-- Step 1: File Selection -->
+    <div id="file-selection-step">
+      <div id="file-drop-zone" style="border: 2px dashed #ccc; padding: 40px; text-align: center; margin: 20px 0; border-radius: 8px; background: #fafafa; cursor: pointer;">
+        <p style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Drop CSV or Excel file here or click to browse</p>
+        <p style="margin: 0; color: #999; font-size: 14px;">Supported formats: .csv, .xlsx</p>
+        <input type="file" id="file-input" accept=".csv,.xlsx" style="display: none;">
+      </div>
+      <div id="selected-file-info" style="display: none; margin: 10px 0; padding: 10px; background: #e8f5e8; border-radius: 4px;">
+        <strong>Selected:</strong> <span id="selected-file-name"></span>
+      </div>
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="import-cancel-btn" class="secondary-btn">Cancel</button>
+        <button id="import-next-btn" class="primary-btn" disabled>Next</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Import Mode Selection -->
+    <div id="import-mode-step" style="display: none;">
+      <p style="margin-bottom: 20px; color: #333;">Choose how to import the data:</p>
+      <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 15px; cursor: pointer;">
+          <input type="radio" name="import-mode" value="append" checked style="margin-right: 8px;">
+          <strong>Append</strong> - Add to existing selection
+        </label>
+        <label style="display: block; cursor: pointer;">
+          <input type="radio" name="import-mode" value="override" style="margin-right: 8px;">
+          <strong>Override</strong> - Replace all existing selections (warning: this will clear everything)
+        </label>
+      </div>
+      <div id="override-warning" style="display: none; margin: 15px 0; padding: 15px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
+        <strong>Warning:</strong> This will delete all your current product selections.
+      </div>
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="import-back-btn" class="secondary-btn">Back</button>
+        <button id="import-process-btn" class="primary-btn">Import</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Processing -->
+    <div id="import-processing-step" style="display: none; text-align: center; padding: 40px 20px;">
+      <div style="border:6px solid #e0e0e0;border-top:6px solid #059669;border-radius:50%;width:54px;height:54px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+      <p style="margin: 0; color: #666;">Processing file...</p>
+    </div>
+
+    <!-- Step 4: Results -->
+    <div id="import-results-step" style="display: none;">
+      <h4 style="margin: 0 0 15px 0; color: #059669;">Import Complete</h4>
+      <div id="import-summary" style="margin-bottom: 20px;"></div>
+      <div id="not-found-products" style="display: none;">
+        <h5 style="margin: 20px 0 10px 0; color: #c33;">Products added with placeholder information:</h5>
+        <div id="not-found-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fafafa;"></div>
+      </div>
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="import-close-btn" class="primary-btn">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Download Modal -->
+<div id="pdf-email-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <form id="pdf-email-form" autocomplete="off">
+      <h3 style="margin: 0 0 20px 0; color: #333;">Download PDF Report</h3>
+      
+      <label for="user-name">Name <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+      <input type="text" id="user-name" name="user-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+      
+      <label for="user-project">Project <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+      <input type="text" id="user-project" name="user-project" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+      
+      <label for="user-address">Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+      <input type="text" id="user-address" name="user-address" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+      
+      <label for="user-email">Email Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+      <input type="email" id="user-email" name="user-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+      
+      <label for="user-telephone">Phone <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+      <input type="tel" id="user-telephone" name="user-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+      
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button type="button" id="pdf-email-cancel" class="secondary-btn">Cancel</button>
+        <button type="submit" id="pdf-email-send" class="primary-btn">Download PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PDF Processing Spinner -->
+<div id="pdf-spinner" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;padding:30px;border-radius:12px;text-align:center;max-width:300px;">
+    <div style="border:6px solid #e0e0e0;border-top:6px solid #059669;border-radius:50%;width:54px;height:54px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+    <p style="margin:0;color:#666;font-size:1.1rem;">Generating PDF...</p>
+  </div>
+</div> 
