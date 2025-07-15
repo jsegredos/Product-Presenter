@@ -691,7 +691,6 @@ export class ProductGridManager {
     const tableRows = [];
     
     Object.entries(groupedRows).forEach(([room, rows]) => {
-      const roomIcon = this.getRoomIcon(room);
       const roomClass = this.getRoomClass(room);
       
       // Room header as a proper table row that spans all columns
@@ -699,7 +698,6 @@ export class ProductGridManager {
         <div class="grid-row room-header-row ${roomClass}">
           <div class="col-search room-header-cell" colspan="8">
             <div class="room-header-content">
-              <span class="room-icon">${roomIcon}</span>
               <span class="room-name">${room}</span>
               <span class="room-count">(${rows.length})</span>
             </div>
@@ -856,24 +854,6 @@ export class ProductGridManager {
     return grouped;
   }
 
-  getRoomIcon(roomName) {
-    const roomIcons = {
-      'Blank': '📋',
-      'Bath 1': '🛁',
-      'Bath 2': '🚿', 
-      'Ensuite': '🛀',
-      'Powder': '🚽',
-      'Kitchen': '🍳',
-      'Laundry': '🧺',
-      'Alfresco': '🌿',
-      'Butlers': '🍽️',
-      'Other': '🏠',
-      'All Products': '📦'
-    };
-    
-    return roomIcons[roomName] || '📝';
-  }
-
   getRoomClass(roomName) {
     const roomClasses = {
       'Blank': 'blank-room',
@@ -883,8 +863,10 @@ export class ProductGridManager {
       'Powder': 'bath-room',
       'Kitchen': 'kitchen-room',
       'Laundry': 'laundry-room',
-      'Alfresco': 'kitchen-room',
-      'Butlers': 'kitchen-room'
+      'Alfresco': 'alfresco-room',
+      'Butlers': 'butlers-room',
+      'Other': 'other-room',
+      'All Products': 'all-products'
     };
     
     return roomClasses[roomName] || '';

@@ -6,7 +6,7 @@ import { Utils } from './utils.js';
 export class NavigationManager {
   constructor() {
     this.currentScreen = 'welcome';
-    this.selectedRoom = null;
+    this.currentSearchResults = [];
   }
 
   async init() {
@@ -24,14 +24,10 @@ export class NavigationManager {
 
   setupWelcomeScreen() {
     const startBtn = document.getElementById('start-btn');
-    const editRoomsBtn = document.getElementById('edit-rooms-btn');
     const clearSelectionBtn = document.getElementById('clear-selection-btn');
 
     if (startBtn) {
       startBtn.onclick = () => this.showProductLookupScreen();
-    }
-    if (editRoomsBtn) {
-      editRoomsBtn.onclick = () => this.showRoomSelection();
     }
     if (clearSelectionBtn) {
       clearSelectionBtn.onclick = () => this.showClearConfirmModal();
@@ -57,63 +53,11 @@ export class NavigationManager {
     }
   }
 
-  async showRoomSelection() {
-    try {
-      const response = await fetch('screens/room-selection.html');
-      const html = await response.text();
-      document.body.innerHTML = html;
-      
-      this.currentScreen = 'room-selection';
-      this.renderRoomGrid();
-      
-      // Setup event handlers
-      const backBtn = document.getElementById('back-to-welcome');
-      const addRoomBtn = document.getElementById('add-custom-room');
-      
-      if (backBtn) {
-        backBtn.onclick = () => location.reload();
-      }
-      
-      if (addRoomBtn) {
-        addRoomBtn.onclick = () => this.handleAddCustomRoom();
-      }
-    } catch (error) {
-      console.error('Failed to load room selection screen:', error);
-    }
-  }
 
-  renderRoomGrid() {
-    const grid = document.getElementById('room-grid');
-    if (!grid) return;
 
-    grid.innerHTML = '';
-    
-    // Render predefined rooms
-    CONFIG.ROOMS.PREDEFINED.forEach(room => {
-      const btn = document.createElement('button');
-      btn.className = 'room-btn';
-      btn.innerHTML = `<span class="room-icon">${room.icon}</span>${room.name}`;
-      btn.onclick = () => this.selectRoom(room.name);
-      grid.appendChild(btn);
-    });
 
-    // Render custom rooms
-    const customRooms = StorageManager.getCustomRooms();
-    customRooms.forEach((room, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'room-btn';
-      btn.innerHTML = `<span class="room-icon">📝</span>${room.name}`;
-      btn.onclick = () => this.selectRoom(room.name);
-      btn.ondblclick = () => this.handleRemoveCustomRoom(idx);
-      btn.title = 'Double-click to remove';
-      grid.appendChild(btn);
-    });
-  }
 
-  selectRoom(roomName) {
-    this.selectedRoom = roomName;
-    this.showProductLookupScreen();
-  }
+
 
   async showProductLookupScreen() {
     try {
@@ -416,9 +360,6 @@ export class NavigationManager {
       const option = document.createElement('option');
       option.value = room.name;
       option.textContent = room.name;
-      if (room.name === this.selectedRoom) {
-        option.selected = true;
-      }
       select.appendChild(option);
     });
 
@@ -428,9 +369,6 @@ export class NavigationManager {
       const option = document.createElement('option');
       option.value = room.name;
       option.textContent = room.name;
-      if (room.name === this.selectedRoom) {
-        option.selected = true;
-      }
       select.appendChild(option);
     });
 
@@ -442,10 +380,8 @@ export class NavigationManager {
     addOption.style.color = '#2563eb';
     select.appendChild(addOption);
 
-    // Default to "Blank" if no room is selected
-    if (!this.selectedRoom) {
-      select.value = 'Blank';
-    }
+    // Default to "Blank"
+    select.value = 'Blank';
 
     // Add event listener for room selection change
     select.removeEventListener('change', this.handleRoomSelectChange.bind(this));
@@ -563,7 +499,7 @@ export class NavigationManager {
     const quantitySelect = document.getElementById('product-quantity');
     const annotationField = document.getElementById('product-annotation');
 
-    const room = roomSelect ? roomSelect.value : this.selectedRoom;
+    const room = roomSelect ? roomSelect.value : 'Blank';
     const quantity = quantitySelect ? parseInt(quantitySelect.value) : 1;
     const notes = annotationField ? annotationField.value : '';
 
@@ -979,23 +915,7 @@ export class NavigationManager {
     // CSV download is handled in the PDF generator module
   }
 
-  handleAddCustomRoom() {
-    const roomName = prompt('Enter custom room name:');
-    if (roomName && roomName.trim()) {
-      if (StorageManager.addCustomRoom(roomName.trim())) {
-        this.renderRoomGrid();
-      } else {
-        alert('Room name already exists or is invalid');
-      }
-    }
-  }
 
-  handleRemoveCustomRoom(index) {
-    if (confirm('Remove this custom room?')) {
-      StorageManager.removeCustomRoom(index);
-      this.renderRoomGrid();
-    }
-  }
 
   showClearConfirmModal() {
     const modal = document.getElementById('clear-selection-modal');
@@ -1064,26 +984,17 @@ export class NavigationManager {
           this.populateRoomSelect(select);
           select.value = trimmedName;
           
-          // Update selectedRoom if this is the main room selector
-          if (select.id === 'room-select') {
-            this.selectedRoom = trimmedName;
-          }
-          
           console.log('✅ Added new room:', trimmedName);
         } else {
           alert('Room name already exists or is invalid');
-          // Reset to previous selection
-          select.value = this.selectedRoom || 'Blank';
+          // Reset to Blank
+          select.value = 'Blank';
         }
       } else {
-        // User cancelled or entered empty name, reset selection
-        select.value = this.selectedRoom || 'Blank';
-      }
-    } else {
-      // Normal room selection
-      if (select.id === 'room-select') {
-        this.selectedRoom = selectedValue;
+        // User cancelled or entered empty name, reset to Blank
+        select.value = 'Blank';
       }
     }
+    // Normal room selection doesn't need any special handling
   }
 } 

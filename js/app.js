@@ -38,9 +38,6 @@ class SeimaScanner {
       document.getElementById('start-btn').onclick = () => {
         this.navigationManager.showProductLookupScreen();
       };
-      document.getElementById('edit-rooms-btn').onclick = () => {
-        this.navigationManager.showRoomSelection();
-      };
 
       // Make services globally available for compatibility
       window.navigationManager = this.navigationManager;
