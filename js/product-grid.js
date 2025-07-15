@@ -602,7 +602,36 @@ export class ProductGridManager {
 
     // Update row data based on input type
     if (input.classList.contains('grid-select') && input.name === 'room') {
-      row.room = input.value;
+      if (input.value === '__ADD_NEW_ROOM__') {
+        // User selected "Add new room..." option
+        const roomName = prompt('Enter new room name:');
+        if (roomName && roomName.trim()) {
+          const trimmedName = roomName.trim();
+          if (StorageManager.addCustomRoom(trimmedName)) {
+            // Successfully added room
+            row.room = trimmedName;
+            console.log('✅ Added new room:', trimmedName);
+            
+            // Refresh all room dropdowns in the grid
+            this.refreshRoomDropdowns();
+            
+            // Set the new room value for this specific dropdown
+            input.value = trimmedName;
+          } else {
+            alert('Room name already exists or is invalid');
+            // Reset to previous selection
+            input.value = row.room || 'Blank';
+            return;
+          }
+        } else {
+          // User cancelled or entered empty name, reset selection
+          input.value = row.room || 'Blank';
+          return;
+        }
+      } else {
+        // Normal room selection
+        row.room = input.value;
+      }
     } else if (input.classList.contains('grid-input') && input.name === 'quantity') {
       row.quantity = Math.max(1, parseInt(input.value) || 1);
       input.value = row.quantity; // Ensure valid value
@@ -873,6 +902,9 @@ export class ProductGridManager {
       options += `<option value="${room.name}" ${selectedRoom === room.name ? 'selected' : ''}>${room.name}</option>`;
     });
 
+    // Add "Add new room..." option
+    options += '<option value="__ADD_NEW_ROOM__" style="font-weight: bold; color: #2563eb;">➕ Add new room...</option>';
+
     return options;
   }
 
@@ -1112,5 +1144,20 @@ export class ProductGridManager {
     });
 
     this.draggedRowId = null;
+  }
+
+  refreshRoomDropdowns() {
+    // Update all room select dropdowns in the grid
+    const roomSelects = document.querySelectorAll('.grid-select[name="room"]');
+    roomSelects.forEach(select => {
+      const currentValue = select.value;
+      const currentRow = this.gridRows.find(r => r.id === select.closest('.grid-row').dataset.rowId);
+      if (currentRow) {
+        select.innerHTML = this.getRoomOptions(currentRow.room);
+      }
+    });
+
+    // Also update bulk room select if it exists
+    this.populateRoomOptions();
   }
 } 

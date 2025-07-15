@@ -434,10 +434,22 @@ export class NavigationManager {
       select.appendChild(option);
     });
 
+    // Add "Add new room..." option
+    const addOption = document.createElement('option');
+    addOption.value = '__ADD_NEW_ROOM__';
+    addOption.textContent = '➕ Add new room...';
+    addOption.style.fontWeight = 'bold';
+    addOption.style.color = '#2563eb';
+    select.appendChild(addOption);
+
     // Default to "Blank" if no room is selected
     if (!this.selectedRoom) {
       select.value = 'Blank';
     }
+
+    // Add event listener for room selection change
+    select.removeEventListener('change', this.handleRoomSelectChange.bind(this));
+    select.addEventListener('change', this.handleRoomSelectChange.bind(this));
   }
 
   setupQuantitySelect() {
@@ -686,6 +698,9 @@ export class NavigationManager {
       options += `<option value="${room.name}"${selectedRoom === room.name ? ' selected' : ''}>${room.name}</option>`;
     });
 
+    // Add "Add new room..." option
+    options += '<option value="__ADD_NEW_ROOM__" style="font-weight: bold; color: #2563eb;">➕ Add new room...</option>';
+
     return options;
   }
 
@@ -707,9 +722,41 @@ export class NavigationManager {
 
   handleRoomChange(select) {
     const index = parseInt(select.getAttribute('data-index'));
-    const newRoom = select.value;
+    let newRoom = select.value;
     
-    // Update storage
+    if (newRoom === '__ADD_NEW_ROOM__') {
+      // User selected "Add new room..." option
+      const roomName = prompt('Enter new room name:');
+      if (roomName && roomName.trim()) {
+        const trimmedName = roomName.trim();
+        if (StorageManager.addCustomRoom(trimmedName)) {
+          // Successfully added room
+          newRoom = trimmedName;
+          console.log('✅ Added new room:', trimmedName);
+          
+          // Refresh the entire review table to update all dropdowns
+          this.renderSelectionTable();
+          return;
+        } else {
+          alert('Room name already exists or is invalid');
+          // Reset to previous selection
+          const selectedProducts = StorageManager.getSelectedProducts();
+          if (selectedProducts[index]) {
+            select.value = selectedProducts[index].room || 'Blank';
+          }
+          return;
+        }
+      } else {
+        // User cancelled or entered empty name, reset selection
+        const selectedProducts = StorageManager.getSelectedProducts();
+        if (selectedProducts[index]) {
+          select.value = selectedProducts[index].room || 'Blank';
+        }
+        return;
+      }
+    }
+    
+    // Update storage with normal room selection
     const selectedProducts = StorageManager.getSelectedProducts();
     if (selectedProducts[index]) {
       selectedProducts[index].room = newRoom;
@@ -1000,6 +1047,43 @@ export class NavigationManager {
     const countElement = document.getElementById('selection-count');
     if (countElement) {
       countElement.textContent = StorageManager.getSelectionCount().toString();
+    }
+  }
+
+  handleRoomSelectChange(event) {
+    const select = event.target;
+    const selectedValue = select.value;
+
+    if (selectedValue === '__ADD_NEW_ROOM__') {
+      // User selected "Add new room..." option
+      const roomName = prompt('Enter new room name:');
+      if (roomName && roomName.trim()) {
+        const trimmedName = roomName.trim();
+        if (StorageManager.addCustomRoom(trimmedName)) {
+          // Successfully added room, refresh dropdown and select it
+          this.populateRoomSelect(select);
+          select.value = trimmedName;
+          
+          // Update selectedRoom if this is the main room selector
+          if (select.id === 'room-select') {
+            this.selectedRoom = trimmedName;
+          }
+          
+          console.log('✅ Added new room:', trimmedName);
+        } else {
+          alert('Room name already exists or is invalid');
+          // Reset to previous selection
+          select.value = this.selectedRoom || 'Blank';
+        }
+      } else {
+        // User cancelled or entered empty name, reset selection
+        select.value = this.selectedRoom || 'Blank';
+      }
+    } else {
+      // Normal room selection
+      if (select.id === 'room-select') {
+        this.selectedRoom = selectedValue;
+      }
     }
   }
 } 
