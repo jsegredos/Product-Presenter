@@ -3,24 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seima Product Selector - Desktop Edition</title>
+  <title>Seima Product Selector</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/seima-logo.png">
 </head>
 <body>
-  <div class="welcome-container">
-    <img src="assets/seima-logo.png" alt="SEIMA Logo" class="logo">
-    <h1 class="tagline">Product Selector</h1>
-    <button id="start-btn" class="primary-btn">Select Products</button>
-    <button id="clear-selection-btn" class="clear-selection-btn" style="margin-top: 18px;">Clear Selection</button>
-    <button id="import-file-btn" class="primary-btn" style="margin-top: 50px; background: #059669; border-color: #059669;">Import File</button>
+  <div class="grid-container">
+    <!-- Header Section -->
+    <div class="grid-header">
+      <div class="header-top">
+        <div class="header-left">
+          <img src="assets/seima-logo.png" alt="SEIMA Logo" class="panel-logo">
+          <h2>Product Selection Grid</h2>
+        </div>
+        <div class="header-center">
+          <div class="sort-controls">
+            <label for="sort-by">Sort by:</label>
+            <select id="sort-by" class="sort-select">
+              <option value="room">Room</option>
+              <option value="order">Entry Order</option>
+              <option value="product">Product Name</option>
+              <option value="code">Product Code</option>
+            </select>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="import-file-btn" class="btn-import-quote">Import Quote</button>
+          <button id="clear-all-btn" class="btn-clear-all">Clear All</button>
+          <button id="settings-btn" class="btn-settings">Settings</button>
+          <button id="download-btn" class="btn-create">Create</button>
+        </div>
+      </div>
+      <div class="header-bottom">
+        <div class="selection-summary">
+          <span id="total-items">0 items</span>, <span id="total-rooms">0 Rooms</span>. Total <span id="total-value">$0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid Section -->
+    <div class="grid-content">
+      <div id="product-grid-empty" class="empty-state">
+        <p>Start by searching for products in the grid below.</p>
+        <p class="subtitle">Type product codes or descriptions to add items to your selection.</p>
+      </div>
+
+      <div id="product-grid-container" class="grid-table-container">
+        <div class="grid-table">
+          <div class="grid-header-row">
+            <div class="col-image">Image</div>
+            <div class="col-product">Product</div>
+            <div class="col-room">Room</div>
+            <div class="col-qty">Qty</div>
+            <div class="col-price">Price</div>
+            <div class="col-total">Total</div>
+            <div class="col-notes">Notes</div>
+            <div class="col-actions">Actions</div>
+          </div>
+          <div id="grid-body" class="grid-body">
+            <!-- Grid rows will be dynamically added here -->
+          </div>
+        </div>
+        
+        <div class="grid-footer">
+          <button id="add-row-btn" class="add-row-btn">+ Add Row</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div id="clear-selection-modal" class="modal" style="display:none;">
+
+  <!-- Room Selection Modal for bulk assignment -->
+  <div id="room-assignment-modal" class="modal" style="display:none;">
     <div class="modal-content">
-      <p style="margin-bottom: 24px;">Are you sure you want to clear all product and room selections?</p>
-      <div style="display: flex; gap: 16px; justify-content: flex-end;">
-        <button id="modal-cancel-btn" class="secondary-btn">Cancel</button>
-        <button id="modal-confirm-btn" class="primary-btn" style="background: #b91c1c; color: #fff;">Clear All</button>
+      <h3>Assign to Room</h3>
+      <p>Select a room for the selected products:</p>
+      <select id="bulk-room-select">
+        <option value="Blank">Blank</option>
+      </select>
+      <div class="modal-actions">
+        <button id="room-assign-cancel" class="secondary-btn">Cancel</button>
+        <button id="room-assign-confirm" class="primary-btn">Assign</button>
       </div>
     </div>
   </div>
@@ -52,7 +114,7 @@
         <div style="margin: 20px 0;">
           <label style="display: block; margin-bottom: 15px; cursor: pointer;">
             <input type="radio" name="import-mode" value="append" checked style="margin-right: 8px;">
-            <strong>Append</strong> - Add to existing selection (items will be added to "Blank" room)
+            <strong>Append</strong> - Add to existing selection
           </label>
           <label style="display: block; cursor: pointer;">
             <input type="radio" name="import-mode" value="override" style="margin-right: 8px;">
@@ -60,7 +122,7 @@
           </label>
         </div>
         <div id="override-warning" style="display: none; margin: 15px 0; padding: 15px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
-          <strong>Warning:</strong> This will delete all your current product selections and room assignments.
+          <strong>Warning:</strong> This will delete all your current product selections.
         </div>
         <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
           <button id="import-back-btn" class="secondary-btn">Back</button>
@@ -88,79 +150,91 @@
       </div>
     </div>
   </div>
-  <div id="pdf-spinner" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);align-items:center;justify-content:center;">
-    <div style="border:6px solid #e0e0e0;border-top:6px solid #2563eb;border-radius:50%;width:54px;height:54px;animation:spin 1s linear infinite;"></div>
+
+  <!-- PDF Download Modal -->
+  <div id="pdf-email-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <form id="pdf-email-form" autocomplete="off">
+        <h3 style="margin: 0 0 20px 0; color: #333;">Download PDF Report</h3>
+        
+        <label for="user-name">Name <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-name" name="user-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-project">Project <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-project" name="user-project" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-address">Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="text" id="user-address" name="user-address" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-email">Email Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="email" id="user-email" name="user-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <label for="user-telephone">Phone <span style="color:#888;font-size:0.95em;">(optional)</span></label>
+        <input type="tel" id="user-telephone" name="user-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
+        
+        <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" id="pdf-email-cancel" class="secondary-btn">Cancel</button>
+          <button type="submit" id="pdf-email-send" class="primary-btn">Download PDF</button>
+        </div>
+      </form>
+    </div>
   </div>
-  <style>
-    @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script type="module" src="js/app.js"></script>
-  <script nomodule src="app.js"></script>
-  <div id="version-info" style="position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:0.98rem;color:#888;z-index:10;">
-    Ver: <span id="version-number" style="cursor:pointer;text-decoration:underline;color:#2563eb;" title="Click to view version history">1.0.0</span>
-  </div>
-  
-  <!-- Version History Modal -->
-  <div id="version-modal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px;">
-        <h3 style="margin: 0; color: #1f2937; font-size: 1.4rem;">Version History</h3>
-        <button id="close-version-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 4px;" title="Close">&times;</button>
-      </div>
-      <div id="version-history" style="font-family: 'SF Pro Display', 'Segoe UI', sans-serif; line-height: 1.6;">
-        <!-- Version history will be loaded here -->
+
+  <!-- Clear All Confirmation Modal -->
+  <div id="clear-all-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 style="margin: 0 0 20px 0; color: #333;">Confirm Clear All</h3>
+      <p style="margin-bottom: 20px; color: #666;">This will delete all selected products and any custom rooms you've created. This action cannot be undone.</p>
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="clear-all-cancel" class="secondary-btn">Cancel</button>
+        <button id="clear-all-confirm" class="btn-clear-all">Clear All</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let fullVersionContent = '';
-    
-    fetch('version.txt').then(r => r.text()).then(v => {
-      fullVersionContent = v.trim();
-      const lines = fullVersionContent.split('\n').filter(line => line.trim() !== '');
-      const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 style="margin: 0 0 20px 0; color: #333;">Settings</h3>
       
-      // Extract just the version number (before the first dash)
-      const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
-      document.getElementById('version-number').textContent = versionNumber;
+      <div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Staff Contact Details</h4>
+        <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">These details will appear on the presentation title page.</p>
+        
+        <label for="staff-name">Name</label>
+        <input type="text" id="staff-name" name="staff-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
+        
+        <label for="staff-email">Email</label>
+        <input type="email" id="staff-email" name="staff-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
+        
+        <label for="staff-telephone">Phone</label>
+        <input type="tel" id="staff-telephone" name="staff-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
+      </div>
       
-      // Populate version history modal
-      const historyDiv = document.getElementById('version-history');
-      if (historyDiv) {
-        historyDiv.innerHTML = lines.reverse().map(line => {
-          const [version, ...descParts] = line.split(' - ');
-          const description = descParts.join(' - ');
-          return `
-            <div style="margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
-              <div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">${version}</div>
-              <div style="color: #374151; font-size: 0.95rem;">${description}</div>
-            </div>
-          `;
-        }).join('');
-      }
-    });
-    
-    // Show version modal when version number is clicked
-    document.getElementById('version-number').addEventListener('click', () => {
-      document.getElementById('version-modal').style.display = 'flex';
-    });
-    
-    // Close modal when close button is clicked
-    document.getElementById('close-version-modal').addEventListener('click', () => {
-      document.getElementById('version-modal').style.display = 'none';
-    });
-    
-    // Close modal when clicking outside the modal content
-    document.getElementById('version-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'version-modal') {
-        document.getElementById('version-modal').style.display = 'none';
-      }
-    });
-  </script>
+      <div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Presentation Customization</h4>
+        <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">Additional PDF pages and customization options will be available here in future updates.</p>
+      </div>
+      
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="settings-cancel" class="secondary-btn">Cancel</button>
+        <button id="settings-save" class="primary-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Processing Spinner -->
+  <div id="pdf-spinner" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;padding:30px;border-radius:12px;text-align:center;max-width:300px;">
+      <div style="border:6px solid #e0e0e0;border-top:6px solid #059669;border-radius:50%;width:54px;height:54px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+      <p style="margin:0;color:#666;font-size:1.1rem;">Generating PDF...</p>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+  </style>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html> 

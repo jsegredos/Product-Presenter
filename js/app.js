@@ -34,10 +34,8 @@ class SeimaScanner {
       // Setup global event listeners
       this.setupGlobalEventListeners();
 
-      // Setup main menu button event listeners
-      document.getElementById('start-btn').onclick = () => {
-        this.navigationManager.showProductLookupScreen();
-      };
+      // Initialize product grid manager directly (since grid is now the home page)
+      this.productGridManager.init();
 
       // Make services globally available for compatibility
       window.navigationManager = this.navigationManager;
@@ -52,7 +50,8 @@ class SeimaScanner {
 
       console.log('Seima Scanner initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize Seima Scanner:', error);
+      console.error('Failed to initialize app:', error);
+      this.showError('Failed to load application. Please refresh the page.');
     }
   }
 

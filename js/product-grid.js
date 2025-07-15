@@ -46,6 +46,7 @@ export class ProductGridManager {
     const importBtn = document.getElementById('import-file-btn');
     const downloadBtn = document.getElementById('download-btn');
     const clearAllBtn = document.getElementById('clear-all-btn');
+    const settingsBtn = document.getElementById('settings-btn');
     const addRowBtn = document.getElementById('add-row-btn');
 
     if (backBtn) {
@@ -64,8 +65,59 @@ export class ProductGridManager {
       clearAllBtn.onclick = () => this.showClearAllModal();
     }
 
+    if (settingsBtn) {
+      settingsBtn.onclick = () => this.showSettingsModal();
+    }
+
     if (addRowBtn) {
       addRowBtn.onclick = () => this.addEmptyRow();
+    }
+
+    // Clear All modal events
+    const clearAllCancel = document.getElementById('clear-all-cancel');
+    const clearAllConfirm = document.getElementById('clear-all-confirm');
+    
+    if (clearAllCancel) {
+      clearAllCancel.onclick = () => this.hideClearAllModal();
+    }
+    
+    if (clearAllConfirm) {
+      clearAllConfirm.onclick = () => {
+        this.clearAll();
+        this.hideClearAllModal();
+      };
+    }
+
+    // Settings modal events
+    const settingsCancel = document.getElementById('settings-cancel');
+    const settingsSave = document.getElementById('settings-save');
+    
+    if (settingsCancel) {
+      settingsCancel.onclick = () => this.hideSettingsModal();
+    }
+    
+    if (settingsSave) {
+      settingsSave.onclick = () => this.saveSettings();
+    }
+
+    // Modal click-outside handlers
+    const clearAllModal = document.getElementById('clear-all-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    
+    if (clearAllModal) {
+      clearAllModal.onclick = (e) => {
+        if (e.target === clearAllModal) {
+          this.hideClearAllModal();
+        }
+      };
+    }
+    
+    if (settingsModal) {
+      settingsModal.onclick = (e) => {
+        if (e.target === settingsModal) {
+          this.hideSettingsModal();
+        }
+      };
     }
 
     // Sort functionality
@@ -924,21 +976,32 @@ export class ProductGridManager {
 
   updateTotals() {
     const totalItemsElement = document.getElementById('total-items');
+    const totalRoomsElement = document.getElementById('total-rooms');
     const totalValueElement = document.getElementById('total-value');
 
     let totalItems = 0;
     let totalValue = 0;
+    const uniqueRooms = new Set();
 
     this.gridRows.forEach(row => {
       if (row.product) {
         totalItems += row.quantity;
         const price = parseFloat(row.price) || 0;
         totalValue += price * row.quantity;
+        
+        // Count unique rooms (excluding "Blank" or empty rooms)
+        if (row.room && row.room !== 'Blank' && row.room.trim() !== '') {
+          uniqueRooms.add(row.room);
+        }
       }
     });
 
     if (totalItemsElement) {
       totalItemsElement.textContent = `${totalItems} items`;
+    }
+
+    if (totalRoomsElement) {
+      totalRoomsElement.textContent = `${uniqueRooms.size} Rooms`;
     }
 
     if (totalValueElement) {
@@ -1012,9 +1075,63 @@ export class ProductGridManager {
 
   // Clear all functionality
   showClearAllModal() {
-    if (confirm('Are you sure you want to clear all products from the grid?')) {
-      this.clearAll();
+    const modal = document.getElementById('clear-all-modal');
+    if (modal) {
+      modal.style.display = 'flex';
     }
+  }
+
+  hideClearAllModal() {
+    const modal = document.getElementById('clear-all-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  // Settings functionality
+  showSettingsModal() {
+    this.loadSettings();
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  hideSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  loadSettings() {
+    const settings = StorageManager.getUserSettings();
+    
+    const staffName = document.getElementById('staff-name');
+    const staffEmail = document.getElementById('staff-email');
+    const staffTelephone = document.getElementById('staff-telephone');
+    
+    if (staffName) staffName.value = settings.staffName || '';
+    if (staffEmail) staffEmail.value = settings.staffEmail || '';
+    if (staffTelephone) staffTelephone.value = settings.staffTelephone || '';
+  }
+
+  saveSettings() {
+    const staffName = document.getElementById('staff-name');
+    const staffEmail = document.getElementById('staff-email');
+    const staffTelephone = document.getElementById('staff-telephone');
+    
+    const settings = {
+      staffName: staffName?.value || '',
+      staffEmail: staffEmail?.value || '',
+      staffTelephone: staffTelephone?.value || ''
+    };
+    
+    StorageManager.saveUserSettings(settings);
+    this.hideSettingsModal();
+    
+    // Show success message
+    console.log('Settings saved successfully');
   }
 
   clearAll() {

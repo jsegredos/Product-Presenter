@@ -17,24 +17,11 @@ export class NavigationManager {
       console.error('Failed to load product catalog:', error);
     }
 
-    // Setup welcome screen
-    this.setupWelcomeScreen();
+    // Update selection count for when we show product lookup screen
     this.updateSelectionCount();
   }
 
-  setupWelcomeScreen() {
-    const startBtn = document.getElementById('start-btn');
-    const clearSelectionBtn = document.getElementById('clear-selection-btn');
 
-    if (startBtn) {
-      startBtn.onclick = () => this.showProductLookupScreen();
-    }
-    if (clearSelectionBtn) {
-      clearSelectionBtn.onclick = () => this.showClearConfirmModal();
-    }
-    // Load version
-    this.loadVersion();
-  }
 
   async loadVersion() {
     try {

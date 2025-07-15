@@ -2702,16 +2702,41 @@ body {
 
 /* Grid Header */
 .grid-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.header-bottom {
+  padding: 0 24px 12px 24px;
 }
 
 .grid-header .back-btn {
@@ -2735,38 +2760,86 @@ body {
   border-color: #9ca3af;
 }
 
-.grid-header .header-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  margin: 0 24px;
-}
-
 .grid-header .panel-logo {
-  height: 24px;
+  height: 32px;
   width: auto;
-  margin-bottom: 8px;
 }
 
 .grid-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 4px 0;
+  margin: 0;
 }
 
 .grid-header .selection-summary {
   font-size: 0.875rem;
   color: #6b7280;
-  display: flex;
-  gap: 8px;
 }
 
-.grid-header .header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+/* New Button Styles */
+.btn-import-quote {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-import-quote:hover {
+  background: #2563eb;
+}
+
+.btn-clear-all {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-clear-all:hover {
+  background: #dc2626;
+}
+
+.btn-settings {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-settings:hover {
+  background: #4b5563;
+}
+
+.btn-create {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-create:hover {
+  background: #059669;
 }
 
 .sort-controls {
@@ -3382,15 +3455,45 @@ body {
 }
 
 @media (max-width: 768px) {
-  .grid-header .header-actions {
+  .header-top {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    padding: 12px 16px;
   }
   
-  .grid-header .header-actions .secondary-btn,
-  .grid-header .header-actions .primary-btn {
+  .header-left {
+    justify-content: center;
+  }
+  
+  .header-center {
+    justify-content: center;
+  }
+  
+  .header-right {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .header-bottom {
+    padding: 0 16px 8px 16px;
+    text-align: center;
+  }
+  
+  .btn-import-quote,
+  .btn-clear-all,
+  .btn-settings,
+  .btn-create {
     font-size: 0.8rem;
-    padding: 8px 12px;
+    padding: 6px 12px;
+  }
+  
+  .grid-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .grid-header .panel-logo {
+    height: 28px;
   }
   
   .col-notes { display: none; }

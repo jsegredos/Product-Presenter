@@ -103,4 +103,12 @@ export class StorageManager {
   static getSelectionCount() {
     return this.getSelectedProducts().length;
   }
+
+  static getUserSettings() {
+    return Utils.getStorageItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, {});
+  }
+
+  static saveUserSettings(settings) {
+    return Utils.setStorageItem(CONFIG.STORAGE_KEYS.USER_PREFERENCES, settings);
+  }
 } 
