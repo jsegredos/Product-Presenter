@@ -3,6 +3,7 @@ import { moduleCoordinator, pdfGenerator, CONFIG } from './modules.js';
 import { showPdfFormScreen, ensurePdfSpinner, downloadWithFallback } from './pdf-generator.js';
 import { StorageManager } from './storage.js';
 import { FileImportManager } from './file-import.js';
+import { ProductGridManager } from './product-grid.js';
 import { browserCompatibility, isSamsungDevice } from './browser-compatibility.js';
 
 // Main application class
@@ -10,6 +11,7 @@ class SeimaScanner {
   constructor() {
     this.navigationManager = null;
     this.fileImportManager = new FileImportManager();
+    this.productGridManager = new ProductGridManager();
   }
 
   async init() {
@@ -42,6 +44,7 @@ class SeimaScanner {
 
       // Make services globally available for compatibility
       window.navigationManager = this.navigationManager;
+      window.productGridManager = this.productGridManager;
       window.browserCompatibility = browserCompatibility;
       window.downloadWithFallback = downloadWithFallback;
 

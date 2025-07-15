@@ -117,16 +117,17 @@ export class NavigationManager {
 
   async showProductLookupScreen() {
     try {
-      const response = await fetch('screens/split-interface.html');
+      const response = await fetch('screens/product-grid.html');
       const html = await response.text();
       document.body.innerHTML = html;
-      this.currentScreen = 'split-interface';
-      this.updateSelectionCount();
+      this.currentScreen = 'product-grid';
       
-      // Setup split interface
-      this.setupSplitInterface();
+      // Initialize grid interface
+      if (window.productGridManager) {
+        window.productGridManager.init();
+      }
     } catch (error) {
-      console.error('Failed to load split interface screen:', error);
+      console.error('Failed to load product grid screen:', error);
     }
   }
 
@@ -555,8 +556,8 @@ export class NavigationManager {
     const notes = annotationField ? annotationField.value : '';
 
     if (StorageManager.addProductToSelection(product, notes, room, quantity)) {
-      // Like the original, show review screen after adding
-      this.showReviewScreen();
+      // Show split interface table view after adding
+      this.showProductLookupScreen();
     } else {
       alert('Failed to add product to selection');
     }
@@ -969,9 +970,11 @@ export class NavigationManager {
           modal.style.display = 'none';
           this.updateSelectionCount();
           
-          // Also re-render the table if we're in the split interface
-          if (this.currentScreen === 'split-interface') {
-            this.renderReviewTable();
+          // Also re-render the grid if we're in the product grid interface
+          if (this.currentScreen === 'product-grid') {
+            if (window.productGridManager) {
+              window.productGridManager.clearAll();
+            }
           }
         };
       }

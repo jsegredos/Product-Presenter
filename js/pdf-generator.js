@@ -330,8 +330,8 @@ export function showPdfFormScreen(userDetails) {
           // Skip email mode image filtering for testing
           if (userDetails.emailCompatible) {
             console.log(`📧 Email mode: Including image for testing: ${imgUrl}`);
-          }
-          
+              }
+              
           // Use the proxy loading mechanism but without optimization
           let callbackCalled = false; // Prevent multiple callback calls
           
@@ -350,28 +350,28 @@ export function showPdfFormScreen(userDetails) {
             img.crossOrigin = 'Anonymous';
             let timeoutId = null;
             
-            img.onload = function() {
+                  img.onload = function() {
               if (callbackCalled) return;
               callbackCalled = true;
               
               if (timeoutId) clearTimeout(timeoutId);
               
-              try {
+                    try {
                 const pdfMaxW = Math.min(maxW, 120);
-                const pdfMaxH = Math.min(maxH, 120);
+                      const pdfMaxH = Math.min(maxH, 120);
                 
                 // Add original unprocessed image directly to PDF
                 doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
                 console.log(`✅ Added ORIGINAL UNCOMPRESSED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
                 imageOptimizationStats.optimizedImages++; // Count as processed
-              } catch (e) {
+                    } catch (e) {
                 console.warn('Failed to add original image to PDF:', e);
-                imageOptimizationStats.failedImages++;
-              }
-              if (cb) cb();
-            };
+                      imageOptimizationStats.failedImages++;
+                    }
+                    if (cb) cb();
+                  };
             
-            img.onerror = function() {
+                  img.onerror = function() {
               if (callbackCalled) return;
               if (timeoutId) clearTimeout(timeoutId);
               
@@ -385,9 +385,9 @@ export function showPdfFormScreen(userDetails) {
               } else {
                 callbackCalled = true;
                 console.warn('All proxies failed, skipping image');
-                imageOptimizationStats.failedImages++;
-                if (cb) cb();
-              }
+                  imageOptimizationStats.failedImages++;
+                  if (cb) cb();
+                }
             };
             
             timeoutId = setTimeout(() => {
@@ -594,13 +594,13 @@ export function showPdfFormScreen(userDetails) {
                   const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
                   generateCsvBlobAsync(userDetails, csvFilename).then(csvBlob => {
                     // Trigger email sending with CSV
-                    window.dispatchEvent(new CustomEvent('sendEmail', {
-                      detail: {
-                        userDetails: userDetails,
-                        pdfBlob: optimizedBlob,
-                        csvBlob: csvBlob
-                      }
-                    }));
+                window.dispatchEvent(new CustomEvent('sendEmail', {
+                  detail: {
+                    userDetails: userDetails,
+                    pdfBlob: optimizedBlob,
+                    csvBlob: csvBlob
+                  }
+                }));
                   }).catch(error => {
                     console.error('Async CSV generation for email failed:', error);
                     // Send email without CSV
@@ -1104,12 +1104,12 @@ export async function generateAndDownloadCsv(userDetails, csvFilename) {
   
   try {
     const csvBlob = await generateCsvBlobAsync(userDetails, csvFilename);
-    if (!csvBlob) {
-      if (spinner) spinner.style.display = 'none';
-      return;
-    }
+  if (!csvBlob) {
+    if (spinner) spinner.style.display = 'none';
+    return;
+  }
     
-    // Download CSV with enhanced error handling
+  // Download CSV with enhanced error handling
     const fileInfo = showFileSizeInfo(csvBlob, csvFilename);
     downloadWithFallback(csvBlob, csvFilename, 'CSV');
   } catch (error) {
@@ -1373,13 +1373,13 @@ function attemptStandardDownload(blob, filename) {
       resolve(false);
     }
   });
-  }
-  
+}
+
           // *** IMAGE OPTIMIZATION COMPLETELY DISABLED - MAXIMUM QUALITY ***
   export function optimizeImageForPDF(imageUrl, maxWidth = 450, quality = 0.85) {
     console.log(`🔍 NO OPTIMIZATION: Returning original URL for maximum quality: ${imageUrl}`);
     return Promise.resolve(imageUrl);
-  }
+}
 
 function calculateOptimizedDimensions(originalWidth, originalHeight, maxWidth) {
   if (originalWidth <= maxWidth) {

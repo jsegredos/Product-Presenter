@@ -526,9 +526,16 @@ export class FileImportManager {
       doneBtn.textContent = 'View Products';
       doneBtn.onclick = () => {
         this.closeModal();
-        // Navigate to review screen if navigation manager is available
-        if (window.navigationManager && window.navigationManager.showReviewScreen) {
-          window.navigationManager.showReviewScreen();
+        
+        // If we're already in the grid interface, refresh it
+        if (window.navigationManager && window.navigationManager.currentScreen === 'product-grid' && window.productGridManager) {
+          // Reload the grid with imported data
+          window.productGridManager.loadExistingProducts();
+          window.productGridManager.renderGrid();
+          window.productGridManager.updateTotals();
+        } else if (window.navigationManager && window.navigationManager.showProductLookupScreen) {
+          // Navigate to product grid interface
+          window.navigationManager.showProductLookupScreen();
         }
       };
     }

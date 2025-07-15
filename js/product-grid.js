@@ -598,16 +598,25 @@ export class ProductGridManager {
 
     if (!row) return;
 
+    let shouldUpdateTotal = false;
+
     // Update row data based on input type
     if (input.classList.contains('grid-select') && input.name === 'room') {
       row.room = input.value;
     } else if (input.classList.contains('grid-input') && input.name === 'quantity') {
       row.quantity = Math.max(1, parseInt(input.value) || 1);
       input.value = row.quantity; // Ensure valid value
+      shouldUpdateTotal = true;
     } else if (input.classList.contains('grid-input') && input.name === 'price') {
       row.price = input.value;
+      shouldUpdateTotal = true;
     } else if (input.classList.contains('grid-textarea') && input.name === 'notes') {
       row.notes = input.value;
+    }
+
+    // Update row total if quantity or price changed
+    if (shouldUpdateTotal) {
+      this.updateRowTotal(rowElement, row);
     }
 
     // Update storage if product exists
@@ -617,6 +626,16 @@ export class ProductGridManager {
       StorageManager.updateProductNotes(row.storageId, row.notes);
       // Note: Price updates would need additional storage method
       this.updateTotals();
+    }
+  }
+
+  updateRowTotal(rowElement, row) {
+    const totalDisplay = rowElement.querySelector('.grid-total-display');
+    if (totalDisplay) {
+      const unitPrice = parseFloat(row.price) || 0;
+      const quantity = parseInt(row.quantity) || 1;
+      const totalPrice = unitPrice * quantity;
+      totalDisplay.textContent = totalPrice > 0 ? totalPrice.toFixed(2) : '';
     }
   }
 
@@ -690,6 +709,12 @@ export class ProductGridManager {
     const productName = product ? (product.Description || product.ProductName || product['Product Name'] || '') : '';
     const productCode = product ? (product.OrderCode || product.Code || '') : '';
     const displayPrice = row.price || (product ? (product.RRP_INCGST || product.rrpIncGst || '') : '');
+    
+    // Calculate total price
+    const unitPrice = parseFloat(displayPrice) || 0;
+    const quantity = parseInt(row.quantity) || 1;
+    const totalPrice = unitPrice * quantity;
+    const displayTotal = totalPrice > 0 ? totalPrice.toFixed(2) : '';
 
     return `
       <div class="grid-row" data-row-id="${row.id}" draggable="true">
@@ -699,8 +724,9 @@ export class ProductGridManager {
         <div class="col-product grid-product-cell ${product ? 'has-product' : 'empty-product'}">
           ${product ? `
             <div class="grid-product-display">
-              <div class="grid-product-name">${Utils.sanitizeInput(productName)}</div>
-              <div class="grid-product-code">${Utils.sanitizeInput(productCode)}</div>
+              <div class="grid-product-name">
+                <strong>${Utils.sanitizeInput(productCode)}</strong> ${Utils.sanitizeInput(productName)}
+              </div>
             </div>
           ` : `
             <input type="text" 
@@ -719,6 +745,9 @@ export class ProductGridManager {
         </div>
         <div class="col-price">
           <input type="text" class="grid-input" name="price" value="${displayPrice}" placeholder="0.00">
+        </div>
+        <div class="col-total">
+          <div class="grid-total-display">${displayTotal}</div>
         </div>
         <div class="col-notes">
           <textarea class="grid-textarea" name="notes" placeholder="Notes..." rows="1">${Utils.sanitizeInput(row.notes)}</textarea>

@@ -1,5 +1,0 @@
-can we also send a CSV file of the same information?
-can we upload a list of order codes or product names 
-update the PRS with all the current features, decisions.
-review all screens to ensure we are keeping a consistant theme
-on the front page, in the bottom left hand corner of the screen, show the current version number of the program in the form: eg Iss: 1.0.1

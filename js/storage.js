@@ -68,6 +68,28 @@ export class StorageManager {
     return false;
   }
 
+  static updateProductRoom(productId, newRoom) {
+    const selectedProducts = this.getSelectedProducts();
+    const productIndex = selectedProducts.findIndex(p => p.id === productId);
+    
+    if (productIndex !== -1) {
+      selectedProducts[productIndex].room = Utils.sanitizeInput(newRoom, 50);
+      return this.setSelectedProducts(selectedProducts);
+    }
+    return false;
+  }
+
+  static updateProductNotes(productId, newNotes) {
+    const selectedProducts = this.getSelectedProducts();
+    const productIndex = selectedProducts.findIndex(p => p.id === productId);
+    
+    if (productIndex !== -1) {
+      selectedProducts[productIndex].notes = Utils.sanitizeInput(newNotes, CONFIG.UI.ANNOTATION_MAX_LENGTH);
+      return this.setSelectedProducts(selectedProducts);
+    }
+    return false;
+  }
+
   static removeProductFromSelection(productId) {
     const selectedProducts = this.getSelectedProducts();
     const filteredProducts = selectedProducts.filter(p => p.id !== productId);
