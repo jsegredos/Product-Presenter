@@ -249,6 +249,15 @@ export class FileImportManager {
   }
 
   async parseExcel(file) {
+    try {
+      // Load XLSX library if not already loaded
+      if (typeof XLSX === 'undefined') {
+        await Utils.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      }
+    } catch (error) {
+      throw new Error('Failed to load XLSX library');
+    }
+
     return new Promise((resolve, reject) => {
       if (typeof XLSX === 'undefined') {
         reject(new Error('XLSX library not loaded'));
