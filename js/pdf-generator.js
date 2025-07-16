@@ -261,7 +261,7 @@ export function showPdfFormScreen(userDetails) {
       doc.text(infoMsg2, pageWidth/2, pageHeight-44, { align: 'center' });
       // Footer bar with timestamp and www.seima.com.au
       const footerHeight = 28;
-      doc.setFillColor('#888');
+      doc.setFillColor('#9B9184'); // Updated footer color
       doc.rect(0, pageHeight-footerHeight, pageWidth, footerHeight, 'F');
       doc.setTextColor('#fff');
       doc.setFontSize(11);
@@ -494,7 +494,7 @@ export function showPdfFormScreen(userDetails) {
               drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice);
               currentY = footerHeight + 8;
               // Footer bar (reduced height and font size)
-              doc.setFillColor('#888');
+              doc.setFillColor('#9B9184'); // Updated footer color
               doc.rect(0, pageHeight-footerHeight, pageWidth, footerHeight, 'F');
               doc.setTextColor('#fff');
               doc.setFontSize(11);
@@ -781,7 +781,7 @@ export function showPdfFormScreen(userDetails) {
 
 export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice) {
   const headerHeight = footerHeight + 5.7;
-  doc.setFillColor('#222');
+  doc.setFillColor('#8B6C2B'); // Updated header color
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   if (logoDataUrl && logoNaturalW && logoNaturalH) {
     const logoH = headerHeight * 0.55;

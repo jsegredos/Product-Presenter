@@ -42,6 +42,7 @@ class SeimaScanner {
       window.productGridManager = this.productGridManager;
       window.browserCompatibility = browserCompatibility;
       window.downloadWithFallback = downloadWithFallback;
+      window.showPdfFormScreen = showPdfFormScreen;
 
       // Log Samsung device detection for debugging
       if (isSamsungDevice()) {
@@ -51,6 +52,16 @@ class SeimaScanner {
       console.log('Seima Scanner initialized successfully');
     } catch (error) {
       console.error('Failed to initialize app:', error);
+      if (error && error.stack) {
+        console.error('Stack trace:', error.stack);
+      }
+      if (typeof error === 'object' && error !== null) {
+        for (const key in error) {
+          if (Object.prototype.hasOwnProperty.call(error, key)) {
+            console.error(`Error property [${key}]:`, error[key]);
+          }
+        }
+      }
       this.showError('Failed to load application. Please refresh the page.');
     }
   }
@@ -185,6 +196,15 @@ class SeimaScanner {
     if (this.navigationManager) {
       this.navigationManager.updateSelectionCount();
     }
+  }
+
+  /**
+   * Displays a user-friendly error message in a modal or alert.
+   * @param {string} message
+   */
+  showError(message) {
+    // Simple fallback: alert, can be replaced with a custom modal if desired
+    alert(message);
   }
 }
 

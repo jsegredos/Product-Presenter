@@ -3571,3 +3571,89 @@ body {
   background: #3b82f6;
   color: #fff;
 }
+
+/* Product search dropdown improvements */
+.global-search-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: #2563eb #f3f4f6;
+}
+.global-search-dropdown::-webkit-scrollbar {
+  width: 8px;
+  background: #f3f4f6;
+}
+.global-search-dropdown::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  border-radius: 4px;
+}
+.global-search-dropdown li {
+  transition: background 0.15s, border-left 0.15s, padding-left 0.15s;
+  background: #fff;
+  cursor: pointer;
+}
+.global-search-dropdown li.active,
+.global-search-dropdown li:active {
+  background: #e0f2fe !important;
+  border-left: 3px solid #2563eb;
+  padding-left: 13px;
+}
+.global-search-dropdown li:hover {
+  background: #f0f9ff !important;
+  border-left: 3px solid #3b82f6;
+  padding-left: 13px;
+}
+
+/* --- Dropdown Styles --- */
+.global-search-dropdown {
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.10);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10010;
+  position: fixed !important;
+  padding: 4px 0;
+  margin: 0;
+  list-style: none;
+  width: auto;
+  min-width: 200px;
+  font-size: 14px;
+  transition: box-shadow 0.2s;
+}
+.global-search-dropdown li {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  display: block;
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: visible;
+  transition: background 0.15s, color 0.15s;
+}
+.global-search-dropdown li.active {
+  background: #2563eb !important;
+  color: #fff !important;
+  font-weight: bold;
+}
+.global-search-dropdown li.hover:not(.active) {
+  background: #e0e7ff !important;
+  color: #1e293b !important;
+}
+.global-search-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+.global-search-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.global-search-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}

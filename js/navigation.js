@@ -52,6 +52,15 @@ export class NavigationManager {
       const html = await response.text();
       document.body.innerHTML = html;
       this.currentScreen = 'product-grid';
+      // Dynamically re-inject app.js to re-initialize all logic
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'js/app.js';
+      document.body.appendChild(script);
+      // Remove any back button artifacts from the grid screen
+      setTimeout(() => {
+        document.querySelectorAll('.back-btn').forEach(btn => btn.remove());
+      }, 100);
       
       // Initialize grid interface
       if (window.productGridManager) {

@@ -1,27 +1,33 @@
 <div class="grid-container">
   <!-- Header Section -->
   <div class="grid-header">
-    <button class="back-btn" id="back-to-home" aria-label="Back to Home">&#60;</button>
-    <div class="header-content">
-      <img src="assets/seima-logo.png" alt="SEIMA Logo" class="panel-logo">
-      <h2>Product Selection Grid</h2>
-      <div class="selection-summary">
-        <span id="total-items">0 items</span> • <span id="total-value">$0.00</span>
+    <div class="header-top">
+      <div class="header-left">
+        <img src="assets/seima-logo.png" alt="SEIMA Logo" class="panel-logo">
+        <h2>Product Selection Grid</h2>
+      </div>
+      <div class="header-center">
+        <div class="sort-controls">
+          <label for="sort-by">Sort by:</label>
+          <select id="sort-by" class="sort-select">
+            <option value="room">Room</option>
+            <option value="order">Entry Order</option>
+            <option value="product">Product Name</option>
+            <option value="code">Product Code</option>
+          </select>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="import-file-btn" class="btn-import-quote">Import Quote</button>
+        <button id="clear-all-btn" class="btn-clear-all">Clear All</button>
+        <button id="settings-btn" class="btn-settings">Settings</button>
+        <button id="download-btn" class="btn-create">Create</button>
       </div>
     </div>
-    <div class="header-actions">
-      <div class="sort-controls">
-        <label for="sort-by">Sort by:</label>
-        <select id="sort-by" class="sort-select">
-          <option value="room">Room</option>
-          <option value="order">Entry Order</option>
-          <option value="product">Product Name</option>
-          <option value="code">Product Code</option>
-        </select>
+    <div class="header-bottom">
+      <div class="selection-summary">
+        <span id="total-items">0 items</span>, <span id="total-rooms">0 Rooms</span>. Total <span id="total-value">$0.00</span>
       </div>
-      <button id="import-file-btn" class="secondary-btn">Import File</button>
-      <button id="download-btn" class="primary-btn">Download</button>
-      <button id="clear-all-btn" class="secondary-btn">Clear All</button>
     </div>
   </div>
 

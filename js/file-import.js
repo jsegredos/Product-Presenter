@@ -535,13 +535,9 @@ export class FileImportManager {
       doneBtn.textContent = 'View Products';
       doneBtn.onclick = () => {
         this.closeModal();
-        
-        // If we're already in the grid interface, refresh it
-        if (window.navigationManager && window.navigationManager.currentScreen === 'product-grid' && window.productGridManager) {
-          // Reload the grid with imported data
-          window.productGridManager.loadExistingProducts();
-          window.productGridManager.renderGrid();
-          window.productGridManager.updateTotals();
+        // If we're already in the grid interface, reload the full grid screen for a true refresh
+        if (window.navigationManager && window.navigationManager.currentScreen === 'product-grid' && window.navigationManager.showProductLookupScreen) {
+          window.navigationManager.showProductLookupScreen();
         } else if (window.navigationManager && window.navigationManager.showProductLookupScreen) {
           // Navigate to product grid interface
           window.navigationManager.showProductLookupScreen();

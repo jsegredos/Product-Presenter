@@ -2,15 +2,179 @@ import { StorageManager } from './storage.js';
 import { CONFIG, dataLayer } from './modules.js';
 import { Utils } from './utils.js';
 
+// --- DROPDOWN MANAGER (Reusable Component) ---
+class DropdownManager {
+  constructor() {
+    this.activeDropdown = null;
+    this.updatePositionHandler = null;
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.global-search-dropdown')) {
+        this.hideDropdown();
+      }
+    });
+  }
+
+  showDropdown(targetInput, items, onSelect) {
+    this.hideDropdown();
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'global-search-dropdown';
+    const dropdownHeight = 300;
+    const inputRect = targetInput.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    // Make dropdown width match input
+    const dropdownWidth = inputRect.width;
+    // Calculate available space above and below
+    const spaceBelow = viewportHeight - inputRect.bottom;
+    const spaceAbove = inputRect.top;
+    // Decide whether to show above or below
+    let showAbove = false;
+    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+      showAbove = true;
+    }
+    // Calculate top position, clamp to viewport
+    let topPosition;
+    if (showAbove) {
+      topPosition = Math.max(8, inputRect.top - dropdownHeight - 8);
+    } else {
+      topPosition = Math.min(viewportHeight - dropdownHeight - 8, inputRect.bottom + 8);
+    }
+    // Clamp left/right to viewport
+    let leftPosition = inputRect.left;
+    if (leftPosition + dropdownWidth > viewportWidth - 8) {
+      leftPosition = viewportWidth - dropdownWidth - 8;
+    }
+    if (leftPosition < 8) leftPosition = 8;
+    const styles = {
+      position: 'fixed',
+      top: topPosition + 'px',
+      left: leftPosition + 'px',
+      width: dropdownWidth + 'px',
+      minWidth: dropdownWidth + 'px',
+      maxWidth: dropdownWidth + 'px',
+      background: '#fff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.10)',
+      maxHeight: dropdownHeight + 'px',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      zIndex: '10010',
+      listStyle: 'none',
+      margin: '0',
+      padding: '4px 0',
+      whiteSpace: 'normal',
+      wordWrap: 'break-word',
+      display: 'block',
+      pointerEvents: 'auto',
+      transform: 'none',
+      contain: 'none',
+      isolation: 'isolate'
+    };
+    Object.keys(styles).forEach(prop => {
+      dropdown.style.setProperty(prop, styles[prop], 'important');
+    });
+    dropdown.dropdownHeight = dropdownHeight;
+    if (items.length === 0) {
+      dropdown.innerHTML = '<li style="padding: 12px 16px; color: #6b7280; font-style: italic; background: #fff;">No products found</li>';
+    } else {
+      dropdown.innerHTML = items.map(item => {
+        const orderCode = item.OrderCode || item.Code || '';
+        const description = item.Description || item.ProductName || item['Product Name'] || '';
+        return `<li data-product='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+                     style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f3f4f6; 
+                            transition: background-color 0.15s ease; font-size: 14px; line-height: 1.5;
+                            margin: 0; display: block; width: 100%; 
+                            white-space: normal; word-wrap: break-word; overflow: visible; background: #fff !important;">
+          <span style="font-weight: 600; color: #2563eb;">${Utils.sanitizeInput(orderCode)}</span>
+          <span style="color: #6b7280; margin: 0 8px;">—</span>
+          <span style="color: #374151;">${Utils.sanitizeInput(description)}</span>
+        </li>`;
+      }).join('');
+    }
+    dropdown.querySelectorAll('li[data-product]').forEach(li => {
+      li.addEventListener('mouseenter', () => {
+        li.classList.add('hover');
+      });
+      li.addEventListener('mouseleave', () => {
+        li.classList.remove('hover');
+      });
+      li.onclick = () => {
+        try {
+          const product = JSON.parse(li.getAttribute('data-product'));
+          onSelect(product);
+          this.hideDropdown();
+        } catch (error) {
+          console.error('Failed to parse product data:', error);
+        }
+      };
+    });
+    document.body.appendChild(dropdown);
+    this.activeDropdown = dropdown;
+    // Smart reposition on scroll/resize
+    this.updatePositionHandler = () => {
+      const inputRect = targetInput.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = dropdown.dropdownHeight || 300;
+      const spaceBelow = viewportHeight - inputRect.bottom;
+      const spaceAbove = inputRect.top;
+      let showAbove = false;
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        showAbove = true;
+      }
+      let topPosition;
+      if (showAbove) {
+        topPosition = Math.max(8, inputRect.top - dropdownHeight - 8);
+      } else {
+        topPosition = Math.min(viewportHeight - dropdownHeight - 8, inputRect.bottom + 8);
+      }
+      let leftPosition = inputRect.left;
+      if (leftPosition + inputRect.width > viewportWidth - 8) {
+        leftPosition = viewportWidth - inputRect.width - 8;
+      }
+      if (leftPosition < 8) leftPosition = 8;
+      dropdown.style.setProperty('top', topPosition + 'px', 'important');
+      dropdown.style.setProperty('left', leftPosition + 'px', 'important');
+      dropdown.style.setProperty('width', inputRect.width + 'px', 'important');
+      dropdown.style.setProperty('min-width', inputRect.width + 'px', 'important');
+      dropdown.style.setProperty('max-width', inputRect.width + 'px', 'important');
+    };
+    window.addEventListener('scroll', this.updatePositionHandler);
+    window.addEventListener('resize', this.updatePositionHandler);
+  }
+
+  hideDropdown() {
+    if (this.activeDropdown) {
+      if (this.updatePositionHandler) {
+        window.removeEventListener('scroll', this.updatePositionHandler);
+        window.removeEventListener('resize', this.updatePositionHandler);
+      }
+      this.activeDropdown.remove();
+      this.activeDropdown = null;
+      this.updatePositionHandler = null;
+    }
+  }
+}
+
+/**
+ * Manages the product selection grid, including state, rendering, and user interactions.
+ */
 export class ProductGridManager {
+  /**
+   * Initializes the ProductGridManager and sets up state.
+   */
   constructor() {
     this.gridRows = [];
     this.nextRowId = 1;
     this.currentSearchRow = null;
     this.searchCache = new Map();
     this.searchTimeout = null;
+    this.dropdownManager = new DropdownManager();
   }
 
+  /**
+   * Initializes the grid, event listeners, and loads any existing products.
+   */
   init() {
     // Clean up any leftover dropdown elements and restore table layout
     const gridTable = document.querySelector('.grid-table');
@@ -27,19 +191,19 @@ export class ProductGridManager {
     }
     
     this.setupEventListeners();
-    this.populateRoomOptions();
+    this.updateAllRoomDropdowns();
     this.loadExistingProducts();
     this.updateTotals();
-    
-    // Add initial empty row
-    if (this.gridRows.length === 0) {
-      this.addEmptyRow();
-    }
-    
+    // Remove: if (this.gridRows.length === 0) { this.addEmptyRow(); }
+    // Instead, always ensure at least one empty row after loading products and updating totals
+    this.ensureAtLeastOneEmptyRow();
     // Initialize sorting (default to room)
     this.handleSortChange();
   }
 
+  /**
+   * Sets up all event listeners for grid and UI actions.
+   */
   setupEventListeners() {
     // Header actions
     const backBtn = document.getElementById('back-to-home');
@@ -149,8 +313,39 @@ export class ProductGridManager {
         this.hideAllDropdowns();
       }
     });
+
+    // PDF Download modal elements
+    const pdfModal = document.getElementById('pdf-email-modal');
+    // PDF Download modal cancel button
+    const pdfCancelBtn = document.getElementById('pdf-email-cancel');
+    if (pdfCancelBtn && pdfModal) {
+      pdfCancelBtn.onclick = () => { pdfModal.style.display = 'none'; };
+    }
+    // PDF Download form submission
+    const pdfForm = document.getElementById('pdf-email-form');
+    if (pdfForm) {
+      pdfForm.onsubmit = (e) => {
+        e.preventDefault();
+        const userDetails = {
+          name: pdfForm['user-name']?.value || '',
+          project: pdfForm['user-project']?.value || '',
+          address: pdfForm['user-address']?.value || '',
+          email: pdfForm['user-email']?.value || '',
+          telephone: pdfForm['user-telephone']?.value || ''
+        };
+        if (window.showPdfFormScreen) {
+          window.showPdfFormScreen(userDetails);
+        } else if (typeof showPdfFormScreen === 'function') {
+          showPdfFormScreen(userDetails);
+        }
+        if (pdfModal) pdfModal.style.display = 'none'; // Hide modal after download
+      };
+    }
   }
 
+  /**
+   * Adds an empty row to the grid for new product entry.
+   */
   addEmptyRow() {
     const rowId = 'row_' + this.nextRowId++;
     const row = {
@@ -174,6 +369,10 @@ export class ProductGridManager {
     }, 100);
   }
 
+  /**
+   * Removes a row by ID and ensures at least one empty row remains.
+   * @param {string} rowId
+   */
   removeRow(rowId) {
     const index = this.gridRows.findIndex(row => row.id === rowId);
     if (index !== -1) {
@@ -187,14 +386,15 @@ export class ProductGridManager {
       this.gridRows.splice(index, 1);
       this.renderGrid();
       this.updateTotals();
-
-      // Ensure at least one empty row
-      if (this.gridRows.length === 0) {
-        this.addEmptyRow();
-      }
     }
+    this.ensureAtLeastOneEmptyRow();
   }
 
+  /**
+   * Moves a row up or down in the grid.
+   * @param {string} rowId
+   * @param {'up'|'down'} direction
+   */
   moveRow(rowId, direction) {
     const currentIndex = this.gridRows.findIndex(row => row.id === rowId);
     if (currentIndex === -1) return;
@@ -227,6 +427,11 @@ export class ProductGridManager {
     }, 100);
   }
 
+  /**
+   * Handles product search input and displays dropdown results.
+   * @param {HTMLElement} searchInput
+   * @param {string} query
+   */
   async handleProductSearch(searchInput, query) {
     if (!query || query.length < 2) {
       this.hideSearchDropdown(searchInput);
@@ -254,6 +459,11 @@ export class ProductGridManager {
     }, 300);
   }
 
+  /**
+   * Performs a product search against the data layer.
+   * @param {string} query
+   * @returns {Promise<Array>}
+   */
   async searchProducts(query) {
     if (!dataLayer.isLoaded) {
       await new Promise(resolve => {
@@ -279,150 +489,19 @@ export class ProductGridManager {
       return orderCode.includes(searchTerm) || 
              description.includes(searchTerm) || 
              longDescription.includes(searchTerm);
-    }).slice(0, 10); // Limit to 10 results
+    }); // Removed .slice(0, 10) to show all results
   }
 
   showSearchResults(searchInput, products, query) {
-    // Remove any existing dropdown first
-    const existingDropdown = document.querySelector('.global-search-dropdown');
-    if (existingDropdown) {
-      existingDropdown.remove();
-    }
-    
-    // Create dropdown outside the table structure
-    const dropdown = document.createElement('ul');
-    dropdown.className = 'global-search-dropdown';
-    
-    // SMART DROPDOWN POSITIONING - Full screen width with intelligent placement
-    const inputRect = searchInput.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const dropdownWidth = Math.min(1000, viewportWidth - 40);
-    const dropdownHeight = 300; // Expected dropdown height
-    
-    // Smart positioning: above input if no space below, below if space available
-    const spaceBelow = viewportHeight - inputRect.bottom;
-    const spaceAbove = inputRect.top;
-    const showAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
-    
-    const topPosition = showAbove 
-      ? (inputRect.top - dropdownHeight - 8) + 'px'
-      : (inputRect.bottom + 8) + 'px';
-    
-    // Clean modern dropdown styling
-    const styles = {
-      position: 'fixed',
-      top: topPosition,
-      left: '20px',
-      right: '20px',
-      width: 'auto',
-      minWidth: dropdownWidth + 'px',
-      maxWidth: 'none',
-      backgroundColor: '#ffffff',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-      maxHeight: dropdownHeight + 'px',
-      overflowY: 'auto',
-      overflowX: 'hidden',
-      zIndex: '999999',
-      listStyle: 'none',
-      margin: '0',
-      padding: '4px 0',
-      whiteSpace: 'normal',
-      wordWrap: 'break-word',
-      display: 'block',
-      pointerEvents: 'auto',
-      transform: 'none',
-      contain: 'none',
-      isolation: 'isolate'
-    };
-    
-    // Apply all styles with !important for reliable positioning
-    Object.keys(styles).forEach(prop => {
-      dropdown.style.setProperty(prop, styles[prop], 'important');
-    });
-    
-    // Don't modify table layout - dropdown is positioned in document.body so it doesn't need table changes
-    
-    // Store positioning info for updates
-    dropdown.dropdownHeight = dropdownHeight;
-
-    if (products.length === 0) {
-      dropdown.innerHTML = '<li style="padding: 12px 16px; color: #6b7280; font-style: italic;">No products found</li>';
-    } else {
-      dropdown.innerHTML = products.map(product => {
-        const orderCode = product.OrderCode || product.Code || '';
-        const description = product.Description || product.ProductName || product['Product Name'] || '';
-        
-        return `<li data-product='${JSON.stringify(product).replace(/'/g, "&apos;")}'
-                     style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f3f4f6; 
-                            transition: background-color 0.15s ease; font-size: 14px; line-height: 1.5;
-                            margin: 0; display: block; width: 100%; 
-                            white-space: normal; word-wrap: break-word; overflow: visible;">
-          <span style="font-weight: 600; color: #2563eb;">${Utils.sanitizeInput(orderCode)}</span>
-          <span style="color: #6b7280; margin: 0 8px;">—</span>
-          <span style="color: #374151;">${Utils.sanitizeInput(description)}</span>
-        </li>`;
-      }).join('');
-    }
-
-    // Add to document body to escape all container constraints
-    document.body.appendChild(dropdown);
-    
-    // Store reference to the input for cleanup
-    dropdown.dataset.inputId = searchInput.closest('.grid-row').dataset.rowId;
-    
-    this.setupDropdownEvents(dropdown, searchInput);
+    this.dropdownManager.showDropdown(
+      searchInput,
+      products,
+      (product) => this.selectProduct(searchInput, product)
+    );
   }
 
   setupDropdownEvents(dropdown, searchInput) {
-    dropdown.querySelectorAll('li[data-product]').forEach(li => {
-      // Add hover effects
-      li.addEventListener('mouseenter', () => {
-        li.style.backgroundColor = '#f0f9ff';
-        li.style.borderLeft = '3px solid #3b82f6';
-        li.style.paddingLeft = '13px';
-      });
-      
-      li.addEventListener('mouseleave', () => {
-        li.style.backgroundColor = '';
-        li.style.borderLeft = '';
-        li.style.paddingLeft = '16px';
-      });
-      
-      li.onclick = () => {
-        try {
-          const product = JSON.parse(li.getAttribute('data-product'));
-          this.selectProduct(searchInput, product);
-          this.hideGlobalDropdown();
-        } catch (error) {
-          console.error('Failed to parse product data:', error);
-        }
-      };
-    });
-    
-    // Update position on scroll/resize with smart positioning
-    const updatePosition = () => {
-      const inputRect = searchInput.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = dropdown.dropdownHeight || 300;
-      const spaceBelow = viewportHeight - inputRect.bottom;
-      const spaceAbove = inputRect.top;
-      const showAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
-      
-      const newTop = showAbove 
-        ? (inputRect.top - dropdownHeight - 8) + 'px'
-        : (inputRect.bottom + 8) + 'px';
-        
-      dropdown.style.setProperty('top', newTop, 'important');
-    };
-    
-    window.addEventListener('scroll', updatePosition);
-    window.addEventListener('resize', updatePosition);
-    
-    // Store cleanup function
-    dropdown.updatePosition = updatePosition;
+    // No longer needed, handled by DropdownManager
   }
 
   hideSearchDropdown(searchInput) {
@@ -430,20 +509,14 @@ export class ProductGridManager {
   }
 
   hideGlobalDropdown() {
-    const dropdown = document.querySelector('.global-search-dropdown');
-    if (dropdown) {
-      // Clean up event listeners
-      if (dropdown.updatePosition) {
-        window.removeEventListener('scroll', dropdown.updatePosition);
-        window.removeEventListener('resize', dropdown.updatePosition);
-      }
-      
-      // Dropdown cleanup complete
-      
-      dropdown.remove();
-    }
+    this.dropdownManager.hideDropdown();
   }
 
+  /**
+   * Handles selection of a product from the dropdown.
+   * @param {HTMLElement} searchInput
+   * @param {Object} product
+   */
   selectProduct(searchInput, product) {
     const rowElement = searchInput.closest('.grid-row');
     const rowId = rowElement.dataset.rowId;
@@ -461,8 +534,8 @@ export class ProductGridManager {
     // Clear search input
     searchInput.value = '';
 
-    // Render the row to show product details
-    this.renderRow(row);
+    // Render the grid to show product details
+    this.renderGrid();
 
     // Save to storage
     this.saveRowToStorage(row);
@@ -471,6 +544,10 @@ export class ProductGridManager {
     this.focusNextRowOrCreate(rowId);
   }
 
+  /**
+   * Saves a row's product selection to storage.
+   * @param {Object} row
+   */
   saveRowToStorage(row) {
     if (!row.product) return;
 
@@ -496,6 +573,10 @@ export class ProductGridManager {
     }
   }
 
+  /**
+   * Focuses the next row's search input or creates a new row if at the end.
+   * @param {string} currentRowId
+   */
   focusNextRowOrCreate(currentRowId) {
     const currentIndex = this.gridRows.findIndex(row => row.id === currentRowId);
     
@@ -514,24 +595,44 @@ export class ProductGridManager {
     }
   }
 
+  /**
+   * Handles input events in the grid (delegated).
+   * @param {Event} event
+   */
   handleGridInput(event) {
     const target = event.target;
-    
-    if (target.classList.contains('grid-search-input') && !target.classList.contains('populated')) {
+    if (
+      target.classList.contains('grid-search-input') && !target.classList.contains('populated')
+    ) {
       this.handleProductSearch(target, target.value);
-    } else if (target.classList.contains('grid-input') || target.classList.contains('grid-textarea')) {
+    } else if (
+      target.classList.contains('grid-input') ||
+      target.classList.contains('grid-textarea') ||
+      target.classList.contains('grid-select')
+    ) {
       this.updateRowFromInput(target);
     }
   }
 
+  /**
+   * Handles change events in the grid (delegated).
+   * @param {Event} event
+   */
   handleGridChange(event) {
     const target = event.target;
-    
-    if (target.classList.contains('grid-select') || target.classList.contains('grid-input')) {
+    if (
+      target.classList.contains('grid-select') ||
+      target.classList.contains('grid-input') ||
+      target.classList.contains('grid-textarea')
+    ) {
       this.updateRowFromInput(target);
     }
   }
 
+  /**
+   * Handles click events in the grid (delegated).
+   * @param {Event} event
+   */
   handleGridClick(event) {
     const target = event.target;
     
@@ -555,10 +656,10 @@ export class ProductGridManager {
 
   handleGridKeydown(event) {
     if (event.target.classList.contains('grid-search-input')) {
-      const dropdown = event.target.parentElement.querySelector('.grid-search-dropdown.visible');
-      
-      if (dropdown) {
-        this.handleDropdownKeyboard(event, dropdown);
+      // Always use the global dropdown for keyboard navigation
+      const globalDropdown = document.querySelector('.global-search-dropdown');
+      if (globalDropdown) {
+        this.handleDropdownKeyboard(event, globalDropdown);
       } else if (event.key === 'Enter') {
         event.preventDefault();
         this.handleProductSearch(event.target, event.target.value);
@@ -567,51 +668,48 @@ export class ProductGridManager {
   }
 
   handleDropdownKeyboard(event, dropdown) {
-    // Always check for global dropdown
     const globalDropdown = document.querySelector('.global-search-dropdown');
     if (!globalDropdown) return;
-    
     const items = globalDropdown.querySelectorAll('li[data-product]');
     let activeItem = globalDropdown.querySelector('li.active');
-    
+    let newActive = null;
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
         if (!activeItem) {
-          items[0]?.classList.add('active');
-          items[0]?.style.setProperty('background-color', '#e0f2fe', 'important');
+          newActive = items[0];
         } else {
           activeItem.classList.remove('active');
-          activeItem.style.backgroundColor = '';
           const currentIndex = Array.from(items).indexOf(activeItem);
           const nextIndex = (currentIndex + 1) % items.length;
-          items[nextIndex]?.classList.add('active');
-          items[nextIndex]?.style.setProperty('background-color', '#e0f2fe', 'important');
+          newActive = items[nextIndex];
+        }
+        if (newActive) {
+          newActive.classList.add('active');
+          newActive.scrollIntoView({block: 'nearest'});
         }
         break;
-        
       case 'ArrowUp':
         event.preventDefault();
         if (!activeItem) {
-          items[items.length - 1]?.classList.add('active');
-          items[items.length - 1]?.style.setProperty('background-color', '#e0f2fe', 'important');
+          newActive = items[items.length - 1];
         } else {
           activeItem.classList.remove('active');
-          activeItem.style.backgroundColor = '';
           const currentIndex = Array.from(items).indexOf(activeItem);
           const prevIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
-          items[prevIndex]?.classList.add('active');
-          items[prevIndex]?.style.setProperty('background-color', '#e0f2fe', 'important');
+          newActive = items[prevIndex];
+        }
+        if (newActive) {
+          newActive.classList.add('active');
+          newActive.scrollIntoView({block: 'nearest'});
         }
         break;
-        
       case 'Enter':
         event.preventDefault();
         if (activeItem) {
           activeItem.click();
         }
         break;
-        
       case 'Escape':
         event.preventDefault();
         this.hideGlobalDropdown();
@@ -619,30 +717,91 @@ export class ProductGridManager {
     }
   }
 
-  handleGridFocusIn(event) {
-    if (event.target.classList.contains('grid-search-input')) {
-      this.currentSearchRow = event.target.closest('.grid-row').dataset.rowId;
-    }
-  }
+  /**
+   * Handles focusin events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleGridFocusIn(event) {}
 
-  handleGridFocusOut(event) {
-    // Hide dropdown when focus leaves search area
-    if (event.target.classList.contains('grid-search-input')) {
-      setTimeout(() => {
-        if (!event.relatedTarget || !event.target.parentElement.contains(event.relatedTarget)) {
-          this.hideSearchDropdown(event.target);
-        }
-      }, 150);
-    }
-  }
+  /**
+   * Handles focusout events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleGridFocusOut(event) {}
+
+  /**
+   * Handles dragstart events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleDragStart(event) {}
+
+  /**
+   * Handles dragover events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleDragOver(event) {}
+
+  /**
+   * Handles drop events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleDrop(event) {}
+
+  /**
+   * Handles dragend events in the grid (delegated).
+   * @param {Event} event
+   */
+  handleDragEnd(event) {}
 
   // Helper method to clean up all open dropdowns
   hideAllDropdowns() {
     this.hideGlobalDropdown();
   }
 
+  /**
+   * Shows the modal to confirm clearing all selections.
+   */
+  showClearAllModal() {
+    const modal = document.getElementById('clear-all-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
 
+  /**
+   * Hides the clear-all confirmation modal.
+   */
+  hideClearAllModal() {
+    const modal = document.getElementById('clear-all-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
 
+  /**
+   * Shows the settings modal.
+   */
+  showSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  /**
+   * Hides the settings modal.
+   */
+  hideSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  /**
+   * Updates a row's data from an input element.
+   * @param {HTMLElement} input
+   */
   updateRowFromInput(input) {
     const rowElement = input.closest('.grid-row');
     const rowId = rowElement.dataset.rowId;
@@ -665,7 +824,7 @@ export class ProductGridManager {
             console.log('✅ Added new room:', trimmedName);
             
             // Refresh all room dropdowns in the grid
-            this.refreshRoomDropdowns();
+            this.updateAllRoomDropdowns();
             
             // Set the new room value for this specific dropdown
             input.value = trimmedName;
@@ -720,6 +879,33 @@ export class ProductGridManager {
     }
   }
 
+  /**
+   * Loads any previously selected products from storage and populates the grid.
+   */
+  loadExistingProducts() {
+    const selectedProducts = StorageManager.getSelectedProducts();
+    // Clear existing rows first
+    this.gridRows = [];
+    this.nextRowId = 1;
+    selectedProducts.forEach(item => {
+      const rowId = 'row_' + this.nextRowId++;
+      const row = {
+        id: rowId,
+        product: item.product,
+        room: item.room || 'Blank',
+        quantity: item.quantity || 1,
+        price: item.product?.RRP_INCGST || item.product?.rrpIncGst || item.product?.Price || '',
+        notes: item.notes || '',
+        storageId: item.id
+      };
+      this.gridRows.push(row);
+    });
+    this.renderGrid();
+  }
+
+  /**
+   * Renders the entire grid based on the current state.
+   */
   renderGrid() {
     const gridBody = document.getElementById('grid-body');
     const emptyState = document.getElementById('product-grid-empty');
@@ -775,13 +961,11 @@ export class ProductGridManager {
      gridBody.innerHTML = tableRows.join('');
     }
 
-  renderRow(row) {
-    const existingRowElement = document.querySelector(`[data-row-id="${row.id}"]`);
-    if (existingRowElement) {
-      existingRowElement.outerHTML = this.renderRowHtml(row);
-    }
-  }
-
+  /**
+   * Returns the HTML for a single row.
+   * @param {Object} row
+   * @returns {string}
+   */
   renderRowHtml(row) {
     const product = row.product;
     const imageUrl = product ? (product.Image_URL || product.imageUrl || product.Image || 'assets/no-image.png') : 'assets/no-image.png';
@@ -942,38 +1126,38 @@ export class ProductGridManager {
     return options;
   }
 
-  populateRoomOptions() {
+  /**
+   * Updates all room dropdowns in the grid and bulk modal.
+   */
+  updateAllRoomDropdowns() {
+    // Update all room select dropdowns in the grid
+    const roomSelects = document.querySelectorAll('.grid-select[name="room"]');
+    roomSelects.forEach(select => {
+      const currentValue = select.value;
+      const currentRow = this.gridRows.find(r => r.id === select.closest('.grid-row').dataset.rowId);
+      if (currentRow) {
+        select.innerHTML = this.getRoomOptions(currentRow.room);
+      }
+    });
+    // Update bulk room select if it exists
     const bulkRoomSelect = document.getElementById('bulk-room-select');
     if (bulkRoomSelect) {
       bulkRoomSelect.innerHTML = this.getRoomOptions('Blank');
     }
   }
 
-  loadExistingProducts() {
-    const selectedProducts = StorageManager.getSelectedProducts();
-    
-    // Clear existing rows first
-    this.gridRows = [];
-    this.nextRowId = 1;
-    
-    selectedProducts.forEach(item => {
-      const rowId = 'row_' + this.nextRowId++;
-      const row = {
-        id: rowId,
-        product: item.product,
-        room: item.room || 'Blank',
-        quantity: item.quantity || 1,
-        price: item.product.RRP_INCGST || item.product.rrpIncGst || item.product.Price || '',
-        notes: item.notes || '',
-        storageId: item.id
-      };
-
-      this.gridRows.push(row);
-    });
-
-    this.renderGrid();
+  /**
+   * Ensures there is always at least one empty row in the grid.
+   */
+  ensureAtLeastOneEmptyRow() {
+    if (this.gridRows.length === 0) {
+      this.addEmptyRow();
+    }
   }
 
+  /**
+   * Updates the UI with the total items, rooms, and value.
+   */
   updateTotals() {
     const totalItemsElement = document.getElementById('total-items');
     const totalRoomsElement = document.getElementById('total-rooms');
@@ -988,8 +1172,6 @@ export class ProductGridManager {
         totalItems += row.quantity;
         const price = parseFloat(row.price) || 0;
         totalValue += price * row.quantity;
-        
-        // Count unique rooms (excluding "Blank" or empty rooms)
         if (row.room && row.room !== 'Blank' && row.room.trim() !== '') {
           uniqueRooms.add(row.room);
         }
@@ -999,264 +1181,52 @@ export class ProductGridManager {
     if (totalItemsElement) {
       totalItemsElement.textContent = `${totalItems} items`;
     }
-
     if (totalRoomsElement) {
       totalRoomsElement.textContent = `${uniqueRooms.size} Rooms`;
     }
-
     if (totalValueElement) {
       totalValueElement.textContent = `$${totalValue.toFixed(2)}`;
     }
   }
 
-  // Import functionality
+  /**
+   * Clears all selections and resets the grid.
+   */
+  clearAll() {
+    // Clear storage
+    StorageManager.clearAllSelections();
+    // Clear grid
+    this.gridRows = [];
+    this.nextRowId = 1;
+    this.renderGrid();
+    this.updateTotals();
+    this.ensureAtLeastOneEmptyRow();
+  }
+
+  /**
+   * Shows the import modal for importing products.
+   */
   showImportModal() {
     const modal = document.getElementById('file-import-modal');
     if (modal) {
       modal.style.display = 'flex';
-      // Import modal functionality is handled by existing FileImportManager
-      if (window.fileImportManager) {
-        window.fileImportManager.showModal();
-      }
     }
   }
 
-  // Download functionality  
+  /**
+   * Shows the download modal for downloading the PDF/email.
+   */
   showDownloadModal() {
     const modal = document.getElementById('pdf-email-modal');
     if (modal) {
       modal.style.display = 'flex';
-      
-      const form = document.getElementById('pdf-email-form');
-      const cancelBtn = document.getElementById('pdf-email-cancel');
-      const submitBtn = document.getElementById('pdf-email-send');
-      
-      // Setup cancel button
-      if (cancelBtn) {
-        cancelBtn.onclick = () => {
-          modal.style.display = 'none';
-        };
-      }
-      
-      // Setup form submission
-      if (form) {
-        form.onsubmit = (e) => {
-          e.preventDefault();
-          this.handleDownloadFormSubmit();
-          modal.style.display = 'none';
-        };
-      }
     }
   }
 
-  handleDownloadFormSubmit() {
-    const form = document.getElementById('pdf-email-form');
-    if (!form) return;
-
-    const formData = new FormData(form);
-    const userDetails = {
-      name: formData.get('user-name') || '',
-      project: formData.get('user-project') || '',
-      address: formData.get('user-address') || '',
-      email: formData.get('user-email') || '',
-      telephone: formData.get('user-telephone') || '',
-      excludePrice: false,
-      exportCsv: true
-    };
-
-    // Generate and download PDF using the existing system
-    if (window.showPdfFormScreen) {
-      window.showPdfFormScreen(userDetails);
-    } else {
-      // Fallback: dispatch custom event
-      window.dispatchEvent(new CustomEvent('generatePdf', { detail: userDetails }));
-    }
-  }
-
-  // Clear all functionality
-  showClearAllModal() {
-    const modal = document.getElementById('clear-all-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
-  }
-
-  hideClearAllModal() {
-    const modal = document.getElementById('clear-all-modal');
-    if (modal) {
-      modal.style.display = 'none';
-    }
-  }
-
-  // Settings functionality
-  showSettingsModal() {
-    this.loadSettings();
-    const modal = document.getElementById('settings-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
-  }
-
-  hideSettingsModal() {
-    const modal = document.getElementById('settings-modal');
-    if (modal) {
-      modal.style.display = 'none';
-    }
-  }
-
-  loadSettings() {
-    const settings = StorageManager.getUserSettings();
-    
-    const staffName = document.getElementById('staff-name');
-    const staffEmail = document.getElementById('staff-email');
-    const staffTelephone = document.getElementById('staff-telephone');
-    
-    if (staffName) staffName.value = settings.staffName || '';
-    if (staffEmail) staffEmail.value = settings.staffEmail || '';
-    if (staffTelephone) staffTelephone.value = settings.staffTelephone || '';
-  }
-
-  saveSettings() {
-    const staffName = document.getElementById('staff-name');
-    const staffEmail = document.getElementById('staff-email');
-    const staffTelephone = document.getElementById('staff-telephone');
-    
-    const settings = {
-      staffName: staffName?.value || '',
-      staffEmail: staffEmail?.value || '',
-      staffTelephone: staffTelephone?.value || ''
-    };
-    
-    StorageManager.saveUserSettings(settings);
-    this.hideSettingsModal();
-    
-    // Show success message
-    console.log('Settings saved successfully');
-  }
-
-  clearAll() {
-    // Clear storage
-    StorageManager.clearAllSelections();
-    
-    // Clear grid
-    this.gridRows = [];
-    this.renderGrid();
-    this.updateTotals();
-    
-    // Add initial empty row
-    this.addEmptyRow();
-  }
-
-  // Method to handle imported products
-  addImportedProducts(products) {
-    products.forEach(productData => {
-      const rowId = 'row_' + this.nextRowId++;
-      const row = {
-        id: rowId,
-        product: productData.product,
-        room: productData.room || 'Blank',
-        quantity: productData.quantity || 1,
-        price: productData.product.RRP_INCGST || productData.product.rrpIncGst || productData.product.price || '',
-        notes: productData.notes || '',
-        storageId: productData.id
-      };
-
-      this.gridRows.push(row);
-    });
-
-    this.renderGrid();
-    this.updateTotals();
-  }
-
-  // Drag and Drop handlers
-  handleDragStart(event) {
-    const rowElement = event.target.closest('.grid-row');
-    if (!rowElement) return;
-
-    this.draggedRowId = rowElement.dataset.rowId;
-    rowElement.classList.add('dragging');
-    
-    // Set drag effect
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', rowElement.outerHTML);
-  }
-
-  handleDragOver(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-
-    const rowElement = event.target.closest('.grid-row');
-    if (!rowElement || rowElement.dataset.rowId === this.draggedRowId) return;
-
-    // Remove existing drag-over indicators
-    document.querySelectorAll('.grid-row.drag-over').forEach(row => {
-      row.classList.remove('drag-over');
-    });
-
-    // Add drag-over indicator
-    rowElement.classList.add('drag-over');
-  }
-
-  handleDrop(event) {
-    event.preventDefault();
-    
-    const targetRowElement = event.target.closest('.grid-row');
-    if (!targetRowElement || !this.draggedRowId) return;
-
-    const targetRowId = targetRowElement.dataset.rowId;
-    if (targetRowId === this.draggedRowId) return;
-
-    // Find indices
-    const draggedIndex = this.gridRows.findIndex(row => row.id === this.draggedRowId);
-    const targetIndex = this.gridRows.findIndex(row => row.id === targetRowId);
-
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    // Move the row
-    const draggedRow = this.gridRows.splice(draggedIndex, 1)[0];
-    this.gridRows.splice(targetIndex, 0, draggedRow);
-
-    this.renderGrid();
-    this.updateTotals();
-
-    // Highlight the moved row
-    setTimeout(() => {
-      const movedRowElement = document.querySelector(`[data-row-id="${this.draggedRowId}"]`);
-      if (movedRowElement) {
-        movedRowElement.style.backgroundColor = '#dbeafe';
-        setTimeout(() => {
-          movedRowElement.style.backgroundColor = '';
-        }, 500);
-      }
-    }, 100);
-  }
-
-  handleDragEnd(event) {
-    const rowElement = event.target.closest('.grid-row');
-    if (rowElement) {
-      rowElement.classList.remove('dragging');
-    }
-
-    // Remove all drag-over indicators
-    document.querySelectorAll('.grid-row.drag-over').forEach(row => {
-      row.classList.remove('drag-over');
-    });
-
-    this.draggedRowId = null;
-  }
-
-  refreshRoomDropdowns() {
-    // Update all room select dropdowns in the grid
-    const roomSelects = document.querySelectorAll('.grid-select[name="room"]');
-    roomSelects.forEach(select => {
-      const currentValue = select.value;
-      const currentRow = this.gridRows.find(r => r.id === select.closest('.grid-row').dataset.rowId);
-      if (currentRow) {
-        select.innerHTML = this.getRoomOptions(currentRow.room);
-      }
-    });
-
-    // Also update bulk room select if it exists
-    this.populateRoomOptions();
+  /**
+   * Refreshes the grid UI and event listeners after major data changes (e.g., import).
+   */
+  refreshUI() {
+    this.init();
   }
 } 
