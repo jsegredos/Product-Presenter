@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { StorageManager } from './storage.js';
 
 // Samsung Browser Compatibility Utilities
 export function isSamsungBrowser() {
@@ -251,14 +252,42 @@ export function showPdfFormScreen(userDetails) {
           y += 28;
         }
       });
+      // Get staff contact details from settings
+      const staffSettings = StorageManager.getUserSettings();
+      const staffName = staffSettings.staffName || '';
+      const staffEmail = staffSettings.staffEmail || '';
+      const staffPhone = staffSettings.staffPhone || '';
+      
       // Thank you/info message at bottom above footer
-      const infoMsg = 'Thank you for selecting Seima products. If you would like additional information';
-      const infoMsg2 = 'please call or email your Seima representative, or email info@seima.com.au';
+      let infoMsg = 'Thank you for selecting Seima products.';
+      let infoMsg2 = '';
+      
+      if (staffName || staffEmail || staffPhone) {
+        // Use staff contact details if available
+        if (staffName && staffPhone) {
+          infoMsg = `For further information please contact ${staffName} on ${staffPhone}`;
+        } else if (staffName) {
+          infoMsg = `For further information please contact ${staffName}`;
+        } else if (staffPhone) {
+          infoMsg = `For further information please contact us on ${staffPhone}`;
+        }
+        
+        if (staffEmail) {
+          infoMsg2 = `or email: ${staffEmail}`;
+        }
+      } else {
+        // Fallback to default message
+        infoMsg = 'Thank you for selecting Seima products. If you would like additional information';
+        infoMsg2 = 'please call or email your Seima representative, or email info@seima.com.au';
+      }
+      
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(12);
       doc.setTextColor('#222');
       doc.text(infoMsg, pageWidth/2, pageHeight-60, { align: 'center' });
-      doc.text(infoMsg2, pageWidth/2, pageHeight-44, { align: 'center' });
+      if (infoMsg2) {
+        doc.text(infoMsg2, pageWidth/2, pageHeight-44, { align: 'center' });
+      }
       // Footer bar with timestamp and www.seima.com.au
       const footerHeight = 28;
       doc.setFillColor('#9B9184'); // Updated footer color

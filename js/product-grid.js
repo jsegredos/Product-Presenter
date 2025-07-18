@@ -781,10 +781,38 @@ export class ProductGridManager {
   /**
    * Shows the settings modal.
    */
-  showSettingsModal() {
+  async showSettingsModal() {
     const modal = document.getElementById('settings-modal');
     if (modal) {
       modal.style.display = 'flex';
+      // Load existing settings when modal opens
+      this.loadSettings();
+      // Debug: forcibly set the version span to TEST VERSION
+      setTimeout(async () => {
+        const versionSpan = document.getElementById('settings-version-info');
+        if (versionSpan) {
+          versionSpan.innerText = 'TEST VERSION';
+          console.log('DEBUG: Set version span to TEST VERSION');
+        } else {
+          console.warn('DEBUG: settings-version-info span not found');
+        }
+        // Now try to fetch the real version
+        try {
+          const response = await fetch('version.txt');
+          const version = await response.text();
+          const lines = version.trim().split('\n').filter(line => line.trim() !== '');
+          const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
+          const versionInfo = latestVersion;
+          if (versionSpan) {
+            versionSpan.innerText = versionInfo;
+            console.log('Settings version info set:', versionInfo);
+          }
+        } catch (e) {
+          if (versionSpan) {
+            versionSpan.innerText = 'v2.1.0';
+          }
+        }
+      }, 200);
     }
   }
 
@@ -796,6 +824,40 @@ export class ProductGridManager {
     if (modal) {
       modal.style.display = 'none';
     }
+  }
+
+  saveSettings() {
+    const staffName = document.getElementById('staff-name')?.value || '';
+    const staffEmail = document.getElementById('staff-email')?.value || '';
+    const staffPhone = document.getElementById('staff-telephone')?.value || '';
+    
+    const settings = {
+      staffName: staffName.trim(),
+      staffEmail: staffEmail.trim(),
+      staffPhone: staffPhone.trim()
+    };
+    
+    // Save to storage
+    StorageManager.saveUserSettings(settings);
+    
+    // Hide the modal
+    this.hideSettingsModal();
+    
+    // Show success message
+    console.log('Settings saved successfully:', settings);
+  }
+
+  loadSettings() {
+    const settings = StorageManager.getUserSettings();
+    
+    // Populate the form fields
+    const staffNameField = document.getElementById('staff-name');
+    const staffEmailField = document.getElementById('staff-email');
+    const staffPhoneField = document.getElementById('staff-telephone');
+    
+    if (staffNameField) staffNameField.value = settings.staffName || '';
+    if (staffEmailField) staffEmailField.value = settings.staffEmail || '';
+    if (staffPhoneField) staffPhoneField.value = settings.staffPhone || '';
   }
 
   /**

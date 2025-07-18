@@ -17,8 +17,14 @@ export class NavigationManager {
       console.error('Failed to load product catalog:', error);
     }
 
+    // Load version information
+    await this.loadVersion();
+
     // Update selection count for when we show product lookup screen
     this.updateSelectionCount();
+    
+    // Retry version loading after a short delay in case of timing issues
+    setTimeout(() => this.loadVersion(), 1000);
   }
 
 
@@ -33,9 +39,25 @@ export class NavigationManager {
         const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
         // Extract just the version number (before the first dash)
         const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
-        versionElement.textContent = versionNumber;
+        versionElement.innerText = versionNumber;
+        // Fallback: if still empty, set a default version
+        if (!versionElement.innerText.trim()) {
+          versionElement.innerText = 'v2.1.0';
+        }
+      } else {
+        // If element not found, retry after a short delay
+        setTimeout(() => {
+          const el = document.getElementById('version-number');
+          if (el && !el.innerText.trim()) {
+            el.innerText = 'v2.1.0';
+          }
+        }, 1000);
       }
     } catch (error) {
+      const versionElement = document.getElementById('version-number');
+      if (versionElement) {
+        versionElement.innerText = 'v2.1.0';
+      }
       console.warn('Could not load version:', error);
     }
   }
@@ -66,6 +88,12 @@ export class NavigationManager {
       if (window.productGridManager) {
         window.productGridManager.init();
       }
+      
+      // Load version information for the grid screen
+      await this.loadVersion();
+      
+      // Retry version loading after a short delay in case of timing issues
+      setTimeout(() => this.loadVersion(), 1000);
     } catch (error) {
       console.error('Failed to load product grid screen:', error);
     }
