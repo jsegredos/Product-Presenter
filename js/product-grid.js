@@ -156,6 +156,9 @@ class DropdownManager {
   }
 }
 
+const ASSETS_PDF_PATH = 'assets/';
+const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';
+
 /**
  * Manages the product selection grid, including state, rendering, and user interactions.
  */
@@ -786,8 +789,6 @@ export class ProductGridManager {
     if (modal) {
       modal.style.display = 'flex';
       // Load existing settings when modal opens
-      this.loadSettings();
-      // Debug: forcibly set the version span to TEST VERSION
       setTimeout(async () => {
         const versionSpan = document.getElementById('settings-version-info');
         if (versionSpan) {
@@ -796,24 +797,104 @@ export class ProductGridManager {
         } else {
           console.warn('DEBUG: settings-version-info span not found');
         }
-        // Now try to fetch the real version
-        try {
-          const response = await fetch('version.txt');
-          const version = await response.text();
-          const lines = version.trim().split('\n').filter(line => line.trim() !== '');
-          const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
-          const versionInfo = latestVersion;
-          if (versionSpan) {
-            versionSpan.innerText = versionInfo;
-            console.log('Settings version info set:', versionInfo);
-          }
-        } catch (e) {
-          if (versionSpan) {
-            versionSpan.innerText = 'v2.1.0';
-          }
-        }
-      }, 200);
+        // --- Tip/Tail PDF UI logic ---
+        await this.populateTipTailDropdowns();
+        this.loadTipTailSelections();
+        this.setupTipTailHandlers();
+      }, 0);
     }
+  }
+
+  async populateTipTailDropdowns() {
+    // Fetch PDF files from assets folder (simulate, as we can't list files directly)
+    // You may want to hardcode or fetch from server if needed
+    const assetPdfs = [
+      'assets/tip.pdf',
+      'assets/tail.pdf'
+    ];
+    const tipSelect = document.getElementById('tip-pdf-select');
+    const tailSelect = document.getElementById('tail-pdf-select');
+    if (tipSelect && tailSelect) {
+      tipSelect.innerHTML = '<option value="">(None)</option>';
+      tailSelect.innerHTML = '<option value="">(None)</option>';
+      assetPdfs.forEach(pdf => {
+        const name = pdf.split('/').pop();
+        tipSelect.innerHTML += `<option value="${pdf}">${name}</option>`;
+        tailSelect.innerHTML += `<option value="${pdf}">${name}</option>`;
+      });
+    }
+  }
+
+  loadTipTailSelections() {
+    const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
+    const tipSelect = document.getElementById('tip-pdf-select');
+    const tailSelect = document.getElementById('tail-pdf-select');
+    const tipSelected = document.getElementById('tip-pdf-selected');
+    const tailSelected = document.getElementById('tail-pdf-selected');
+    if (tipSelect && settings.tipAsset) tipSelect.value = settings.tipAsset;
+    if (tailSelect && settings.tailAsset) tailSelect.value = settings.tailAsset;
+    if (tipSelected) tipSelected.textContent = settings.tipUploadName || '';
+    if (tailSelected) tailSelected.textContent = settings.tailUploadName || '';
+  }
+
+  setupTipTailHandlers() {
+    const tipSelect = document.getElementById('tip-pdf-select');
+    const tailSelect = document.getElementById('tail-pdf-select');
+    const tipUpload = document.getElementById('tip-pdf-upload');
+    const tailUpload = document.getElementById('tail-pdf-upload');
+    const tipClear = document.getElementById('tip-pdf-clear');
+    const tailClear = document.getElementById('tail-pdf-clear');
+    const tipSelected = document.getElementById('tip-pdf-selected');
+    const tailSelected = document.getElementById('tail-pdf-selected');
+
+    tipSelect.onchange = () => {
+      this.saveTipTailSettings({ tipAsset: tipSelect.value, tipUpload: null, tipUploadName: '' });
+      if (tipSelected) tipSelected.textContent = '';
+    };
+    tailSelect.onchange = () => {
+      this.saveTipTailSettings({ tailAsset: tailSelect.value, tailUpload: null, tailUploadName: '' });
+      if (tailSelected) tailSelected.textContent = '';
+    };
+    tipUpload.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          this.saveTipTailSettings({ tipAsset: '', tipUpload: ev.target.result, tipUploadName: file.name });
+          if (tipSelected) tipSelected.textContent = file.name;
+          if (tipSelect) tipSelect.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    };
+    tailUpload.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          this.saveTipTailSettings({ tailAsset: '', tailUpload: ev.target.result, tailUploadName: file.name });
+          if (tailSelected) tailSelected.textContent = file.name;
+          if (tailSelect) tailSelect.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    };
+    tipClear.onclick = () => {
+      this.saveTipTailSettings({ tipAsset: '', tipUpload: null, tipUploadName: '' });
+      if (tipSelect) tipSelect.value = '';
+      if (tipSelected) tipSelected.textContent = '';
+    };
+    tailClear.onclick = () => {
+      this.saveTipTailSettings({ tailAsset: '', tailUpload: null, tailUploadName: '' });
+      if (tailSelect) tailSelect.value = '';
+      if (tailSelected) tailSelected.textContent = '';
+    };
+  }
+
+  saveTipTailSettings(partial) {
+    const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
+    const newSettings = { ...settings, ...partial };
+    localStorage.setItem(TIP_TAIL_STORAGE_KEY, JSON.stringify(newSettings));
   }
 
   /**

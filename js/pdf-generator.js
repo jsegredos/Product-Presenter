@@ -653,7 +653,10 @@ export function showPdfFormScreen(userDetails) {
                 }
               } else {
                 // Standard download
-                downloadWithFallback(optimizedBlob, pdfFilename, 'PDF');
+                (async () => {
+                  const mergedBlob = await mergeWithTipTail(optimizedBlob);
+                  downloadWithFallback(mergedBlob, pdfFilename, 'PDF');
+                })();
                 
                 // Generate and download CSV if requested
                 if (userDetails.exportCsv) {
@@ -2516,3 +2519,70 @@ export function generateSpaceSeparatedData(userDetails, filename) {
 }
 
 // Alternative: Use simple format without quotes if still having issues
+
+// Add at the top, after imports
+const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';
+
+// Add this function near the top-level (not inside another function)
+async function mergeWithTipTail(mainPdfBlob) {
+  const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
+  const { tipAsset, tipUpload, tailAsset, tailUpload } = settings;
+  if (!tipAsset && !tipUpload && !tailAsset && !tailUpload) return mainPdfBlob;
+
+  // Helper to fetch PDF as ArrayBuffer
+  async function fetchPdfBuffer(src, isUpload) {
+    if (isUpload && src) return src;
+    if (src) {
+      const res = await fetch(src);
+      return await res.arrayBuffer();
+    }
+    return null;
+  }
+
+  // Load main PDF
+  const mainBytes = await mainPdfBlob.arrayBuffer();
+  const mainDoc = await PDFLib.PDFDocument.load(mainBytes);
+
+  // Prepare new merged doc
+  const mergedDoc = await PDFLib.PDFDocument.create();
+
+  // --- 1. Title page from main PDF ---
+  const [titlePage] = await mergedDoc.copyPages(mainDoc, [0]);
+  mergedDoc.addPage(titlePage);
+
+  // --- 2. Tip file pages 2+ (if any) ---
+  let tipDoc = null;
+  if (tipUpload) {
+    tipDoc = await PDFLib.PDFDocument.load(tipUpload);
+  } else if (tipAsset) {
+    const tipBuf = await fetchPdfBuffer(tipAsset, false);
+    if (tipBuf) tipDoc = await PDFLib.PDFDocument.load(tipBuf);
+  }
+  if (tipDoc && tipDoc.getPageCount() > 1) {
+    const tipPages = await mergedDoc.copyPages(tipDoc, Array.from({length: tipDoc.getPageCount()-1}, (_,i)=>i+1));
+    tipPages.forEach(p => mergedDoc.addPage(p));
+  }
+
+  // --- 3. Main PDF content pages 2+ ---
+  if (mainDoc.getPageCount() > 1) {
+    const mainPages = await mergedDoc.copyPages(mainDoc, Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1));
+    mainPages.forEach(p => mergedDoc.addPage(p));
+  }
+
+  // --- 4. Tail file (all pages) ---
+  let tailDoc = null;
+  if (tailUpload) {
+    tailDoc = await PDFLib.PDFDocument.load(tailUpload);
+  } else if (tailAsset) {
+    const tailBuf = await fetchPdfBuffer(tailAsset, false);
+    if (tailBuf) tailDoc = await PDFLib.PDFDocument.load(tailBuf);
+  }
+  if (tailDoc) {
+    const tailPages = await mergedDoc.copyPages(tailDoc, Array.from({length: tailDoc.getPageCount()}, (_,i)=>i));
+    tailPages.forEach(p => mergedDoc.addPage(p));
+  }
+
+  // Output merged PDF as Blob
+  const mergedBytes = await mergedDoc.save();
+  return new Blob([mergedBytes], { type: 'application/pdf' });
+}

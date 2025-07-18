@@ -214,6 +214,21 @@
       <div style="margin-bottom: 20px;">
         <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Presentation Customization</h4>
         <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">Additional PDF pages and customization options will be available here in future updates.</p>
+        <!-- Tip/Tail PDF Selection UI -->
+        <div style="margin-bottom: 12px;">
+          <label for="tip-pdf-select" style="font-weight: 500;">Prepend PDF (Tip):</label>
+          <select id="tip-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
+          <input type="file" id="tip-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
+          <button type="button" id="tip-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tip</button>
+          <div id="tip-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label for="tail-pdf-select" style="font-weight: 500;">Append PDF (Tail):</label>
+          <select id="tail-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
+          <input type="file" id="tail-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
+          <button type="button" id="tail-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tail</button>
+          <div id="tail-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
+        </div>
       </div>
       
       <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
@@ -239,5 +254,6 @@
   </style>
 
   <script type="module" src="js/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </body>
 </html> 
