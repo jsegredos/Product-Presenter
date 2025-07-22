@@ -293,6 +293,10 @@ export class ProductGridManager {
     if (sortSelect) {
       sortSelect.onchange = () => this.handleSortChange();
     }
+    const sortRefreshBtn = document.getElementById('sort-refresh-btn');
+    if (sortRefreshBtn) {
+      sortRefreshBtn.onclick = () => this.handleSortChange();
+    }
 
     // Grid event delegation
     const gridBody = document.getElementById('grid-body');
@@ -793,10 +797,16 @@ export class ProductGridManager {
       setTimeout(async () => {
         const versionSpan = document.getElementById('settings-version-info');
         if (versionSpan) {
-          versionSpan.innerText = 'TEST VERSION';
-          console.log('DEBUG: Set version span to TEST VERSION');
-        } else {
-          console.warn('DEBUG: settings-version-info span not found');
+          try {
+            const resp = await fetch('version.txt');
+            let version = (await resp.text()).trim();
+            // Only use the first line and strip unwanted characters
+            version = version.split(/\r?\n/)[0].replace(/[^0-9.v]/g, '');
+            versionSpan.innerText = version ? `v${version}` : '';
+            versionSpan.title = 'App Version';
+          } catch (e) {
+            versionSpan.innerText = '';
+          }
         }
         // --- Customer Logo UI logic ---
         this.loadCustomerLogoPreview();
@@ -1190,7 +1200,7 @@ export class ProductGridManager {
           <div class="grid-total-display">${displayTotal}</div>
         </div>
         <div class="col-notes">
-          <textarea class="grid-textarea" name="notes" placeholder="Notes..." rows="1">${Utils.sanitizeInput(row.notes)}</textarea>
+          <textarea class="grid-textarea" name="notes" placeholder="Notes..." rows="1" maxlength="140">${Utils.sanitizeInput(row.notes)}</textarea>
         </div>
         <div class="col-actions grid-actions-cell">
           <div class="grid-actions-group">
