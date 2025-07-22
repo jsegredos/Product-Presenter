@@ -741,25 +741,59 @@ export class ProductGridManager {
    * Handles dragstart events in the grid (delegated).
    * @param {Event} event
    */
-  handleDragStart(event) {}
+  handleDragStart(event) {
+    const row = event.target.closest('.grid-row');
+    if (!row || !event.target.classList.contains('grid-drag-handle')) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', row.dataset.rowId);
+    row.classList.add('dragging');
+  }
 
   /**
    * Handles dragover events in the grid (delegated).
    * @param {Event} event
    */
-  handleDragOver(event) {}
+  handleDragOver(event) {
+    event.preventDefault();
+    const row = event.target.closest('.grid-row');
+    if (row && !row.classList.contains('dragging')) {
+      row.classList.add('drag-over');
+    }
+    event.dataTransfer.dropEffect = 'move';
+  }
 
   /**
    * Handles drop events in the grid (delegated).
    * @param {Event} event
    */
-  handleDrop(event) {}
+  handleDrop(event) {
+    event.preventDefault();
+    const fromRowId = event.dataTransfer.getData('text/plain');
+    const toRow = event.target.closest('.grid-row');
+    if (!toRow || !fromRowId) return;
+    const toRowId = toRow.dataset.rowId;
+    if (fromRowId === toRowId) return;
+    // Find indexes
+    const fromIdx = this.gridRows.findIndex(r => r.id === fromRowId);
+    const toIdx = this.gridRows.findIndex(r => r.id === toRowId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    // Move row
+    const [movedRow] = this.gridRows.splice(fromIdx, 1);
+    this.gridRows.splice(toIdx, 0, movedRow);
+    this.renderGrid();
+  }
 
   /**
    * Handles dragend events in the grid (delegated).
    * @param {Event} event
    */
-  handleDragEnd(event) {}
+  handleDragEnd(event) {
+    document.querySelectorAll('.grid-row.dragging').forEach(row => row.classList.remove('dragging'));
+    document.querySelectorAll('.grid-row.drag-over').forEach(row => row.classList.remove('drag-over'));
+  }
 
   // Helper method to clean up all open dropdowns
   hideAllDropdowns() {
@@ -1167,7 +1201,7 @@ export class ProductGridManager {
     const displayTotal = totalPrice > 0 ? totalPrice.toFixed(2) : '';
 
     return `
-      <div class="grid-row" data-row-id="${row.id}" draggable="true">
+      <div class="grid-row" data-row-id="${row.id}">
         <div class="col-image grid-image-cell">
           ${product ? `<img src="${imageUrl}" alt="Product" class="grid-product-image" onerror="this.src='assets/no-image.png';">` : ''}
         </div>
@@ -1206,7 +1240,7 @@ export class ProductGridManager {
           <div class="grid-actions-group">
             <button class="grid-move-btn grid-move-up" title="Move up" data-direction="up">↑</button>
             <button class="grid-move-btn grid-move-down" title="Move down" data-direction="down">↓</button>
-            <div class="grid-drag-handle" title="Drag to reorder">⋮⋮</div>
+            <div class="grid-drag-handle" title="Drag to reorder" draggable="true">⋮⋮</div>
             <button class="grid-remove-btn" title="Remove row">×</button>
           </div>
         </div>
