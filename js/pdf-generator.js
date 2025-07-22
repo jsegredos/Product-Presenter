@@ -165,7 +165,7 @@ export function showPdfFormScreen(userDetails) {
     `;
     document.body.appendChild(processingNotification);
   
-  loadImageAsDataURL('assets/seima-logo.png', function(logoDataUrl, logoNaturalW, logoNaturalH) {
+  loadImageAsDataURL('assets/seima-logo.png', function(coverLogoDataUrl, coverLogoNaturalW, coverLogoNaturalH) {
     // Before PDF export, ensure window.seimaLogoImg is loaded
     function ensureSeimaLogoLoaded(cb) {
       if (window.seimaLogoImg) return cb();
@@ -213,87 +213,57 @@ export function showPdfFormScreen(userDetails) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     // --- COVER PAGE ---
-    loadImageAsDataURL('assets/seima-logo.png', function(coverLogoDataUrl, coverLogoNaturalW, coverLogoNaturalH) {
-      
-      // Debug: Track cover logo size
-      if (coverLogoDataUrl) {
-        console.log(`🔍 Debug - Cover logo size: ${(coverLogoDataUrl.length / 1024).toFixed(1)} KB (${coverLogoNaturalW}x${coverLogoNaturalH})`);
+    // Layout constants
+    const pageCenterX = pageWidth / 2;
+    // 1. Customer logo block (centered at top)
+    const logoBlockW = 320;
+    const logoBlockH = 90;
+    const logoBlockX = (pageWidth - logoBlockW) / 2;
+    const logoBlockY = 70;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(logoBlockX, logoBlockY, logoBlockW, logoBlockH, 'F');
+    const customerLogo = localStorage.getItem('customerLogo');
+    if (customerLogo) {
+      try {
+        doc.addImage(customerLogo, 'PNG', logoBlockX + 10, logoBlockY + 10, logoBlockW - 20, logoBlockH - 20, undefined, 'FAST');
+      } catch (e) {
+        console.warn('Failed to draw customer logo:', e);
       }
-      
-      const coverLogoH = 60;
-      const coverLogoW = coverLogoNaturalW && coverLogoNaturalH ? (coverLogoH * coverLogoNaturalW / coverLogoNaturalH) : 180;
-      const coverLogoX = (pageWidth - coverLogoW) / 2;
-      const coverLogoY = 64;
-      if (coverLogoDataUrl) {
-        doc.addImage(coverLogoDataUrl, 'PNG', coverLogoX, coverLogoY, coverLogoW, coverLogoH);
-      }
-      // Center details block vertically and horizontally, but align left edge with logo
-      let detailsBlockY = coverLogoY + coverLogoH + 60 + 56.7; // lower by 2cm (56.7pt)
-      const detailsBlockX = coverLogoX; // align with left edge of logo
-      const labelX = detailsBlockX;
-      const valueX = detailsBlockX + 90;
-      doc.setFontSize(14);
+    }
+    // 2. SEIMA logo image (centered, lower on page)
+    loadImageAsDataURL('assets/seima-logo.png', function(seimaLogoDataUrl, seimaLogoNaturalW, seimaLogoNaturalH) {
+      const seimaLogoW = 250;
+      const seimaLogoH = seimaLogoNaturalH && seimaLogoNaturalW ? (seimaLogoW * seimaLogoNaturalH / seimaLogoNaturalW) : 65;
+      const seimaLogoX = (pageWidth - seimaLogoW) / 2;
+      const seimaLogoY = logoBlockY + logoBlockH + 80;
+      doc.addImage(seimaLogoDataUrl, 'PNG', seimaLogoX, seimaLogoY, seimaLogoW, seimaLogoH, undefined, 'FAST');
+      // 3. Details block (left-aligned, below SEIMA logo)
+      doc.setFontSize(15);
       doc.setTextColor('#444');
-      doc.setFont('helvetica', 'normal');
-      let y = detailsBlockY;
+      const detailsX = pageCenterX; // center horizontally
+      let detailsY = seimaLogoY + seimaLogoH + 50;
       const details = [
         { label: 'Name:', value: userDetails?.name || '', bold: true },
         { label: 'Project:', value: userDetails?.project || '', bold: true },
         { label: 'Address:', value: userDetails?.address || '', bold: true },
-        { label: 'Email:', value: userDetails?.email || '', bold: true },
         { label: 'Telephone:', value: userDetails?.telephone || '', bold: true },
       ];
+      // Calculate vertical center between SEIMA logo bottom and footer top
+      const footerHeight = 32;
+      const detailsBlockHeight = details.length * 26; // 4 lines, 26px each
+      const detailsBlockY = seimaLogoY + seimaLogoH + ((pageHeight - footerHeight) - (seimaLogoY + seimaLogoH) - detailsBlockHeight) / 2;
       details.forEach(d => {
-        if (d.value) {
-          doc.setFont('helvetica', 'normal');
-          doc.text(d.label, labelX, y);
-          doc.setFont('helvetica', 'bold');
-          doc.text(d.value, valueX, y);
-          y += 28;
-        }
+        doc.setFont('helvetica', 'normal');
+        doc.text(d.label, detailsX - 80, detailsY, { align: 'right' });
+        doc.setFont('helvetica', 'bold');
+        doc.text(d.value, detailsX + 10, detailsY, { align: 'left' });
+        detailsY += 26;
       });
-      // Get staff contact details from settings
-      const staffSettings = StorageManager.getUserSettings();
-      const staffName = staffSettings.staffName || '';
-      const staffEmail = staffSettings.staffEmail || '';
-      const staffPhone = staffSettings.staffPhone || '';
-      
-      // Thank you/info message at bottom above footer
-      let infoMsg = 'Thank you for selecting Seima products.';
-      let infoMsg2 = '';
-      
-      if (staffName || staffEmail || staffPhone) {
-        // Use staff contact details if available
-        if (staffName && staffPhone) {
-          infoMsg = `For further information please contact ${staffName} on ${staffPhone}`;
-        } else if (staffName) {
-          infoMsg = `For further information please contact ${staffName}`;
-        } else if (staffPhone) {
-          infoMsg = `For further information please contact us on ${staffPhone}`;
-        }
-        
-        if (staffEmail) {
-          infoMsg2 = `or email: ${staffEmail}`;
-        }
-      } else {
-        // Fallback to default message
-        infoMsg = 'Thank you for selecting Seima products. If you would like additional information';
-        infoMsg2 = 'please call or email your Seima representative, or email info@seima.com.au';
-      }
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(12);
-      doc.setTextColor('#222');
-      doc.text(infoMsg, pageWidth/2, pageHeight-60, { align: 'center' });
-      if (infoMsg2) {
-        doc.text(infoMsg2, pageWidth/2, pageHeight-44, { align: 'center' });
-      }
-      // Footer bar with timestamp and www.seima.com.au
-      const footerHeight = 28;
-      doc.setFillColor('#9B9184'); // Updated footer color
-      doc.rect(0, pageHeight-footerHeight, pageWidth, footerHeight, 'F');
+      // 4. Footer bar (drawn before info message)
+      doc.setFillColor('#9B9184');
+      doc.rect(0, pageHeight - footerHeight, pageWidth, footerHeight, 'F');
       doc.setTextColor('#fff');
-      doc.setFontSize(11);
+      doc.setFontSize(13);
       // Timestamp (left)
       const now = new Date();
       const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -303,9 +273,34 @@ export function showPdfFormScreen(userDetails) {
       const hour = String(now.getHours()).padStart(2,'0');
       const min = String(now.getMinutes()).padStart(2, '0');
       const timestamp = `Printed ${day} ${month} ${year}, ${hour}:${min}`;
-      doc.text(timestamp, 16, pageHeight-10);
+      doc.text(timestamp, 16, pageHeight - 10);
       // www.seima.com.au (right)
-      doc.text('www.seima.com.au', pageWidth-140, pageHeight-10);
+      doc.text('www.seima.com.au', pageWidth - 140, pageHeight - 10);
+      // 5. Thank you/info message (centered just above footer, using actual staff details)
+      const staffSettings = StorageManager.getUserSettings();
+      const staffName = staffSettings.staffName || '';
+      const staffEmail = staffSettings.staffEmail || '';
+      const staffPhone = staffSettings.staffPhone || '';
+      let infoMsg = 'For more information';
+      if (staffName && staffPhone && staffEmail) {
+        infoMsg = `For more information, please contact ${staffName} on ${staffPhone} or email ${staffEmail}`;
+      } else if (staffName && staffPhone) {
+        infoMsg = `For more information, please contact ${staffName} on ${staffPhone}`;
+      } else if (staffName && staffEmail) {
+        infoMsg = `For more information, please contact ${staffName} or email ${staffEmail}`;
+      } else if (staffPhone && staffEmail) {
+        infoMsg = `For more information, please call ${staffPhone} or email ${staffEmail}`;
+      } else if (staffName) {
+        infoMsg = `For more information, please contact ${staffName}`;
+      } else if (staffPhone) {
+        infoMsg = `For more information, please call ${staffPhone}`;
+      } else if (staffEmail) {
+        infoMsg = `For more information, please email ${staffEmail}`;
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(14);
+      doc.setTextColor('#111');
+      doc.text(infoMsg, pageCenterX, pageHeight - footerHeight - 18, { align: 'center' });
       // --- END COVER PAGE ---
       // Add a new page for the product table
       doc.addPage();
@@ -379,7 +374,7 @@ export function showPdfFormScreen(userDetails) {
             img.crossOrigin = 'Anonymous';
             let timeoutId = null;
             
-                  img.onload = function() {
+                    img.onload = function() {
               if (callbackCalled) return;
               callbackCalled = true;
               
@@ -400,7 +395,7 @@ export function showPdfFormScreen(userDetails) {
                     if (cb) cb();
                   };
             
-                  img.onerror = function() {
+                    img.onerror = function() {
               if (callbackCalled) return;
               if (timeoutId) clearTimeout(timeoutId);
               
@@ -563,7 +558,7 @@ export function showPdfFormScreen(userDetails) {
               console.log(`🔍 Debug - Uncompressed PDF size: ${(uncompressedBlob.size / 1024 / 1024).toFixed(2)} MB`);
               
               const pdfBlob = doc.output('blob', pdfOptions);
-              console.log(`🔍 Debug - Compressed PDF size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB`);
+              console.log(`�� Debug - Compressed PDF size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB`);
               
               // Debug: Analyze PDF structure - with proper null checks
               const pdfString = doc.output('string');
@@ -2559,13 +2554,17 @@ async function mergeWithTipTail(mainPdfBlob) {
     if (tipBuf) tipDoc = await PDFLib.PDFDocument.load(tipBuf);
   }
   if (tipDoc && tipDoc.getPageCount() > 1) {
-    const tipPages = await mergedDoc.copyPages(tipDoc, Array.from({length: tipDoc.getPageCount()-1}, (_,i)=>i+1));
+    const tipPagesIdx = Array.from({length: tipDoc.getPageCount()-1}, (_,i)=>i+1);
+    console.log('Merging tip pages:', tipPagesIdx);
+    const tipPages = await mergedDoc.copyPages(tipDoc, tipPagesIdx);
     tipPages.forEach(p => mergedDoc.addPage(p));
   }
 
   // --- 3. Main PDF content pages 2+ ---
   if (mainDoc.getPageCount() > 1) {
-    const mainPages = await mergedDoc.copyPages(mainDoc, Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1));
+    const mainPagesIdx = Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1);
+    console.log('Merging main content pages:', mainPagesIdx);
+    const mainPages = await mergedDoc.copyPages(mainDoc, mainPagesIdx);
     mainPages.forEach(p => mergedDoc.addPage(p));
   }
 
@@ -2578,7 +2577,9 @@ async function mergeWithTipTail(mainPdfBlob) {
     if (tailBuf) tailDoc = await PDFLib.PDFDocument.load(tailBuf);
   }
   if (tailDoc) {
-    const tailPages = await mergedDoc.copyPages(tailDoc, Array.from({length: tailDoc.getPageCount()}, (_,i)=>i));
+    const tailPagesIdx = Array.from({length: tailDoc.getPageCount()}, (_,i)=>i);
+    console.log('Merging tail pages:', tailPagesIdx);
+    const tailPages = await mergedDoc.copyPages(tailDoc, tailPagesIdx);
     tailPages.forEach(p => mergedDoc.addPage(p));
   }
 

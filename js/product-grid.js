@@ -158,6 +158,7 @@ class DropdownManager {
 
 const ASSETS_PDF_PATH = 'assets/';
 const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';
+const CUSTOMER_LOGO_KEY = 'customerLogo';
 
 /**
  * Manages the product selection grid, including state, rendering, and user interactions.
@@ -797,12 +798,45 @@ export class ProductGridManager {
         } else {
           console.warn('DEBUG: settings-version-info span not found');
         }
+        // --- Customer Logo UI logic ---
+        this.loadCustomerLogoPreview();
+        this.setupCustomerLogoHandlers();
         // --- Tip/Tail PDF UI logic ---
         await this.populateTipTailDropdowns();
         this.loadTipTailSelections();
         this.setupTipTailHandlers();
       }, 0);
     }
+  }
+
+  loadCustomerLogoPreview() {
+    const preview = document.getElementById('customer-logo-preview');
+    const logoData = localStorage.getItem(CUSTOMER_LOGO_KEY);
+    if (preview) {
+      preview.innerHTML = logoData ? `<img src="${logoData}" style="max-height:90px;max-width:180px;object-fit:contain;">` : '';
+    }
+  }
+
+  setupCustomerLogoHandlers() {
+    const upload = document.getElementById('customer-logo-upload');
+    const clear = document.getElementById('customer-logo-clear');
+    const preview = document.getElementById('customer-logo-preview');
+    upload.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          localStorage.setItem(CUSTOMER_LOGO_KEY, ev.target.result);
+          if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-height:90px;max-width:180px;object-fit:contain;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    clear.onclick = () => {
+      localStorage.removeItem(CUSTOMER_LOGO_KEY);
+      if (preview) preview.innerHTML = '';
+      if (upload) upload.value = '';
+    };
   }
 
   async populateTipTailDropdowns() {
