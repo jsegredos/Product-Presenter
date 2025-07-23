@@ -2539,7 +2539,6 @@ const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';
 // Add this function near the top-level (not inside another function)
 async function mergeWithTipTail(mainPdfBlob) {
   const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
-  console.log('mergeWithTipTail settings:', settings);
   const { tipAsset, tipUpload, tailAsset, tailUpload } = settings;
   if (!tipAsset && !tipUpload && !tailAsset && !tailUpload) return mainPdfBlob;
 
@@ -2567,29 +2566,20 @@ async function mergeWithTipTail(mainPdfBlob) {
   // --- 2. Tip file (all pages, if selected) ---
   let tipDoc = null;
   if (tipUpload) {
-    console.log('tipUpload is set:', tipUpload);
     tipDoc = await PDFLib.PDFDocument.load(tipUpload);
   } else if (tipAsset) {
-    console.log('tipAsset is set:', tipAsset);
     const tipBuf = await fetchPdfBuffer(tipAsset, false);
-    console.log('Fetched tipAsset buffer for prepend:', tipAsset, tipBuf ? tipBuf.byteLength : null);
     if (tipBuf) tipDoc = await PDFLib.PDFDocument.load(tipBuf);
-    else console.error('Failed to fetch tipAsset buffer:', tipAsset);
   }
   if (tipDoc) {
-    console.log('Tip file loaded:', tipDoc.getPageCount(), 'pages');
     const tipPagesIdx = Array.from({length: tipDoc.getPageCount()}, (_,i)=>i);
     const tipPages = await mergedDoc.copyPages(tipDoc, tipPagesIdx);
     tipPages.forEach(p => mergedDoc.addPage(p));
-    console.log('Tip pages merged:', tipPagesIdx);
-  } else {
-    console.log('No tip file loaded for prepend.');
   }
 
   // --- 3. Main PDF content pages 2+ ---
   if (mainDoc.getPageCount() > 1) {
     const mainPagesIdx = Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1);
-    console.log('Merging main content pages:', mainPagesIdx);
     const mainPages = await mergedDoc.copyPages(mainDoc, mainPagesIdx);
     mainPages.forEach(p => mergedDoc.addPage(p));
   }
@@ -2604,7 +2594,6 @@ async function mergeWithTipTail(mainPdfBlob) {
   }
   if (tailDoc) {
     const tailPagesIdx = Array.from({length: tailDoc.getPageCount()}, (_,i)=>i);
-    console.log('Merging tail pages:', tailPagesIdx);
     const tailPages = await mergedDoc.copyPages(tailDoc, tailPagesIdx);
     tailPages.forEach(p => mergedDoc.addPage(p));
   }
