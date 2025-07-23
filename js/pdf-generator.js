@@ -254,6 +254,9 @@ export function showPdfFormScreen(userDetails) {
       if (userDetails?.address && userDetails.address.trim()) {
         details.push({ label: 'Address:', value: userDetails.address.trim(), bold: true });
       }
+      if (userDetails?.email && userDetails.email.trim()) {
+        details.push({ label: 'Email:', value: userDetails.email.trim(), bold: true });
+      }
       if (userDetails?.telephone && userDetails.telephone.trim()) {
         details.push({ label: 'Telephone:', value: userDetails.telephone.trim(), bold: true });
       }
