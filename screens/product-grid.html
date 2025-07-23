@@ -167,15 +167,13 @@
           <input type="checkbox" id="exclude-prices" name="exclude-prices" style="width: 18px; height: 18px;">
           <span style="font-size: 1rem;">Exclude prices from PDF</span>
         </label>
-        <p style="margin: 5px 0 0 26px; color: #666; font-size: 0.9rem;">When checked, price columns will be hidden but quantities will remain visible.</p>
       </div>
       
       <div style="margin-bottom: 15px;">
         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <input type="checkbox" id="exclude-qty" name="exclude-qty" style="width: 18px; height: 18px;">
-          <span style="font-size: 1rem;">Remove quantity column</span>
+          <span style="font-size: 1rem;">Exclude Price and Qty from PDF</span>
         </label>
-        <p style="margin: 5px 0 0 26px; color: #666; font-size: 0.9rem;">When checked, the quantity column and its heading will be hidden from the PDF.</p>
       </div>
       
       <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
@@ -215,3 +213,18 @@
     </div>
   </div>
 </div> 
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var priceBox = document.getElementById('exclude-prices');
+    var qtyBox = document.getElementById('exclude-qty');
+    if (priceBox && qtyBox) {
+      priceBox.addEventListener('change', function() {
+        if (priceBox.checked) qtyBox.checked = false;
+      });
+      qtyBox.addEventListener('change', function() {
+        if (qtyBox.checked) priceBox.checked = false;
+      });
+    }
+  });
+</script> 

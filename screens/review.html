@@ -25,11 +25,11 @@
         <div style="margin: 12px 0 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 20px;">
           <span style="display: flex; align-items: center;">
             <input type="checkbox" id="exclude-price" name="exclude-price" style="margin-right: 8px;">
-            <label for="exclude-price" style="font-size:1.05rem; color:#222; cursor:pointer;">Exclude price</label>
+            <label for="exclude-price" style="font-size:1.05rem; color:#222; cursor:pointer;">Exclude prices from PDF</label>
           </span>
           <span style="display: flex; align-items: center;">
             <input type="checkbox" id="exclude-qty" name="exclude-qty" style="margin-right: 8px;">
-            <label for="exclude-qty" style="font-size:1.05rem; color:#222; cursor:pointer;">Remove quantity</label>
+            <label for="exclude-qty" style="font-size:1.05rem; color:#222; cursor:pointer;">Exclude Price and Qty from PDF</label>
           </span>
         </div>
         <div style="display:flex;gap:16px;justify-content:flex-end;margin-top:10px;">
@@ -39,4 +39,18 @@
       </form>
     </div>
   </div>
-</div> 
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var priceBox = document.getElementById('exclude-price');
+    var qtyBox = document.getElementById('exclude-qty');
+    if (priceBox && qtyBox) {
+      priceBox.addEventListener('change', function() {
+        if (priceBox.checked) qtyBox.checked = false;
+      });
+      qtyBox.addEventListener('change', function() {
+        if (qtyBox.checked) priceBox.checked = false;
+      });
+    }
+  });
+</script> 
