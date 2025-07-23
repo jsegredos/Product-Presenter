@@ -339,7 +339,9 @@ export class ProductGridManager {
           project: pdfForm['user-project']?.value || '',
           address: pdfForm['user-address']?.value || '',
           email: pdfForm['user-email']?.value || '',
-          telephone: pdfForm['user-telephone']?.value || ''
+          telephone: pdfForm['user-telephone']?.value || '',
+          excludePrice: pdfForm['exclude-price']?.checked || pdfForm['exclude-prices']?.checked || false,
+          excludeQty: pdfForm['exclude-qty']?.checked || false
         };
         if (window.showPdfFormScreen) {
           window.showPdfFormScreen(userDetails);
@@ -361,7 +363,7 @@ export class ProductGridManager {
       product: null,
       room: 'Blank',
       quantity: 1,
-      price: '',
+      price: '0.00',
       notes: ''
     };
 
@@ -534,10 +536,15 @@ export class ProductGridManager {
 
     // Update row data
     row.product = product;
-    
     // Set default price
-    const defaultPrice = product.RRP_INCGST || product.rrpIncGst || product.Price || '';
+    const defaultPrice = product.RRP_INCGST || product['RRP INC GST'] || product.rrpIncGst || product.Price || '';
     row.price = defaultPrice;
+
+    // Update the price input field in the DOM immediately
+    const priceInput = rowElement.querySelector('input[name="price"]');
+    if (priceInput) {
+      priceInput.value = defaultPrice;
+    }
 
     // Clear search input
     searchInput.value = '';
@@ -564,7 +571,7 @@ export class ProductGridManager {
       // Ensure consistent field naming
       OrderCode: row.product.OrderCode || row.product.Code || '',
       Description: row.product.Description || row.product.ProductName || row.product['Product Name'] || '',
-      RRP_INCGST: row.price || row.product.RRP_INCGST || row.product.rrpIncGst || '0',
+      RRP_INCGST: row.price || row.product.RRP_INCGST || row.product['RRP INC GST'] || row.product.rrpIncGst || '0',
       Image_URL: row.product.Image_URL || row.product.imageUrl || row.product.Image || 'assets/no-image.png'
     };
 
@@ -829,6 +836,16 @@ export class ProductGridManager {
       modal.style.display = 'flex';
       // Load existing settings when modal opens
       setTimeout(async () => {
+        // Load staff contact details from storage and populate fields
+        const userSettings = StorageManager.getUserSettings();
+        if (userSettings) {
+          const staffNameInput = document.getElementById('staff-name');
+          const staffEmailInput = document.getElementById('staff-email');
+          const staffPhoneInput = document.getElementById('staff-telephone');
+          if (staffNameInput) staffNameInput.value = userSettings.staffName || '';
+          if (staffEmailInput) staffEmailInput.value = userSettings.staffEmail || '';
+          if (staffPhoneInput) staffPhoneInput.value = userSettings.staffPhone || '';
+        }
         const versionSpan = document.getElementById('settings-version-info');
         if (versionSpan) {
           try {
@@ -1101,7 +1118,7 @@ export class ProductGridManager {
   updateRowTotal(rowElement, row) {
     const totalDisplay = rowElement.querySelector('.grid-total-display');
     if (totalDisplay) {
-      const unitPrice = parseFloat(row.price) || 0;
+      const unitPrice = parseFloat((row.price || '').toString().replace(/,/g, '')) || 0;
       const quantity = parseInt(row.quantity) || 1;
       const totalPrice = unitPrice * quantity;
       totalDisplay.textContent = totalPrice > 0 ? totalPrice.toFixed(2) : '';
@@ -1200,10 +1217,11 @@ export class ProductGridManager {
     const imageUrl = product ? (product.Image_URL || product.imageUrl || product.Image || 'assets/no-image.png') : 'assets/no-image.png';
     const productName = product ? (product.Description || product.ProductName || product['Product Name'] || '') : '';
     const productCode = product ? (product.OrderCode || product.Code || '') : '';
-    const displayPrice = row.price || (product ? (product.RRP_INCGST || product.rrpIncGst || '') : '');
+    // Always show product's price if product is selected, otherwise row.price
+    const displayPrice = product ? (product.RRP_INCGST || product.rrpIncGst || product.Price || row.price || '') : (row.price || '');
     
     // Calculate total price
-    const unitPrice = parseFloat(displayPrice) || 0;
+    const unitPrice = parseFloat((displayPrice || '').toString().replace(/,/g, '')) || 0;
     const quantity = parseInt(row.quantity) || 1;
     const totalPrice = unitPrice * quantity;
     const displayTotal = totalPrice > 0 ? totalPrice.toFixed(2) : '';

@@ -931,9 +931,12 @@ export class NavigationManager {
       address: formData.get('user-address'),
       email: formData.get('user-email'),
       telephone: formData.get('user-telephone'),
-      excludePrice: formData.get('exclude-price') === 'on',
+      excludePrice: formData.get('exclude-price') === 'on' || formData.get('exclude-prices') === 'on',
+      excludeQty: formData.get('exclude-qty') === 'on',
       exportCsv: true // Always true
     };
+    // Debug: Show what values are being captured
+    alert(`Form submitted!\nExclude Price: ${userDetails.excludePrice}\nExclude Qty: ${userDetails.excludeQty}\nForm values:\n- exclude-price: ${formData.get('exclude-price')}\n- exclude-prices: ${formData.get('exclude-prices')}\n- exclude-qty: ${formData.get('exclude-qty')}`);
     // Generate and download PDF and CSV
     window.dispatchEvent(new CustomEvent('generatePdf', { detail: userDetails }));
     // CSV download is handled in the PDF generator module

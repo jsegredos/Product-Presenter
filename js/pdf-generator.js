@@ -225,7 +225,32 @@ export function showPdfFormScreen(userDetails) {
     const customerLogo = localStorage.getItem('customerLogo');
     if (customerLogo) {
       try {
-        doc.addImage(customerLogo, 'PNG', logoBlockX + 10, logoBlockY + 10, logoBlockW - 20, logoBlockH - 20, undefined, 'FAST');
+        // Load customer logo to get its natural dimensions
+        const img = new Image();
+        img.onload = function() {
+          const maxWidth = logoBlockW - 20;
+          const maxHeight = logoBlockH - 20;
+          
+          // Calculate dimensions maintaining aspect ratio
+          let logoWidth = img.width;
+          let logoHeight = img.height;
+          
+          if (logoWidth > maxWidth || logoHeight > maxHeight) {
+            const widthRatio = maxWidth / logoWidth;
+            const heightRatio = maxHeight / logoHeight;
+            const scale = Math.min(widthRatio, heightRatio);
+            
+            logoWidth = logoWidth * scale;
+            logoHeight = logoHeight * scale;
+          }
+          
+          // Center the logo in the block
+          const logoX = logoBlockX + (logoBlockW - logoWidth) / 2;
+          const logoY = logoBlockY + (logoBlockH - logoHeight) / 2;
+          
+          doc.addImage(customerLogo, 'PNG', logoX, logoY, logoWidth, logoHeight, undefined, 'FAST');
+        };
+        img.src = customerLogo;
       } catch (e) {
         console.warn('Failed to draw customer logo:', e);
       }
@@ -265,14 +290,14 @@ export function showPdfFormScreen(userDetails) {
       if (details.length > 0) {
         // Calculate vertical center between SEIMA logo bottom and footer top
         const detailsBlockHeight = details.length * 26; // 26px per line
-        const detailsBlockY = seimaLogoY + seimaLogoH + ((pageHeight - footerHeight) - (seimaLogoY + seimaLogoH) - detailsBlockHeight) / 2;
-        details.forEach(d => {
-          doc.setFont('helvetica', 'normal');
-          doc.text(d.label, detailsX - 80, detailsY, { align: 'right' });
-          doc.setFont('helvetica', 'bold');
-          doc.text(d.value, detailsX + 10, detailsY, { align: 'left' });
-          detailsY += 26;
-        });
+      const detailsBlockY = seimaLogoY + seimaLogoH + ((pageHeight - footerHeight) - (seimaLogoY + seimaLogoH) - detailsBlockHeight) / 2;
+      details.forEach(d => {
+        doc.setFont('helvetica', 'normal');
+        doc.text(d.label, detailsX - 80, detailsY, { align: 'right' });
+        doc.setFont('helvetica', 'bold');
+        doc.text(d.value, detailsX + 10, detailsY, { align: 'left' });
+        detailsY += 26;
+      });
       }
       // 4. Footer bar (drawn before info message)
       doc.setFillColor('#9B9184');
@@ -504,7 +529,7 @@ export function showPdfFormScreen(userDetails) {
             const pageCount = doc.internal.getNumberOfPages() - 1; // exclude cover
             for (let i = 2; i <= pageCount + 1; i++) { // start from 2 (first product page)
               doc.setPage(i);
-              drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice);
+              drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
               currentY = footerHeight + 8;
               // Footer bar (reduced height and font size)
               doc.setFillColor('#9B9184'); // Updated footer color
@@ -653,7 +678,7 @@ export function showPdfFormScreen(userDetails) {
           // New page if needed
           if (pageRow >= maxRowsPerPage) {
             doc.addPage();
-            drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice);
+            drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
             currentY = footerHeight + 8;
             pageRow = 0;
           }
@@ -751,9 +776,11 @@ export function showPdfFormScreen(userDetails) {
                 doc.text(pdfPriceStr, Number(colX[3])+30, codeY+10, { align: 'center' });
               }
               // Qty (top-aligned)
+              if (!userDetails.excludeQty) {
               doc.setFontSize(10);
               doc.setTextColor('#222');
               doc.text(String(row.item.Quantity || 1), Number(colX[4])+20, codeY+10, { align: 'center' });
+              }
               // Total (top-aligned, far right)
               doc.setFontSize(10);
               doc.setTextColor('#222');
@@ -773,10 +800,12 @@ export function showPdfFormScreen(userDetails) {
   });
 }
 
-export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice) {
+export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice, excludeQty = false) {
+  console.log('[PDF HEADER] excludePrice:', excludePrice, 'excludeQty:', excludeQty);
   const headerHeight = footerHeight + 5.7;
   doc.setFillColor('#8B6C2B'); // Updated header color
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
+  // Only draw SEIMA logo on product pages, not customer logo
   if (logoDataUrl && logoNaturalW && logoNaturalH) {
     const logoH = headerHeight * 0.55;
     const logoAspect = logoNaturalW / logoNaturalH;
@@ -793,10 +822,14 @@ export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, lo
   doc.text('Description', colX[2]+(colX[3]-colX[2])/2, colY, { align: 'center' });
   if (!excludePrice) {
     doc.text('Price ea inc GST', colX[3]+30, colY, { align: 'center' });
+    if (!excludeQty) {
     doc.text('Qty', colX[4]+20, colY, { align: 'center' });
+    }
     doc.text('Total', colX[5]+20, colY, { align: 'center' });
   } else {
+    if (!excludeQty) {
     doc.text('Qty', colX[4]+20, colY, { align: 'center' });
+    }
   }
 }
 

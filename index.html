@@ -173,6 +173,22 @@
         <label for="user-telephone">Phone <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="tel" id="user-telephone" name="user-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
         
+        <div style="margin-bottom: 15px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="exclude-prices" name="exclude-prices" style="width: 18px; height: 18px;">
+            <span style="font-size: 1rem;">Exclude prices from PDF</span>
+          </label>
+          <p style="margin: 5px 0 0 26px; color: #666; font-size: 0.9rem;">When checked, price columns will be hidden but quantities will remain visible.</p>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="exclude-qty" name="exclude-qty" style="width: 18px; height: 18px;">
+            <span style="font-size: 1rem;">Remove quantity column</span>
+          </label>
+          <p style="margin: 5px 0 0 26px; color: #666; font-size: 0.9rem;">When checked, the quantity column and its heading will be hidden from the PDF.</p>
+        </div>
+        
         <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
           <button type="button" id="pdf-email-cancel" class="secondary-btn">Cancel</button>
           <button type="submit" id="pdf-email-send" class="primary-btn">Download PDF</button>
