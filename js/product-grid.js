@@ -842,6 +842,14 @@ export class ProductGridManager {
             versionSpan.innerText = '';
           }
         }
+        // Add manual refresh for product catalog
+        const refreshBtn = document.getElementById('refresh-catalog-btn');
+        if (refreshBtn) {
+          refreshBtn.onclick = () => {
+            localStorage.removeItem('productCatalogCsv');
+            window.location.reload();
+          };
+        }
         // --- Customer Logo UI logic ---
         this.loadCustomerLogoPreview();
         this.setupCustomerLogoHandlers();

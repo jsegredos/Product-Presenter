@@ -28,18 +28,35 @@ export class DataLayer {
   async loadProductCatalog() {
     try {
       console.log('📦 Loading product catalog...');
-      
-      const response = await fetch('pricelist-latest.csv');
-      if (!response.ok) {
-        throw new Error(`Failed to load catalog: ${response.status}`);
+      // 1. Try to load from localStorage for instant display
+      let cached = localStorage.getItem('productCatalogCsv');
+      let products = [];
+      if (cached) {
+        products = this.parseCSV(cached);
+        this.products = products;
+        this.isLoaded = true;
+        console.log(`⚡ Loaded ${products.length} products from cache`);
       }
-      
-      const csvText = await response.text();
-      this.products = this.parseCSV(csvText);
-      this.isLoaded = true;
-      
-      console.log(`✅ Loaded ${this.products.length} products`);
-      return this.products;
+      // 2. In the background, fetch the latest from Google Sheets
+      const url = CONFIG.CATALOG_URL + (CONFIG.CATALOG_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+      fetch(url)
+        .then(response => response.ok ? response.text() : Promise.reject('Failed to fetch catalog'))
+        .then(csvText => {
+          if (!cached || csvText !== cached) {
+            localStorage.setItem('productCatalogCsv', csvText);
+            const newProducts = this.parseCSV(csvText);
+            // If the new data is different, update and reload
+            if (JSON.stringify(newProducts) !== JSON.stringify(products)) {
+              this.products = newProducts;
+              this.isLoaded = true;
+              console.log('🔄 New catalog loaded, reloading app...');
+              window.location.reload();
+            }
+          }
+        })
+        .catch(err => console.warn('Background catalog update failed:', err));
+      // Return cached or empty products for now
+      return products;
     } catch (error) {
       console.error('❌ Failed to load product catalog:', error);
       throw error;
@@ -62,7 +79,31 @@ export class DataLayer {
           headers.forEach((header, index) => {
             product[header] = values[index] || '';
           });
-          
+
+          // Remap fields to new names if present, fallback to old names
+          product.Group = product['Group'] || '';
+          product['Product Name'] = product['Product Name'] || product['Description'] || '';
+          product.Description = product['Description'] || product['Product Name'] || '';
+          product['Long Description'] = product['Long Description'] || product['LongDescription'] || '';
+          product.OrderCode = product['Order Code'] || product['OrderCode'] || '';
+          product['RRP EX GST'] = product['RRP EX GST'] || product['RRP_EXGST'] || '';
+          product['RRP INC GST'] = product['RRP INC GST'] || product['RRP_INCGST'] || '';
+          product['Release Note'] = product['Release Note'] || '';
+          product.Website_URL = product['Website_URL'] || '';
+          product.Image_URL = product['Image_URL'] || '';
+          product.Diagram_URL = product['Diagram_URL'] || '';
+          product.Datasheet_URL = product['Datasheet_URL'] || '';
+          product.BARCODE = product['BARCODE'] || '';
+          product['X Dimension (mm)'] = product['X Dimension (mm)'] || '';
+          product['Y Dimension (mm)'] = product['Y Dimension (mm)'] || '';
+          product['Z Dimension (mm)'] = product['Z Dimension (mm)'] || '';
+          product.WEIGHT = product['WEIGHT'] || '';
+          product['WELS NO'] = product['WELS NO'] || '';
+          product['WELS STAR'] = product['WELS STAR'] || '';
+          product['WELS CONSUMPTION'] = product['WELS CONSUMPTION'] || '';
+          product['WELS Expiry'] = product['WELS Expiry'] || '';
+          product.WATERMARK = product['WATERMARK'] || '';
+
           // Only add products with valid order codes
           if (product.OrderCode && product.OrderCode.trim()) {
             products.push(product);

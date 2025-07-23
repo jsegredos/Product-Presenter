@@ -25,7 +25,7 @@ export const CONFIG = {
   },
   
   CSV: {
-    URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQw5X0aAe5yYbfqfTlgBIdNqnDIjs-YFhNh1IQ8lIB5RfjBl5VBRwQAMKIwlXz6L6oXI8ittrQD91Ob/pub?gid=114771048&single=true&output=csv'
+    URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnMqBCqB9L52W6YNgreLHJKvxOanS76CJN8ZUorBl8Iccha6MzUpDkGa0N8GSYFPP2zyql1Tq6aBn8/pub?gid=0&single=true&output=csv'
   },
   
   STORAGE_KEYS: {
@@ -50,7 +50,7 @@ export const CONFIG = {
   },
   
   // Product catalog API configuration
-  CATALOG_URL: 'pricelist-latest.csv',
+  CATALOG_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnMqBCqB9L52W6YNgreLHJKvxOanS76CJN8ZUorBl8Iccha6MzUpDkGa0N8GSYFPP2zyql1Tq6aBn8/pub?gid=0&single=true&output=csv',
   
   // Version information
   VERSION: '1.3.0',
