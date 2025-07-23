@@ -10,6 +10,7 @@ import webbrowser
 import sys
 import os
 from pathlib import Path
+import json
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Custom handler to set proper MIME types for ES6 modules"""
@@ -40,6 +41,17 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return 'application/javascript'
         
         return mimetype
+
+    def do_GET(self):
+        if self.path == '/assets-list':
+            assets_dir = Path(__file__).parent / 'assets'
+            pdfs = [f.name for f in assets_dir.glob('*.pdf') if f.is_file()]
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(pdfs).encode('utf-8'))
+            return
+        return super().do_GET()
 
 def main():
     """Start the development server"""

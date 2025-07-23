@@ -909,12 +909,18 @@ export class ProductGridManager {
   }
 
   async populateTipTailDropdowns() {
-    // Fetch PDF files from assets folder (simulate, as we can't list files directly)
-    // You may want to hardcode or fetch from server if needed
-    const assetPdfs = [
-      'assets/tip.pdf',
-      'assets/tail.pdf'
-    ];
+    // Fetch PDF files from server
+    let assetPdfs = [];
+    try {
+      const resp = await fetch('/assets-list');
+      if (resp.ok) {
+        assetPdfs = await resp.json();
+      }
+    } catch (e) {
+      // fallback to default if fetch fails
+      assetPdfs = ['tip.pdf', 'tail.pdf'];
+    }
+    assetPdfs = assetPdfs.map(f => 'assets/' + f);
     const tipSelect = document.getElementById('tip-pdf-select');
     const tailSelect = document.getElementById('tail-pdf-select');
     if (tipSelect && tailSelect) {
