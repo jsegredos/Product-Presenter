@@ -329,18 +329,69 @@ export class ProductGridManager {
     if (pdfCancelBtn && pdfModal) {
       pdfCancelBtn.onclick = () => { pdfModal.style.display = 'none'; };
     }
+    // PDF Download form persistence keys
+    const PDF_FORM_KEY = 'pdfFormSettings';
     // PDF Download form submission
     const pdfForm = document.getElementById('pdf-email-form');
+    // Load persisted values on modal open
+    if (pdfModal) {
+      pdfModal.addEventListener('show', () => {
+        const saved = Utils.getStorageItem(PDF_FORM_KEY, {});
+        if (pdfForm) {
+          pdfForm['user-name'].value = saved.name || '';
+          pdfForm['user-project'].value = saved.project || '';
+          pdfForm['user-address'].value = saved.address || '';
+          pdfForm['user-email'].value = saved.email || '';
+          pdfForm['user-telephone'].value = saved.telephone || '';
+          pdfForm['exclude-prices'].checked = !!saved.excludePrices;
+          pdfForm['exclude-qty'].checked = !!saved.excludeQty;
+        }
+      });
+    }
+    // Save on change
     if (pdfForm) {
+      pdfForm.addEventListener('input', () => {
+        Utils.setStorageItem(PDF_FORM_KEY, {
+          name: pdfForm['user-name'].value,
+          project: pdfForm['user-project'].value,
+          address: pdfForm['user-address'].value,
+          email: pdfForm['user-email'].value,
+          telephone: pdfForm['user-telephone'].value,
+          excludePrices: pdfForm['exclude-prices'].checked,
+          excludeQty: pdfForm['exclude-qty'].checked
+        });
+      });
+      pdfForm.addEventListener('change', () => {
+        Utils.setStorageItem(PDF_FORM_KEY, {
+          name: pdfForm['user-name'].value,
+          project: pdfForm['user-project'].value,
+          address: pdfForm['user-address'].value,
+          email: pdfForm['user-email'].value,
+          telephone: pdfForm['user-telephone'].value,
+          excludePrices: pdfForm['exclude-prices'].checked,
+          excludeQty: pdfForm['exclude-qty'].checked
+        });
+      });
       pdfForm.onsubmit = (e) => {
         e.preventDefault();
+        Utils.setStorageItem(PDF_FORM_KEY, {
+          name: pdfForm['user-name'].value,
+          project: pdfForm['user-project'].value,
+          address: pdfForm['user-address'].value,
+          email: pdfForm['user-email'].value,
+          telephone: pdfForm['user-telephone'].value,
+          excludePrices: pdfForm['exclude-prices'].checked,
+          excludeQty: pdfForm['exclude-qty'].checked
+        });
         const userDetails = {
           name: pdfForm['user-name']?.value || '',
           project: pdfForm['user-project']?.value || '',
           address: pdfForm['user-address']?.value || '',
           email: pdfForm['user-email']?.value || '',
           telephone: pdfForm['user-telephone']?.value || '',
-          excludePrice: pdfForm['exclude-price']?.checked || pdfForm['exclude-prices']?.checked || false,
+          excludePrice: pdfForm['exclude-qty']?.checked
+            ? true
+            : (pdfForm['exclude-price']?.checked || pdfForm['exclude-prices']?.checked || false),
           excludeQty: pdfForm['exclude-qty']?.checked || false
         };
         if (window.showPdfFormScreen) {

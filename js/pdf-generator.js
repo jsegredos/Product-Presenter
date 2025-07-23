@@ -533,7 +533,7 @@ export function showPdfFormScreen(userDetails) {
             const pageCount = doc.internal.getNumberOfPages() - 1; // exclude cover
             for (let i = 2; i <= pageCount + 1; i++) { // start from 2 (first product page)
               doc.setPage(i);
-              drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice);
+              drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
               currentY = footerHeight + 8;
               // Footer bar (reduced height and font size)
               doc.setFillColor('#9B9184'); // Updated footer color
@@ -704,7 +704,7 @@ export function showPdfFormScreen(userDetails) {
           // New page if needed
           if (pageRow >= maxRowsPerPage) {
             doc.addPage();
-            drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice);
+            drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
             currentY = footerHeight + 8;
             pageRow = 0;
           }
@@ -798,18 +798,20 @@ export function showPdfFormScreen(userDetails) {
                 pdfPriceNum = parseFloat(row.item.RRP_INCGST.toString().replace(/,/g, ''));
               }
               let pdfPriceStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? ('$' + pdfPriceNum.toFixed(2)) : '';
-              if (!userDetails.excludePrice) {
+              if (!userDetails.excludePrice && !userDetails.excludeQty) {
                 doc.text(pdfPriceStr, Number(colX[3])+30, codeY+10, { align: 'center' });
               }
               // Qty (top-aligned)
               doc.setFontSize(10);
               doc.setTextColor('#222');
-              doc.text(String(row.item.Quantity || 1), Number(colX[4])+20, codeY+10, { align: 'center' });
+              if (!userDetails.excludeQty) {
+                doc.text(String(row.item.Quantity || 1), Number(colX[4])+20, codeY+10, { align: 'center' });
+              }
               // Total (top-aligned, far right)
               doc.setFontSize(10);
               doc.setTextColor('#222');
               let pdfTotalStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? ('$' + (pdfPriceNum * (row.item.Quantity || 1)).toFixed(2)) : '';
-              if (!userDetails.excludePrice) {
+              if (!userDetails.excludePrice && !userDetails.excludeQty) {
                 doc.text(pdfTotalStr, Number(colX[5])+20, codeY+10, { align: 'center' });
               }
               rowIdx++;
@@ -824,7 +826,7 @@ export function showPdfFormScreen(userDetails) {
   });
 }
 
-export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice) {
+export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice, excludeQty) {
   const headerHeight = footerHeight + 5.7;
   doc.setFillColor('#8B6C2B'); // Updated header color
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
@@ -842,13 +844,14 @@ export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, lo
   const colY = headerHeight - 8;
   doc.text('Code', colX[1]+30, colY, { align: 'center' });
   doc.text('Description', colX[2]+(colX[3]-colX[2])/2, colY, { align: 'center' });
-  if (!excludePrice) {
+  if (!excludePrice && !excludeQty) {
     doc.text('Price ea inc GST', colX[3]+30, colY, { align: 'center' });
     doc.text('Qty', colX[4]+20, colY, { align: 'center' });
     doc.text('Total', colX[5]+20, colY, { align: 'center' });
-  } else {
+  } else if (excludePrice && !excludeQty) {
     doc.text('Qty', colX[4]+20, colY, { align: 'center' });
   }
+  // If excludeQty is true, do not show price or qty columns
 }
 
 // Helper to load an image as a base64 data URL

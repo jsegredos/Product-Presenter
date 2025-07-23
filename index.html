@@ -157,37 +157,53 @@
   <div id="pdf-email-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <form id="pdf-email-form" autocomplete="off">
-        <h3 style="margin: 0 0 20px 0; color: #333;">Download PDF Report</h3>
-        
+        <h3 style="margin: 0 0 20px 0; color: #333;">PDF Report Settings</h3>
+        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Title page details</h4>
         <label for="user-name">Name <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="text" id="user-name" name="user-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
-        
         <label for="user-project">Project <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="text" id="user-project" name="user-project" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
-        
         <label for="user-address">Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="text" id="user-address" name="user-address" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
-        
         <label for="user-email">Email Address <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="email" id="user-email" name="user-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
-        
         <label for="user-telephone">Phone <span style="color:#888;font-size:0.95em;">(optional)</span></label>
         <input type="tel" id="user-telephone" name="user-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1.1rem;padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;">
-        
         <div style="margin-bottom: 15px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="exclude-prices" name="exclude-prices" style="width: 18px; height: 18px;">
             <span style="font-size: 1rem;">Exclude prices from PDF</span>
           </label>
         </div>
-        
         <div style="margin-bottom: 15px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="exclude-qty" name="exclude-qty" style="width: 18px; height: 18px;">
             <span style="font-size: 1rem;">Exclude Price and Qty from PDF</span>
           </label>
         </div>
-        
+        <div style="margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Customer Logo</h4>
+          <input type="file" id="customer-logo-upload" accept="image/png, image/jpeg" style="margin-bottom: 8px;">
+          <button type="button" id="customer-logo-clear" class="secondary-btn" style="margin-bottom: 8px;">Clear Logo</button>
+          <div id="customer-logo-preview" style="height: 100px; width: 200px; background: #fff; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;"></div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Presentation Customisation</h4>
+          <div style="margin-bottom: 12px;">
+            <label for="tip-pdf-select" style="font-weight: 500;">Prepend PDF (Tip):</label>
+            <select id="tip-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
+            <input type="file" id="tip-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
+            <button type="button" id="tip-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tip</button>
+            <div id="tip-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="tail-pdf-select" style="font-weight: 500;">Append PDF (Tail):</label>
+            <select id="tail-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
+            <input type="file" id="tail-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
+            <button type="button" id="tail-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tail</button>
+            <div id="tail-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
+          </div>
+        </div>
         <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
           <button type="button" id="pdf-email-cancel" class="secondary-btn">Cancel</button>
           <button type="submit" id="pdf-email-send" class="primary-btn">Download PDF</button>
@@ -212,59 +228,22 @@
   <div id="settings-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <h3 style="margin: 0 0 20px 0; color: #333; display: flex; align-items: center; gap: 10px;">Settings <span id="settings-version-info" class="version-display" style="font-size:0.75em;color:#aaa;font-weight:400;vertical-align:middle;"></span></h3>
-      
       <div style="margin-bottom: 20px;">
         <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Staff Contact Details</h4>
         <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">These details will appear on the presentation title page.</p>
-        
         <label for="staff-name">Name</label>
         <input type="text" id="staff-name" name="staff-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
-        
         <label for="staff-email">Email</label>
         <input type="email" id="staff-email" name="staff-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
-        
         <label for="staff-telephone">Phone</label>
         <input type="tel" id="staff-telephone" name="staff-telephone" maxlength="50" style="width:100%;margin-bottom:15px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
       </div>
-      
-      <div style="margin-bottom: 20px;">
-        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Customer Logo</h4>
-        <p style="margin: 0 0 10px 0; color: #666; font-size: 0.9rem;">Upload customer logo to appear on PDF cover page. (Recommended: transparent PNG or white background)</p>
-        <input type="file" id="customer-logo-upload" accept="image/png, image/jpeg" style="margin-bottom: 8px;">
-        <button type="button" id="customer-logo-clear" class="secondary-btn" style="margin-bottom: 8px;">Clear Logo</button>
-        <div id="customer-logo-preview" style="height: 100px; width: 200px; background: #fff; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;"></div>
-      </div>
-      
-      <div style="margin-bottom: 20px;">
-        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Presentation Customisation</h4>
-        <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">Select a Tip and Tail file to add to the front or back of the product presentation.</p>
-        <!-- Tip/Tail PDF Selection UI -->
-        <div style="margin-bottom: 12px;">
-          <label for="tip-pdf-select" style="font-weight: 500;">Prepend PDF (Tip):</label>
-          <select id="tip-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
-          <input type="file" id="tip-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
-          <button type="button" id="tip-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tip</button>
-          <div id="tip-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label for="tail-pdf-select" style="font-weight: 500;">Append PDF (Tail):</label>
-          <select id="tail-pdf-select" style="width: 100%; margin-bottom: 6px;"></select>
-          <input type="file" id="tail-pdf-upload" accept="application/pdf" style="margin-bottom: 6px;">
-          <button type="button" id="tail-pdf-clear" class="secondary-btn" style="margin-bottom: 6px;">Clear Tail</button>
-          <div id="tail-pdf-selected" style="font-size: 0.95em; color: #059669;"></div>
-        </div>
-      </div>
-      
-      <!-- Manual refresh button at the bottom -->
       <button id="refresh-catalog-btn" class="secondary-btn" style="margin-top: 16px; width: 100%; background: #f3f4f6; color: #2563eb; border: 1px solid #2563eb;">🔄 Refresh Product Catalog</button>
-      
       <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
         <button id="settings-cancel" class="secondary-btn">Cancel</button>
         <button id="settings-save" class="primary-btn">Save Settings</button>
       </div>
-      <div style="margin-top: 32px; text-align: right;">
-        <!-- version info now in header -->
-      </div>
+      <div style="margin-top: 32px; text-align: right;"></div>
     </div>
   </div>
 
