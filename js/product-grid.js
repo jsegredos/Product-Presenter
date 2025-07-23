@@ -1217,6 +1217,8 @@ export class ProductGridManager {
     const imageUrl = product ? (product.Image_URL || product.imageUrl || product.Image || 'assets/no-image.png') : 'assets/no-image.png';
     const productName = product ? (product.Description || product.ProductName || product['Product Name'] || '') : '';
     const productCode = product ? (product.OrderCode || product.Code || '') : '';
+    // Ensure order code is shown as a plain integer (no decimals, no commas)
+    const displayOrderCode = productCode ? String(parseInt(productCode, 10)) : '';
     // Always show product's price if product is selected, otherwise row.price
     const displayPrice = product ? (product.RRP_INCGST || product.rrpIncGst || product.Price || row.price || '') : (row.price || '');
     
@@ -1235,7 +1237,7 @@ export class ProductGridManager {
           ${product ? `
             <div class="grid-product-display">
               <div class="grid-product-name">
-                <strong>${Utils.sanitizeInput(productCode)}</strong> ${Utils.sanitizeInput(productName)}
+                <strong>${Utils.sanitizeInput(displayOrderCode)}</strong> ${Utils.sanitizeInput(productName)}
               </div>
             </div>
           ` : `
