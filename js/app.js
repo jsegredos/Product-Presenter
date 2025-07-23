@@ -221,8 +221,8 @@ window.addEventListener('DOMContentLoaded', () => {
     .then(version => {
       const versionSpan = document.getElementById('app-version');
       if (versionSpan) {
-        // Only keep numbers and dots, e.g. 1.5.2
-        const cleanVersion = (version.trim().match(/[0-9]+(\.[0-9]+)*/g) || [''])[0];
+        // Allow numbers, dots, letters, and hyphens (e.g., 1.5.2-beta)
+        const cleanVersion = version.trim().replace(/[^0-9.a-zA-Z-]/g, '');
         versionSpan.textContent = `Ver: ${cleanVersion}`;
       }
     });
