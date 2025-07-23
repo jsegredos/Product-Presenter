@@ -221,7 +221,9 @@ window.addEventListener('DOMContentLoaded', () => {
     .then(version => {
       const versionSpan = document.getElementById('app-version');
       if (versionSpan) {
-        versionSpan.textContent = `Ver: ${version.trim()}`;
+        // Only keep numbers and dots, e.g. 1.5.2
+        const cleanVersion = (version.trim().match(/[0-9]+(\.[0-9]+)*/g) || [''])[0];
+        versionSpan.textContent = `Ver: ${cleanVersion}`;
       }
     });
 });
