@@ -214,5 +214,17 @@ document.addEventListener('DOMContentLoaded', () => {
   window.seimaScanner.init();
 });
 
+// Add version number to home screen
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('version.txt')
+    .then(resp => resp.text())
+    .then(version => {
+      const versionSpan = document.getElementById('app-version');
+      if (versionSpan) {
+        versionSpan.textContent = `Ver: ${version.trim()}`;
+      }
+    });
+});
+
 // Export for module usage
 export default SeimaScanner; 
