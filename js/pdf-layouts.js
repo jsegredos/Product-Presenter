@@ -61,15 +61,15 @@ export class PDFLayouts {
     let currentY = this.core.getCurrentY();
     
     // Left column
-    if (userDetails.name) {
-      this.core.addText(`Customer: ${userDetails.name}`, leftCol, currentY, {
+    if (userDetails.name && userDetails.name.trim()) {
+      this.core.addText(`Customer: ${userDetails.name.trim()}`, leftCol, currentY, {
         fontSize: 10
       });
       currentY += 5;
     }
     
-    if (userDetails.project) {
-      this.core.addText(`Project: ${userDetails.project}`, leftCol, currentY, {
+    if (userDetails.project && userDetails.project.trim()) {
+      this.core.addText(`Project: ${userDetails.project.trim()}`, leftCol, currentY, {
         fontSize: 10
       });
       currentY += 5;
@@ -78,23 +78,23 @@ export class PDFLayouts {
     // Right column (reset Y for right column)
     currentY = this.core.getCurrentY();
     
-    if (userDetails.email) {
-      this.core.addText(`Email: ${userDetails.email}`, rightCol, currentY, {
+    if (userDetails.email && userDetails.email.trim()) {
+      this.core.addText(`Email: ${userDetails.email.trim()}`, rightCol, currentY, {
         fontSize: 10
       });
       currentY += 5;
     }
     
-    if (userDetails.phone) {
-      this.core.addText(`Phone: ${userDetails.phone}`, rightCol, currentY, {
+    if (userDetails.phone && userDetails.phone.trim()) {
+      this.core.addText(`Phone: ${userDetails.phone.trim()}`, rightCol, currentY, {
         fontSize: 10
       });
       currentY += 5;
     }
     
-    if (userDetails.address) {
+    if (userDetails.address && userDetails.address.trim()) {
       this.core.setCurrentY(currentY + 2);
-      const addressHeight = this.core.addText(`Address: ${userDetails.address}`, leftCol, this.core.getCurrentY(), {
+      const addressHeight = this.core.addText(`Address: ${userDetails.address.trim()}`, leftCol, this.core.getCurrentY(), {
         fontSize: 10,
         maxWidth: contentWidth - 20
       });

@@ -177,3 +177,25 @@
     <p style="margin:0;color:#666;font-size:1.1rem;">Generating PDF...</p>
   </div>
 </div> 
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width: 500px;">
+    <h3 style="margin: 0 0 20px 0; color: #333;">Settings</h3>
+    <div style="margin-bottom: 20px;">
+      <label for="staff-name">Staff Name</label>
+      <input type="text" id="staff-name" style="width:100%;margin-bottom:10px;">
+      <label for="staff-email">Staff Email</label>
+      <input type="email" id="staff-email" style="width:100%;margin-bottom:10px;">
+      <label for="staff-telephone">Staff Phone</label>
+      <input type="tel" id="staff-telephone" style="width:100%;margin-bottom:10px;">
+    </div>
+    <div id="settings-version-info" style="color:#888;font-size:0.95em;margin-bottom:20px;"></div>
+    <!-- Manual refresh button at the bottom -->
+    <button id="refresh-catalog-btn" class="secondary-btn" style="margin-top: 16px; width: 100%; background: #f3f4f6; color: #2563eb; border: 1px solid #2563eb;">🔄 Refresh Product Catalog</button>
+    <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 24px;">
+      <button id="settings-cancel" class="secondary-btn">Cancel</button>
+      <button id="settings-save" class="primary-btn">Save</button>
+    </div>
+  </div>
+</div> 

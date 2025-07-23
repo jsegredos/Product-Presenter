@@ -242,23 +242,38 @@ export function showPdfFormScreen(userDetails) {
       doc.setTextColor('#444');
       const detailsX = pageCenterX; // center horizontally
       let detailsY = seimaLogoY + seimaLogoH + 50;
-      const details = [
-        { label: 'Name:', value: userDetails?.name || '', bold: true },
-        { label: 'Project:', value: userDetails?.project || '', bold: true },
-        { label: 'Address:', value: userDetails?.address || '', bold: true },
-        { label: 'Telephone:', value: userDetails?.telephone || '', bold: true },
-      ];
-      // Calculate vertical center between SEIMA logo bottom and footer top
+      
+      // Only include details that have values
+      const details = [];
+      if (userDetails?.name && userDetails.name.trim()) {
+        details.push({ label: 'Name:', value: userDetails.name.trim(), bold: true });
+      }
+      if (userDetails?.project && userDetails.project.trim()) {
+        details.push({ label: 'Project:', value: userDetails.project.trim(), bold: true });
+      }
+      if (userDetails?.address && userDetails.address.trim()) {
+        details.push({ label: 'Address:', value: userDetails.address.trim(), bold: true });
+      }
+      if (userDetails?.telephone && userDetails.telephone.trim()) {
+        details.push({ label: 'Telephone:', value: userDetails.telephone.trim(), bold: true });
+      }
+      
+      // Define footerHeight outside the if block so it's available for footer drawing
       const footerHeight = 32;
-      const detailsBlockHeight = details.length * 26; // 4 lines, 26px each
-      const detailsBlockY = seimaLogoY + seimaLogoH + ((pageHeight - footerHeight) - (seimaLogoY + seimaLogoH) - detailsBlockHeight) / 2;
-      details.forEach(d => {
-        doc.setFont('helvetica', 'normal');
-        doc.text(d.label, detailsX - 80, detailsY, { align: 'right' });
-        doc.setFont('helvetica', 'bold');
-        doc.text(d.value, detailsX + 10, detailsY, { align: 'left' });
-        detailsY += 26;
-      });
+      
+      // Only render details if there are any
+      if (details.length > 0) {
+        // Calculate vertical center between SEIMA logo bottom and footer top
+        const detailsBlockHeight = details.length * 26; // 26px per line
+        const detailsBlockY = seimaLogoY + seimaLogoH + ((pageHeight - footerHeight) - (seimaLogoY + seimaLogoH) - detailsBlockHeight) / 2;
+        details.forEach(d => {
+          doc.setFont('helvetica', 'normal');
+          doc.text(d.label, detailsX - 80, detailsY, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          doc.text(d.value, detailsX + 10, detailsY, { align: 'left' });
+          detailsY += 26;
+        });
+      }
       // 4. Footer bar (drawn before info message)
       doc.setFillColor('#9B9184');
       doc.rect(0, pageHeight - footerHeight, pageWidth, footerHeight, 'F');
