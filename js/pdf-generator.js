@@ -225,7 +225,29 @@ export function showPdfFormScreen(userDetails) {
     const customerLogo = localStorage.getItem('customerLogo');
     if (customerLogo) {
       try {
-        doc.addImage(customerLogo, 'PNG', logoBlockX + 10, logoBlockY + 10, logoBlockW - 20, logoBlockH - 20, undefined, 'FAST');
+        // Calculate proper aspect ratio for customer logo
+        const img = new Image();
+        img.onload = function() {
+          const maxWidth = logoBlockW - 20;
+          const maxHeight = logoBlockH - 20;
+          const aspectRatio = img.width / img.height;
+          
+          let drawWidth = maxWidth;
+          let drawHeight = maxWidth / aspectRatio;
+          
+          // If height exceeds max, scale down proportionally
+          if (drawHeight > maxHeight) {
+            drawHeight = maxHeight;
+            drawWidth = maxHeight * aspectRatio;
+          }
+          
+          // Center the logo in the block
+          const logoX = logoBlockX + (logoBlockW - drawWidth) / 2;
+          const logoY = logoBlockY + (logoBlockH - drawHeight) / 2;
+          
+          doc.addImage(customerLogo, 'PNG', logoX, logoY, drawWidth, drawHeight, undefined, 'FAST');
+        };
+        img.src = customerLogo;
       } catch (e) {
         console.warn('Failed to draw customer logo:', e);
       }

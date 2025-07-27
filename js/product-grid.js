@@ -950,7 +950,7 @@ export class ProductGridManager {
     const preview = document.getElementById('customer-logo-preview');
     const logoData = localStorage.getItem(CUSTOMER_LOGO_KEY);
     if (preview) {
-      preview.innerHTML = logoData ? `<img src="${logoData}" style="max-height:90px;max-width:180px;object-fit:contain;">` : '';
+      preview.innerHTML = logoData ? `<img src="${logoData}" style="max-height:100px;max-width:180px;width:auto;height:auto;object-fit:contain;">` : '';
     }
   }
 
@@ -964,7 +964,7 @@ export class ProductGridManager {
         const reader = new FileReader();
         reader.onload = (ev) => {
           localStorage.setItem(CUSTOMER_LOGO_KEY, ev.target.result);
-          if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-height:90px;max-width:180px;object-fit:contain;">`;
+          if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-height:100px;max-width:180px;width:auto;height:auto;object-fit:contain;">`;
         };
         reader.readAsDataURL(file);
       }
