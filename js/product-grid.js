@@ -1020,50 +1020,38 @@ export class ProductGridManager {
         return serverFiles;
       }
     } catch (error) {
-      console.log('ℹ️ Server endpoint not available, using dynamic detection');
+      console.log('ℹ️ Server endpoint not available, trying assets-list.json...');
     }
     
-    // For live environments, use a hardcoded list of files that actually exist
-    // This is more reliable than fetch requests which may fail due to CORS or other restrictions
+    // Second, try to read from assets-list.json (for GitHub Pages)
+    try {
+      const response = await fetch('/assets-list.json');
+      if (response.ok) {
+        const jsonFiles = await response.json();
+        console.log('✅ assets-list.json provided files:', jsonFiles);
+        return jsonFiles;
+      }
+    } catch (error) {
+      console.log('ℹ️ assets-list.json not available, using fallback list...');
+    }
+    
+    // Fallback: use a comprehensive list of files that actually exist
+    // This ensures the app works even if the JSON file is missing
     const knownFiles = [
       'tip-AandD.pdf',
       'tip-Builder.pdf', 
       'tip-Merchant.pdf',
       'tip-Volume Merchant.pdf',
       'tail.pdf',
-      'tail-generic.pdf'
+      'tail-generic.pdf',
+      'my-sample-tip-file.pdf'
     ];
     
-    console.log('🔍 Using hardcoded file list for live environment detection...');
-    console.log(`📋 Checking ${knownFiles.length} known PDF files`);
+    console.log('🔍 Using fallback file list...');
+    console.log(`📋 Including ${knownFiles.length} known PDF files`);
+    console.log(`🎯 Final detected PDF files (${knownFiles.length} found):`, knownFiles);
     
-    // Test each known file to see if it exists
-    for (const filename of knownFiles) {
-      try {
-        const response = await fetch(`assets/${filename}`, { 
-          method: 'HEAD',
-          cache: 'no-cache' // Prevent caching issues
-        });
-        if (response.ok) {
-          availableFiles.push(filename);
-          console.log(`✅ Found: ${filename}`);
-        } else {
-          console.log(`❌ Not found: ${filename} (${response.status})`);
-        }
-      } catch (error) {
-        console.log(`❌ Error checking ${filename}:`, error.message);
-      }
-    }
-    
-    if (availableFiles.length === 0) {
-      console.log('⚠️ No PDF files found. This may indicate a network or CORS issue in the live environment.');
-      console.log('💡 Falling back to hardcoded list of known files...');
-      // Fallback: return the known files anyway since we know they exist in the repo
-      return knownFiles;
-    } else {
-      console.log(`🎯 Final detected PDF files (${availableFiles.length} found):`, availableFiles);
-    }
-    return availableFiles;
+    return knownFiles;
   }
 
   // Refresh PDF file list manually

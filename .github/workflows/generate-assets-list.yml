@@ -1,0 +1,33 @@
+name: Generate Assets List
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'assets/**'
+  workflow_dispatch:
+
+jobs:
+  generate-assets-list:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        
+    - name: Generate assets-list.json
+      run: |
+        python generate-assets-list.py
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add assets-list.json
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update assets-list.json [skip ci]"
+        git push 
