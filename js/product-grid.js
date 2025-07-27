@@ -991,8 +991,29 @@ export class ProductGridManager {
     const tailSelect = document.getElementById('tail-pdf-select');
     const tipSelected = document.getElementById('tip-pdf-selected');
     const tailSelected = document.getElementById('tail-pdf-selected');
-    if (tipSelect && settings.tipAsset) tipSelect.value = settings.tipAsset;
-    if (tailSelect && settings.tailAsset) tailSelect.value = settings.tailAsset;
+    
+    // Handle tip selection
+    if (tipSelect) {
+      if (settings.tipUpload) {
+        // Custom file uploaded - show "Custom file selected"
+        tipSelect.innerHTML = '<option value="">Custom file selected</option>';
+        tipSelect.value = '';
+      } else if (settings.tipAsset) {
+        tipSelect.value = settings.tipAsset;
+      }
+    }
+    
+    // Handle tail selection
+    if (tailSelect) {
+      if (settings.tailUpload) {
+        // Custom file uploaded - show "Custom file selected"
+        tailSelect.innerHTML = '<option value="">Custom file selected</option>';
+        tailSelect.value = '';
+      } else if (settings.tailAsset) {
+        tailSelect.value = settings.tailAsset;
+      }
+    }
+    
     if (tipSelected) tipSelected.textContent = settings.tipUploadName || '';
     if (tailSelected) tailSelected.textContent = settings.tailUploadName || '';
   }
@@ -1020,9 +1041,20 @@ export class ProductGridManager {
       if (file) {
         const reader = new FileReader();
         reader.onload = (ev) => {
-          this.saveTipTailSettings({ tipAsset: '', tipUpload: ev.target.result, tipUploadName: file.name });
+          // Convert ArrayBuffer to base64 string for localStorage storage
+          const arrayBuffer = ev.target.result;
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+          const base64String = btoa(binaryString);
+          this.saveTipTailSettings({ tipAsset: '', tipUpload: base64String, tipUploadName: file.name });
           if (tipSelected) tipSelected.textContent = file.name;
-          if (tipSelect) tipSelect.value = '';
+          if (tipSelect) {
+            tipSelect.value = '';
+            tipSelect.innerHTML = '<option value="">Custom file selected</option>';
+          }
         };
         reader.readAsArrayBuffer(file);
       }
@@ -1032,21 +1064,40 @@ export class ProductGridManager {
       if (file) {
         const reader = new FileReader();
         reader.onload = (ev) => {
-          this.saveTipTailSettings({ tailAsset: '', tailUpload: ev.target.result, tailUploadName: file.name });
+          // Convert ArrayBuffer to base64 string for localStorage storage
+          const arrayBuffer = ev.target.result;
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+          const base64String = btoa(binaryString);
+          this.saveTipTailSettings({ tailAsset: '', tailUpload: base64String, tailUploadName: file.name });
           if (tailSelected) tailSelected.textContent = file.name;
-          if (tailSelect) tailSelect.value = '';
+          if (tailSelect) {
+            tailSelect.value = '';
+            tailSelect.innerHTML = '<option value="">Custom file selected</option>';
+          }
         };
         reader.readAsArrayBuffer(file);
       }
     };
     tipClear.onclick = () => {
       this.saveTipTailSettings({ tipAsset: '', tipUpload: null, tipUploadName: '' });
-      if (tipSelect) tipSelect.value = '';
+      if (tipSelect) {
+        tipSelect.value = '';
+        // Restore original dropdown options
+        this.populateTipTailDropdowns();
+      }
       if (tipSelected) tipSelected.textContent = '';
     };
     tailClear.onclick = () => {
       this.saveTipTailSettings({ tailAsset: '', tailUpload: null, tailUploadName: '' });
-      if (tailSelect) tailSelect.value = '';
+      if (tailSelect) {
+        tailSelect.value = '';
+        // Restore original dropdown options
+        this.populateTipTailDropdowns();
+      }
       if (tailSelected) tailSelected.textContent = '';
     };
   }
@@ -1526,6 +1577,9 @@ export class ProductGridManager {
     const modal = document.getElementById('pdf-email-modal');
     if (modal) {
       modal.style.display = 'flex';
+      // Load customer logo preview for the PDF modal
+      this.loadCustomerLogoPreview();
+      this.setupCustomerLogoHandlers();
       // Populate tip/tail dropdowns and handlers for the PDF modal
       await this.populateTipTailDropdowns();
       this.loadTipTailSelections();

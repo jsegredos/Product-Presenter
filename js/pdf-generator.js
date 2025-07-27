@@ -2552,7 +2552,20 @@ async function mergeWithTipTail(mainPdfBlob) {
 
   // Helper to fetch PDF as ArrayBuffer with error handling
   async function fetchPdfBuffer(src, isUpload, fileType = 'file') {
-    if (isUpload && src) return src;
+    if (isUpload && src) {
+      // Convert base64 string back to ArrayBuffer for uploaded files
+      try {
+        const binaryString = atob(src);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+      } catch (error) {
+        console.warn(`⚠️ Error converting base64 to ArrayBuffer for ${fileType}:`, error);
+        return null;
+      }
+    }
     if (src) {
       try {
         const res = await fetch(src);
