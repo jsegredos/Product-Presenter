@@ -918,6 +918,23 @@ export class ProductGridManager {
             window.location.reload();
           };
         }
+        // Add manual refresh for PDF files
+        const refreshPdfBtn = document.getElementById('refresh-pdf-files-btn');
+        if (refreshPdfBtn) {
+          refreshPdfBtn.onclick = async () => {
+            await this.refreshPdfFileList();
+            // Show a brief success message
+            const originalText = refreshPdfBtn.textContent;
+            refreshPdfBtn.textContent = '✅ Refreshed!';
+            refreshPdfBtn.style.background = '#dcfce7';
+            refreshPdfBtn.style.color = '#059669';
+            setTimeout(() => {
+              refreshPdfBtn.textContent = originalText;
+              refreshPdfBtn.style.background = '#f3f4f6';
+              refreshPdfBtn.style.color = '#059669';
+            }, 2000);
+          };
+        }
         // --- Customer Logo UI logic ---
         this.loadCustomerLogoPreview();
         this.setupCustomerLogoHandlers();
@@ -987,32 +1004,69 @@ export class ProductGridManager {
 
   // Dynamic PDF file detection for live environments
   async detectAvailablePdfFiles() {
-    const possibleFiles = [
-      'tip-AandD.pdf',
-      'tip-Builder.pdf', 
-      'tip-Merchant.pdf',
-      'tip-Volume Merchant.pdf',
-      'tail.pdf',
-      'tail-generic.pdf'
-    ];
-    
     const availableFiles = [];
     
-    // Test each file to see if it exists
-    for (const filename of possibleFiles) {
+    // First, try to get a list from the server if available (most reliable)
+    try {
+      const response = await fetch('/assets-list');
+      if (response.ok) {
+        const serverFiles = await response.json();
+        console.log('✅ Server provided files:', serverFiles);
+        return serverFiles;
+      }
+    } catch (error) {
+      console.log('ℹ️ Server endpoint not available, using dynamic detection');
+    }
+    
+    // Dynamic detection: comprehensive pattern matching
+    const patternsToTry = [
+      // Current known files
+      'tip-AandD.pdf', 'tip-Builder.pdf', 'tip-Merchant.pdf', 'tip-Volume Merchant.pdf',
+      'tail.pdf', 'tail-generic.pdf',
+      // Common variations
+      'tip.pdf', 'prepend.pdf', 'append.pdf', 'header.pdf', 'footer.pdf',
+      // Generic variations
+      'tip-generic.pdf', 'prepend-generic.pdf', 'append-generic.pdf',
+      // Numbered variations (tip-1, tip-2, etc.)
+      ...Array.from({length: 20}, (_, i) => `tip-${i+1}.pdf`),
+      ...Array.from({length: 20}, (_, i) => `tail-${i+1}.pdf`),
+      ...Array.from({length: 20}, (_, i) => `prepend-${i+1}.pdf`),
+      ...Array.from({length: 20}, (_, i) => `append-${i+1}.pdf`),
+      // Letter variations (tip-a, tip-b, etc.)
+      ...Array.from({length: 26}, (_, i) => `tip-${String.fromCharCode(97+i)}.pdf`),
+      ...Array.from({length: 26}, (_, i) => `tail-${String.fromCharCode(97+i)}.pdf`),
+      // Date variations (tip-2024, tip-2023, etc.)
+      ...Array.from({length: 5}, (_, i) => `tip-${2024-i}.pdf`),
+      ...Array.from({length: 5}, (_, i) => `tail-${2024-i}.pdf`)
+    ];
+    
+    console.log('🔍 Scanning for PDF files in assets directory...');
+    
+    // Test each pattern to see if it exists
+    for (const filename of patternsToTry) {
       try {
-        const response = await fetch(`assets/${filename}`, { method: 'HEAD' });
+        const response = await fetch(`assets/${filename}`, { 
+          method: 'HEAD',
+          cache: 'no-cache' // Prevent caching issues
+        });
         if (response.ok) {
           availableFiles.push(filename);
+          console.log(`✅ Found: ${filename}`);
         }
       } catch (error) {
-        // File doesn't exist or can't be accessed
-        console.log(`File not found: ${filename}`);
+        // File doesn't exist or can't be accessed - skip silently
       }
     }
     
-    console.log('Detected available PDF files:', availableFiles);
+    console.log(`🎯 Final detected PDF files (${availableFiles.length} found):`, availableFiles);
     return availableFiles;
+  }
+
+  // Refresh PDF file list manually
+  async refreshPdfFileList() {
+    console.log('🔄 Refreshing PDF file list...');
+    await this.populateTipTailDropdowns();
+    console.log('✅ PDF file list refreshed');
   }
 
   loadTipTailSelections() {
