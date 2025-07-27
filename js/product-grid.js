@@ -983,8 +983,13 @@ export class ProductGridManager {
       const resp = await fetch('/assets-list');
       if (resp.ok) {
         assetPdfs = await resp.json();
+        console.log('✅ Server assets-list endpoint available, using server-provided files');
+      } else {
+        console.log('ℹ️ Server assets-list endpoint returned error, using dynamic detection');
+        assetPdfs = await this.detectAvailablePdfFiles();
       }
     } catch (e) {
+      console.log('ℹ️ Server assets-list endpoint not available (expected in live environments), using dynamic detection');
       // Dynamic fallback: try to detect PDF files in assets directory
       assetPdfs = await this.detectAvailablePdfFiles();
     }
@@ -1041,6 +1046,7 @@ export class ProductGridManager {
     ];
     
     console.log('🔍 Scanning for PDF files in assets directory...');
+    console.log(`📋 Testing ${patternsToTry.length} possible file patterns`);
     
     // Test each pattern to see if it exists
     for (const filename of patternsToTry) {
@@ -1058,7 +1064,11 @@ export class ProductGridManager {
       }
     }
     
-    console.log(`🎯 Final detected PDF files (${availableFiles.length} found):`, availableFiles);
+    if (availableFiles.length === 0) {
+      console.log('⚠️ No PDF files found in assets directory. This is normal if no tip/tail files are present.');
+    } else {
+      console.log(`🎯 Final detected PDF files (${availableFiles.length} found):`, availableFiles);
+    }
     return availableFiles;
   }
 
