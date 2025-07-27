@@ -1,3 +1,22 @@
+/*
+ * SEIMA Product Presenter - CSS Styles
+ * 
+ * ASPECT RATIO PRESERVATION RULES:
+ * =================================
+ * 1. ALL LOGOS MUST RETAIN ORIGINAL ASPECT RATIOS
+ * 2. Use 'width: auto; height: [fixed]' or 'height: auto; width: [fixed]'
+ * 3. Use 'object-fit: contain' for images that need to fit containers
+ * 4. NEVER use both fixed width AND height on logos
+ * 5. Use 'max-width' and 'max-height' with 'object-fit: contain' for responsive logos
+ * 6. PDF generation uses proper scaling calculations to maintain aspect ratios
+ * 
+ * Logo Classes:
+ * - .logo, .page-logo: Main SEIMA logos (preserve aspect ratio)
+ * - .panel-logo: Panel header logos (preserve aspect ratio)
+ * - .grid-product-image: Product images (preserve aspect ratio)
+ * - Customer logos: Always use object-fit: contain
+ */
+
 /* Responsive Design Variables */
 :root {
   --container-max-width: 1200px;
