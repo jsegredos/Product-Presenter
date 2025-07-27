@@ -968,8 +968,8 @@ export class ProductGridManager {
         assetPdfs = await resp.json();
       }
     } catch (e) {
-      // fallback to default if fetch fails
-      assetPdfs = ['tip.pdf', 'tail.pdf'];
+      // Dynamic fallback: try to detect PDF files in assets directory
+      assetPdfs = await this.detectAvailablePdfFiles();
     }
     assetPdfs = assetPdfs.map(f => 'assets/' + f);
     const tipSelect = document.getElementById('tip-pdf-select');
@@ -983,6 +983,36 @@ export class ProductGridManager {
         tailSelect.innerHTML += `<option value="${pdf}">${name}</option>`;
       });
     }
+  }
+
+  // Dynamic PDF file detection for live environments
+  async detectAvailablePdfFiles() {
+    const possibleFiles = [
+      'tip-AandD.pdf',
+      'tip-Builder.pdf', 
+      'tip-Merchant.pdf',
+      'tip-Volume Merchant.pdf',
+      'tail.pdf',
+      'tail-generic.pdf'
+    ];
+    
+    const availableFiles = [];
+    
+    // Test each file to see if it exists
+    for (const filename of possibleFiles) {
+      try {
+        const response = await fetch(`assets/${filename}`, { method: 'HEAD' });
+        if (response.ok) {
+          availableFiles.push(filename);
+        }
+      } catch (error) {
+        // File doesn't exist or can't be accessed
+        console.log(`File not found: ${filename}`);
+      }
+    }
+    
+    console.log('Detected available PDF files:', availableFiles);
+    return availableFiles;
   }
 
   loadTipTailSelections() {
@@ -1111,8 +1141,8 @@ export class ProductGridManager {
             assetPdfs = await resp.json();
           }
         } catch (e) {
-          // fallback to default if fetch fails
-          assetPdfs = ['tip.pdf', 'tail.pdf'];
+          // Dynamic fallback: try to detect PDF files in assets directory
+          assetPdfs = await this.detectAvailablePdfFiles();
         }
         assetPdfs.forEach(pdf => {
           tipSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
@@ -1139,8 +1169,8 @@ export class ProductGridManager {
             assetPdfs = await resp.json();
           }
         } catch (e) {
-          // fallback to default if fetch fails
-          assetPdfs = ['tip.pdf', 'tail.pdf'];
+          // Dynamic fallback: try to detect PDF files in assets directory
+          assetPdfs = await this.detectAvailablePdfFiles();
         }
         assetPdfs.forEach(pdf => {
           tailSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
