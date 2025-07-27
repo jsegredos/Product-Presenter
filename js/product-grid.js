@@ -989,8 +989,8 @@ export class ProductGridManager {
     const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
     const tipSelect = document.getElementById('tip-pdf-select');
     const tailSelect = document.getElementById('tail-pdf-select');
-    const tipSelected = document.getElementById('tip-pdf-selected');
-    const tailSelected = document.getElementById('tail-pdf-selected');
+    const tipUpload = document.getElementById('tip-pdf-upload');
+    const tailUpload = document.getElementById('tail-pdf-upload');
     
     // Handle tip selection
     if (tipSelect) {
@@ -998,6 +998,11 @@ export class ProductGridManager {
         // Custom file uploaded - show "Custom file selected"
         tipSelect.innerHTML = '<option value="">Custom file selected</option>';
         tipSelect.value = '';
+        // Make the file input bold blue to show there's a file
+        if (tipUpload) {
+          tipUpload.style.fontWeight = 'bold';
+          tipUpload.style.color = '#2563eb';
+        }
       } else if (settings.tipAsset) {
         tipSelect.value = settings.tipAsset;
       }
@@ -1009,13 +1014,15 @@ export class ProductGridManager {
         // Custom file uploaded - show "Custom file selected"
         tailSelect.innerHTML = '<option value="">Custom file selected</option>';
         tailSelect.value = '';
+        // Make the file input bold blue to show there's a file
+        if (tailUpload) {
+          tailUpload.style.fontWeight = 'bold';
+          tailUpload.style.color = '#2563eb';
+        }
       } else if (settings.tailAsset) {
         tailSelect.value = settings.tailAsset;
       }
     }
-    
-    if (tipSelected) tipSelected.textContent = settings.tipUploadName || '';
-    if (tailSelected) tailSelected.textContent = settings.tailUploadName || '';
   }
 
   setupTipTailHandlers() {
@@ -1050,10 +1057,14 @@ export class ProductGridManager {
           }
           const base64String = btoa(binaryString);
           this.saveTipTailSettings({ tipAsset: '', tipUpload: base64String, tipUploadName: file.name });
-          if (tipSelected) tipSelected.textContent = file.name;
           if (tipSelect) {
             tipSelect.value = '';
             tipSelect.innerHTML = '<option value="">Custom file selected</option>';
+          }
+          // Make the file input filename bold blue
+          if (tipUpload) {
+            tipUpload.style.fontWeight = 'bold';
+            tipUpload.style.color = '#2563eb';
           }
         };
         reader.readAsArrayBuffer(file);
@@ -1073,32 +1084,74 @@ export class ProductGridManager {
           }
           const base64String = btoa(binaryString);
           this.saveTipTailSettings({ tailAsset: '', tailUpload: base64String, tailUploadName: file.name });
-          if (tailSelected) tailSelected.textContent = file.name;
           if (tailSelect) {
             tailSelect.value = '';
             tailSelect.innerHTML = '<option value="">Custom file selected</option>';
+          }
+          // Make the file input filename bold blue
+          if (tailUpload) {
+            tailUpload.style.fontWeight = 'bold';
+            tailUpload.style.color = '#2563eb';
           }
         };
         reader.readAsArrayBuffer(file);
       }
     };
-    tipClear.onclick = () => {
+    tipClear.onclick = async () => {
       this.saveTipTailSettings({ tipAsset: '', tipUpload: null, tipUploadName: '' });
       if (tipSelect) {
         tipSelect.value = '';
-        // Restore original dropdown options
-        this.populateTipTailDropdowns();
+        // Restore original dropdown options for tip only
+        tipSelect.innerHTML = '<option value="">(None)</option>';
+        // Get asset PDFs dynamically
+        let assetPdfs = [];
+        try {
+          const resp = await fetch('/assets-list');
+          if (resp.ok) {
+            assetPdfs = await resp.json();
+          }
+        } catch (e) {
+          // fallback to default if fetch fails
+          assetPdfs = ['tip.pdf', 'tail.pdf'];
+        }
+        assetPdfs.forEach(pdf => {
+          tipSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
+        });
       }
-      if (tipSelected) tipSelected.textContent = '';
+      // Clear the file input element and reset styling
+      if (tipUpload) {
+        tipUpload.value = '';
+        tipUpload.style.fontWeight = 'normal';
+        tipUpload.style.color = ''; // Reset color
+      }
     };
-    tailClear.onclick = () => {
+    tailClear.onclick = async () => {
       this.saveTipTailSettings({ tailAsset: '', tailUpload: null, tailUploadName: '' });
       if (tailSelect) {
         tailSelect.value = '';
-        // Restore original dropdown options
-        this.populateTipTailDropdowns();
+        // Restore original dropdown options for tail only
+        tailSelect.innerHTML = '<option value="">(None)</option>';
+        // Get asset PDFs dynamically
+        let assetPdfs = [];
+        try {
+          const resp = await fetch('/assets-list');
+          if (resp.ok) {
+            assetPdfs = await resp.json();
+          }
+        } catch (e) {
+          // fallback to default if fetch fails
+          assetPdfs = ['tip.pdf', 'tail.pdf'];
+        }
+        assetPdfs.forEach(pdf => {
+          tailSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
+        });
       }
-      if (tailSelected) tailSelected.textContent = '';
+      // Clear the file input element and reset styling
+      if (tailUpload) {
+        tailUpload.value = '';
+        tailUpload.style.fontWeight = 'normal';
+        tailUpload.style.color = ''; // Reset color
+      }
     };
   }
 
