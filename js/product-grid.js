@@ -1522,10 +1522,14 @@ export class ProductGridManager {
   /**
    * Shows the download modal for downloading the PDF/email.
    */
-  showDownloadModal() {
+  async showDownloadModal() {
     const modal = document.getElementById('pdf-email-modal');
     if (modal) {
       modal.style.display = 'flex';
+      // Populate tip/tail dropdowns and handlers for the PDF modal
+      await this.populateTipTailDropdowns();
+      this.loadTipTailSelections();
+      this.setupTipTailHandlers();
     }
   }
 

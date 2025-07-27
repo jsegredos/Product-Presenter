@@ -2543,65 +2543,172 @@ const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';
 async function mergeWithTipTail(mainPdfBlob) {
   const settings = JSON.parse(localStorage.getItem(TIP_TAIL_STORAGE_KEY) || '{}');
   const { tipAsset, tipUpload, tailAsset, tailUpload } = settings;
-  if (!tipAsset && !tipUpload && !tailAsset && !tailUpload) return mainPdfBlob;
+  
+  // If no tip or tail files are selected, return the main PDF as-is
+  if (!tipAsset && !tipUpload && !tailAsset && !tailUpload) {
+    console.log('📄 No tip/tail files selected - returning main PDF without merging');
+    return mainPdfBlob;
+  }
 
-  // Helper to fetch PDF as ArrayBuffer
-  async function fetchPdfBuffer(src, isUpload) {
+  // Helper to fetch PDF as ArrayBuffer with error handling
+  async function fetchPdfBuffer(src, isUpload, fileType = 'file') {
     if (isUpload && src) return src;
     if (src) {
-      const res = await fetch(src);
-      return await res.arrayBuffer();
+      try {
+        const res = await fetch(src);
+        if (!res.ok) {
+          console.warn(`⚠️ Failed to fetch ${fileType} file: ${src} (${res.status} ${res.statusText})`);
+          return null;
+        }
+        return await res.arrayBuffer();
+      } catch (error) {
+        console.warn(`⚠️ Error fetching ${fileType} file: ${src}`, error);
+        return null;
+      }
     }
     return null;
   }
 
-  // Load main PDF
-  const mainBytes = await mainPdfBlob.arrayBuffer();
-  const mainDoc = await PDFLib.PDFDocument.load(mainBytes);
-
-  // Prepare new merged doc
-  const mergedDoc = await PDFLib.PDFDocument.create();
-
-  // --- 1. Title page from main PDF ---
-  const [titlePage] = await mergedDoc.copyPages(mainDoc, [0]);
-  mergedDoc.addPage(titlePage);
-
-  // --- 2. Tip file (all pages, if selected) ---
-  let tipDoc = null;
-  if (tipUpload) {
-    tipDoc = await PDFLib.PDFDocument.load(tipUpload);
-  } else if (tipAsset) {
-    const tipBuf = await fetchPdfBuffer(tipAsset, false);
-    if (tipBuf) tipDoc = await PDFLib.PDFDocument.load(tipBuf);
-  }
-  if (tipDoc) {
-    const tipPagesIdx = Array.from({length: tipDoc.getPageCount()}, (_,i)=>i);
-    const tipPages = await mergedDoc.copyPages(tipDoc, tipPagesIdx);
-    tipPages.forEach(p => mergedDoc.addPage(p));
+  // Helper to load PDF document with error handling
+  async function loadPdfDocument(buffer, fileType = 'file', source = 'unknown') {
+    if (!buffer) return null;
+    try {
+      return await PDFLib.PDFDocument.load(buffer);
+    } catch (error) {
+      console.warn(`⚠️ Failed to parse ${fileType} PDF: ${source}`, error);
+      return null;
+    }
   }
 
-  // --- 3. Main PDF content pages 2+ ---
-  if (mainDoc.getPageCount() > 1) {
-    const mainPagesIdx = Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1);
-    const mainPages = await mergedDoc.copyPages(mainDoc, mainPagesIdx);
-    mainPages.forEach(p => mergedDoc.addPage(p));
-  }
+  try {
+    // Load main PDF
+    const mainBytes = await mainPdfBlob.arrayBuffer();
+    const mainDoc = await PDFLib.PDFDocument.load(mainBytes);
 
-  // --- 4. Tail file (all pages) ---
-  let tailDoc = null;
-  if (tailUpload) {
-    tailDoc = await PDFLib.PDFDocument.load(tailUpload);
-  } else if (tailAsset) {
-    const tailBuf = await fetchPdfBuffer(tailAsset, false);
-    if (tailBuf) tailDoc = await PDFLib.PDFDocument.load(tailBuf);
-  }
-  if (tailDoc) {
-    const tailPagesIdx = Array.from({length: tailDoc.getPageCount()}, (_,i)=>i);
-    const tailPages = await mergedDoc.copyPages(tailDoc, tailPagesIdx);
-    tailPages.forEach(p => mergedDoc.addPage(p));
-  }
+    // Prepare new merged doc
+    const mergedDoc = await PDFLib.PDFDocument.create();
 
-  // Output merged PDF as Blob
-  const mergedBytes = await mergedDoc.save();
-  return new Blob([mergedBytes], { type: 'application/pdf' });
+    // --- 1. Title page from main PDF ---
+    const [titlePage] = await mergedDoc.copyPages(mainDoc, [0]);
+    mergedDoc.addPage(titlePage);
+
+    // --- 2. Tip file (all pages, if selected) ---
+    let tipDoc = null;
+    let tipError = null;
+    
+    if (tipUpload) {
+      tipDoc = await loadPdfDocument(tipUpload, 'tip', 'uploaded file');
+      if (!tipDoc) {
+        tipError = 'The uploaded tip file is not a valid PDF or could not be loaded.';
+      }
+    } else if (tipAsset) {
+      const tipBuf = await fetchPdfBuffer(tipAsset, false, 'tip');
+      if (tipBuf) {
+        tipDoc = await loadPdfDocument(tipBuf, 'tip', tipAsset);
+        if (!tipDoc) {
+          tipError = `The tip file "${tipAsset.split('/').pop()}" is not a valid PDF or could not be loaded.`;
+        }
+      } else {
+        tipError = `The tip file "${tipAsset.split('/').pop()}" could not be found or accessed.`;
+      }
+    }
+    
+    if (tipDoc) {
+      const tipPagesIdx = Array.from({length: tipDoc.getPageCount()}, (_,i)=>i);
+      const tipPages = await mergedDoc.copyPages(tipDoc, tipPagesIdx);
+      tipPages.forEach(p => mergedDoc.addPage(p));
+      console.log(`✅ Successfully merged tip file with ${tipDoc.getPageCount()} pages`);
+    } else if (tipError) {
+      console.warn(`⚠️ Tip file error: ${tipError}`);
+      // Show user-friendly warning
+      showTipTailWarning('Tip File Issue', tipError);
+    }
+
+    // --- 3. Main PDF content pages 2+ ---
+    if (mainDoc.getPageCount() > 1) {
+      const mainPagesIdx = Array.from({length: mainDoc.getPageCount()-1}, (_,i)=>i+1);
+      const mainPages = await mergedDoc.copyPages(mainDoc, mainPagesIdx);
+      mainPages.forEach(p => mergedDoc.addPage(p));
+    }
+
+    // --- 4. Tail file (all pages) ---
+    let tailDoc = null;
+    let tailError = null;
+    
+    if (tailUpload) {
+      tailDoc = await loadPdfDocument(tailUpload, 'tail', 'uploaded file');
+      if (!tailDoc) {
+        tailError = 'The uploaded tail file is not a valid PDF or could not be loaded.';
+      }
+    } else if (tailAsset) {
+      const tailBuf = await fetchPdfBuffer(tailAsset, false, 'tail');
+      if (tailBuf) {
+        tailDoc = await loadPdfDocument(tailBuf, 'tail', tailAsset);
+        if (!tailDoc) {
+          tailError = `The tail file "${tailAsset.split('/').pop()}" is not a valid PDF or could not be loaded.`;
+        }
+      } else {
+        tailError = `The tail file "${tailAsset.split('/').pop()}" could not be found or accessed.`;
+      }
+    }
+    
+    if (tailDoc) {
+      const tailPagesIdx = Array.from({length: tailDoc.getPageCount()}, (_,i)=>i);
+      const tailPages = await mergedDoc.copyPages(tailDoc, tailPagesIdx);
+      tailPages.forEach(p => mergedDoc.addPage(p));
+      console.log(`✅ Successfully merged tail file with ${tailDoc.getPageCount()} pages`);
+    } else if (tailError) {
+      console.warn(`⚠️ Tail file error: ${tailError}`);
+      // Show user-friendly warning
+      showTipTailWarning('Tail File Issue', tailError);
+    }
+
+    // Output merged PDF as Blob
+    const mergedBytes = await mergedDoc.save();
+    return new Blob([mergedBytes], { type: 'application/pdf' });
+    
+  } catch (error) {
+    console.error('❌ Error during PDF merging:', error);
+    showTipTailWarning('PDF Merging Error', 'An error occurred while merging the PDF files. The main PDF will be generated without tip/tail content.');
+    // Return the original PDF if merging fails
+    return mainPdfBlob;
+  }
+}
+
+// Helper function to show user-friendly warnings for tip/tail issues
+function showTipTailWarning(title, message) {
+  // Create a non-blocking notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed; top: 20px; right: 20px; z-index: 10002;
+    background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;
+    padding: 16px; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  `;
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: flex-start; gap: 12px;">
+      <span style="font-size: 20px;">⚠️</span>
+      <div style="flex: 1;">
+        <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">${title}</div>
+        <div style="color: #78350f; font-size: 14px; line-height: 1.4;">${message}</div>
+        <div style="margin-top: 8px; font-size: 12px; color: #92400e;">
+          The PDF will be generated without this content.
+        </div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: none; border: none; color: #92400e; cursor: pointer;
+        font-size: 18px; padding: 0; width: 20px; height: 20px;
+      ">×</button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 8 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 8000);
 }
