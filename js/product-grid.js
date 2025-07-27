@@ -983,8 +983,13 @@ export class ProductGridManager {
       const resp = await fetch('/assets-list');
       if (resp.ok) {
         assetPdfs = await resp.json();
+        console.log('✅ Server assets-list endpoint available, using server-provided files');
+      } else {
+        console.log('ℹ️ Server assets-list endpoint returned error, using dynamic detection');
+        assetPdfs = await this.detectAvailablePdfFiles();
       }
     } catch (e) {
+      console.log('ℹ️ Server assets-list endpoint not available (expected in live environments), using dynamic detection');
       // Dynamic fallback: try to detect PDF files in assets directory
       assetPdfs = await this.detectAvailablePdfFiles();
     }
@@ -1015,51 +1020,38 @@ export class ProductGridManager {
         return serverFiles;
       }
     } catch (error) {
-      console.log('ℹ️ Server endpoint not available, using dynamic detection');
+      console.log('ℹ️ Server endpoint not available, trying assets-list.json...');
     }
     
-    // Dynamic detection: comprehensive pattern matching
-    const patternsToTry = [
-      // Current known files
-      'tip-AandD.pdf', 'tip-Builder.pdf', 'tip-Merchant.pdf', 'tip-Volume Merchant.pdf',
-      'tail.pdf', 'tail-generic.pdf',
-      // Common variations
-      'tip.pdf', 'prepend.pdf', 'append.pdf', 'header.pdf', 'footer.pdf',
-      // Generic variations
-      'tip-generic.pdf', 'prepend-generic.pdf', 'append-generic.pdf',
-      // Numbered variations (tip-1, tip-2, etc.)
-      ...Array.from({length: 20}, (_, i) => `tip-${i+1}.pdf`),
-      ...Array.from({length: 20}, (_, i) => `tail-${i+1}.pdf`),
-      ...Array.from({length: 20}, (_, i) => `prepend-${i+1}.pdf`),
-      ...Array.from({length: 20}, (_, i) => `append-${i+1}.pdf`),
-      // Letter variations (tip-a, tip-b, etc.)
-      ...Array.from({length: 26}, (_, i) => `tip-${String.fromCharCode(97+i)}.pdf`),
-      ...Array.from({length: 26}, (_, i) => `tail-${String.fromCharCode(97+i)}.pdf`),
-      // Date variations (tip-2024, tip-2023, etc.)
-      ...Array.from({length: 5}, (_, i) => `tip-${2024-i}.pdf`),
-      ...Array.from({length: 5}, (_, i) => `tail-${2024-i}.pdf`)
+    // Second, try to read from assets-list.json (for GitHub Pages)
+    try {
+      const response = await fetch('/assets-list.json');
+      if (response.ok) {
+        const jsonFiles = await response.json();
+        console.log('✅ assets-list.json provided files:', jsonFiles);
+        return jsonFiles;
+      }
+    } catch (error) {
+      console.log('ℹ️ assets-list.json not available, using fallback list...');
+    }
+    
+    // Fallback: use a comprehensive list of files that actually exist
+    // This ensures the app works even if the JSON file is missing
+    const knownFiles = [
+      'tip-AandD.pdf',
+      'tip-Builder.pdf', 
+      'tip-Merchant.pdf',
+      'tip-Volume Merchant.pdf',
+      'tail.pdf',
+      'tail-generic.pdf',
+      'my-sample-tip-file.pdf'
     ];
     
-    console.log('🔍 Scanning for PDF files in assets directory...');
+    console.log('🔍 Using fallback file list...');
+    console.log(`📋 Including ${knownFiles.length} known PDF files`);
+    console.log(`🎯 Final detected PDF files (${knownFiles.length} found):`, knownFiles);
     
-    // Test each pattern to see if it exists
-    for (const filename of patternsToTry) {
-      try {
-        const response = await fetch(`assets/${filename}`, { 
-          method: 'HEAD',
-          cache: 'no-cache' // Prevent caching issues
-        });
-        if (response.ok) {
-          availableFiles.push(filename);
-          console.log(`✅ Found: ${filename}`);
-        }
-      } catch (error) {
-        // File doesn't exist or can't be accessed - skip silently
-      }
-    }
-    
-    console.log(`🎯 Final detected PDF files (${availableFiles.length} found):`, availableFiles);
-    return availableFiles;
+    return knownFiles;
   }
 
   // Refresh PDF file list manually
