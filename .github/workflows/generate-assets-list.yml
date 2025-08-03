@@ -1,5 +1,8 @@
 name: Generate Assets List
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ main, master ]
@@ -26,8 +29,10 @@ jobs:
         
     - name: Commit and push changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add assets-list.json
         git diff --quiet && git diff --staged --quiet || git commit -m "Update assets-list.json [skip ci]"
-        git push 
+        git push origin HEAD:${{ github.ref_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
