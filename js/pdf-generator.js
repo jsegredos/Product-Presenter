@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { StorageManager } from './storage.js';
+import { Utils } from './utils.js';
 
 // Samsung Browser Compatibility Utilities
 export function isSamsungBrowser() {
@@ -358,9 +359,7 @@ export function showPdfFormScreen(userDetails) {
       loadImageAsDataURL('assets/seima-logo-white.png', function(logoDataUrl, logoNaturalW, logoNaturalH) {
         
         // Debug: Track product page logo size
-        if (logoDataUrl) {
-          console.log(`🔍 Debug - Product page logo size: ${(logoDataUrl.length / 1024).toFixed(1)} KB (${logoNaturalW}x${logoNaturalH})`);
-        }
+        // Product page logo loaded successfully
         
         // Margins and layout
         const leftMargin = 32;
@@ -379,10 +378,7 @@ export function showPdfFormScreen(userDetails) {
         const colX = [leftMargin, codeX, descX, priceX, qtyX, totalX];
         const colW = [imgW, imgW, priceX-descX, qtyX-priceX, totalX-qtyX, 60];
         
-        // Debug layout calculations
-        console.log(`🔧 Layout Debug - Page width: ${pageWidth}, Fixed image width: ${imgW}`);
-        console.log(`🔧 Layout Debug - Column positions: [${colX.map((x, i) => `${i}:${x}`).join(', ')}]`);
-        console.log(`🔧 Layout Debug - Column widths: [${colW.map((w, i) => `${i}:${w}`).join(', ')}]`);
+        // Layout calculations complete
         
         // Table headings (no Product/Diagram, Total at far right)
         const headers = ['Code', 'Description', 'Price ea', 'Qty', 'Total'];
@@ -401,18 +397,18 @@ export function showPdfFormScreen(userDetails) {
           
           // For email compatibility, skip images entirely if requested
           if (userDetails.emailCompatible) {
-            console.log(`📧 Email mode: Skipping image for smaller file size: ${imgUrl}`);
+
             imageOptimizationStats.failedImages++;
             if (cb) cb();
             return;
           }
           
                   // Use optimized image loading with smart compression
-        console.log(`🖼️ Loading and optimizing image: ${imgUrl}`);
+
         
         // For email compatibility, skip images entirely if requested
         if (userDetails.emailCompatible) {
-          console.log(`📧 Email mode: Skipping image for smaller file size: ${imgUrl}`);
+
           imageOptimizationStats.failedImages++;
           if (cb) cb();
           return;
@@ -432,7 +428,7 @@ export function showPdfFormScreen(userDetails) {
         function tryLoadOptimizedImage() {
           if (callbackCalled) return;
           
-          console.log(`🔄 Attempting to load image with proxy ${proxyIndex}: ${imgUrl}`);
+
           
           const img = new Image();
           img.crossOrigin = 'Anonymous';
@@ -444,14 +440,14 @@ export function showPdfFormScreen(userDetails) {
             
             if (timeoutId) clearTimeout(timeoutId);
             
-            console.log(`✅ Image loaded successfully: ${imgUrl} (${img.width}x${img.height})`);
+
             
                   try {
                     // Get optimization settings based on current file size estimate
                     const optimizationSettings = getOptimizedFileSettings(0); // Start with minimal compression for best quality
                     const maxImageWidth = optimizationSettings.imageMaxWidth;
                     
-                    console.log(`⚙️ Using optimization settings: maxWidth=${maxImageWidth}, quality=${optimizationSettings.imageQuality}`);
+
                     
                     // Optimize image quality for readability, but display at fixed column size
                     const pdfMaxW = maxW; // Use layout constraint for display size
@@ -629,11 +625,7 @@ export function showPdfFormScreen(userDetails) {
           return sum + description.length + longDescription.length + notes.length + orderCode.length;
         }, 0);
         
-        console.log(`🔍 Debug - Product data analysis:
-          - Total products: ${rowsToDraw ? rowsToDraw.length : 0}
-          - Total text characters: ${totalTextLength}
-          - Average text per product: ${rowsToDraw && rowsToDraw.length > 0 ? Math.round(totalTextLength / rowsToDraw.length) : 0} chars
-          - Estimated text size: ${(totalTextLength / 1024).toFixed(1)} KB`);
+        // Product data analysis complete
         
         // Draw all rows (images async)
         let rowIdx = 0;
@@ -653,7 +645,7 @@ export function showPdfFormScreen(userDetails) {
           }
           
           if (rowIdx >= rowsToDraw.length) {
-            console.log(`✅ Finished processing all ${rowsToDraw.length} products, finalizing PDF...`);
+
             const pageCount = doc.internal.getNumberOfPages() - 1; // exclude cover
             for (let i = 2; i <= pageCount + 1; i++) { // start from 2 (first product page)
               doc.setPage(i);
@@ -780,22 +772,27 @@ export function showPdfFormScreen(userDetails) {
                 }
               } else {
                 // Standard download
+                console.log('📥 Standard download path - not email');
                 (async () => {
                   const mergedBlob = await mergeWithTipTail(optimizedBlob);
                   downloadWithFallback(mergedBlob, pdfFilename, 'PDF');
                 })();
                 
                 // Generate and download CSV if requested
+                console.log('🔍 CSV check - exportCsv:', userDetails.exportCsv, 'userDetails:', userDetails);
                 if (userDetails.exportCsv) {
                   const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
                   // Generate CSV asynchronously to avoid blocking main thread
                   setTimeout(() => {
                     generateCsvBlobAsync(userDetails, csvFilename).then(csvBlob => {
                       if (csvBlob) {
+                        console.log('✅ CSV generated successfully, downloading...');
                         downloadWithFallback(csvBlob, csvFilename, 'CSV');
+                      } else {
+                        console.warn('⚠️ CSV generation returned null - no products selected?');
                       }
                     }).catch(error => {
-                      console.error('Async CSV generation failed:', error);
+                      console.error('❌ CSV generation failed:', error);
                     });
                   }, 1000);
                 }
@@ -843,7 +840,7 @@ export function showPdfFormScreen(userDetails) {
           // Product image (maintain aspect ratio) - use dynamic positioning
           const imageX = colX[0];
           const diagramX = imageX + imgW + imgPad;
-          console.log(`🖼️ Drawing images at positions: Image=${imageX}, Diagram=${diagramX}, imgW=${imgW}`);
+
           
           drawImage(doc, row.item.Image_URL || '', imageX, y+rowPadding+16, imgW, rowHeight-rowPadding*2, function() {
             // Diagram image (maintain aspect ratio) - use dynamic positioning
@@ -1061,7 +1058,18 @@ export function ensurePdfSpinner() {
 // --- CSV GENERATION AND DOWNLOAD ---
 // ASYNC VERSION: Non-blocking CSV generation to prevent performance violations
 export async function generateCsvBlobAsync(userDetails, csvFilename) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
+    // Load PapaParse if not already loaded
+    if (!window.Papa) {
+      try {
+        await Utils.loadScript('https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js');
+      } catch (error) {
+        console.error('Failed to load PapaParse:', error);
+        resolve(null);
+        return;
+      }
+    }
+    
     // Break processing into chunks to avoid blocking main thread
     
     // Step 1: Load data (lightweight)

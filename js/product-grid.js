@@ -392,7 +392,8 @@ export class ProductGridManager {
           excludePrice: pdfForm['exclude-qty']?.checked
             ? true
             : (pdfForm['exclude-price']?.checked || pdfForm['exclude-prices']?.checked || false),
-          excludeQty: pdfForm['exclude-qty']?.checked || false
+          excludeQty: pdfForm['exclude-qty']?.checked || false,
+          exportCsv: true // Always export CSV
         };
         if (window.showPdfFormScreen) {
           window.showPdfFormScreen(userDetails);

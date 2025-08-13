@@ -922,8 +922,12 @@ export class NavigationManager {
   }
 
   handleDownloadFormSubmit() {
+    console.log('🎯 handleDownloadFormSubmit called');
     const form = document.getElementById('pdf-email-form');
-    if (!form) return;
+    if (!form) {
+      console.error('❌ Form not found!');
+      return;
+    }
     const formData = new FormData(form);
     const userDetails = {
       name: formData.get('user-name'),
@@ -935,8 +939,8 @@ export class NavigationManager {
       excludeQty: formData.get('exclude-qty') === 'on',
       exportCsv: true // Always true
     };
-    // Debug: Show what values are being captured
-    alert(`Form submitted!\nExclude Price: ${userDetails.excludePrice}\nExclude Qty: ${userDetails.excludeQty}\nForm values:\n- exclude-price: ${formData.get('exclude-price')}\n- exclude-prices: ${formData.get('exclude-prices')}\n- exclude-qty: ${formData.get('exclude-qty')}`);
+
+    console.log('📝 Navigation userDetails created:', userDetails);
     // Generate and download PDF and CSV
     window.dispatchEvent(new CustomEvent('generatePdf', { detail: userDetails }));
     // CSV download is handled in the PDF generator module
