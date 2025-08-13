@@ -209,7 +209,17 @@ export function showPdfFormScreen(userDetails) {
     });
     // jsPDF setup
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    // Configure jsPDF with compression enabled from the start
+  const doc = new jsPDF({ 
+    orientation: 'landscape', 
+    unit: 'pt', 
+    format: 'a4',
+    compress: true,
+    putOnlyUsedFonts: true,
+    precision: 16,
+    userUnit: 1.0,
+    floatPrecision: 16
+  });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     // --- COVER PAGE ---
@@ -356,15 +366,24 @@ export function showPdfFormScreen(userDetails) {
         const leftMargin = 32;
         const rightMargin = 32;
         const tableWidth = pageWidth - leftMargin - rightMargin;
+        
         // Column layout: [images, code, description, price, qty, total]
-        const imgW = 90, imgPad = 12;
+        // Fixed column positions - images must fit into predefined space
+        const imgW = 90, imgPad = 12; // Fixed image width to maintain consistent layout
         const codeX = leftMargin + imgW*2 + imgPad*2;
         const descX = codeX + 60;
         const priceX = pageWidth - 200;
         const qtyX = pageWidth - 120;
         const totalX = pageWidth - 60;
+        
         const colX = [leftMargin, codeX, descX, priceX, qtyX, totalX];
-        const colW = [imgW, imgW, 60, priceX-descX, 60, 60];
+        const colW = [imgW, imgW, priceX-descX, qtyX-priceX, totalX-qtyX, 60];
+        
+        // Debug layout calculations
+        console.log(`🔧 Layout Debug - Page width: ${pageWidth}, Fixed image width: ${imgW}`);
+        console.log(`🔧 Layout Debug - Column positions: [${colX.map((x, i) => `${i}:${x}`).join(', ')}]`);
+        console.log(`🔧 Layout Debug - Column widths: [${colW.map((w, i) => `${i}:${w}`).join(', ')}]`);
+        
         // Table headings (no Product/Diagram, Total at far right)
         const headers = ['Code', 'Description', 'Price ea', 'Qty', 'Total'];
         // Reset image optimization stats for this PDF generation
@@ -388,104 +407,187 @@ export function showPdfFormScreen(userDetails) {
             return;
           }
           
-          // *** TEMPORARY: USE ORIGINAL IMAGES WITHOUT OPTIMIZATION ***
-          console.log(`🔍 TEST MODE: Using original image without optimization: ${imgUrl}`);
+                  // Use optimized image loading with smart compression
+        console.log(`🖼️ Loading and optimizing image: ${imgUrl}`);
+        
+        // For email compatibility, skip images entirely if requested
+        if (userDetails.emailCompatible) {
+          console.log(`📧 Email mode: Skipping image for smaller file size: ${imgUrl}`);
+          imageOptimizationStats.failedImages++;
+          if (cb) cb();
+          return;
+        }
+        
+        // Use the proxy loading mechanism with optimization
+        let callbackCalled = false; // Prevent multiple callback calls
+        
+        // Load images with optimization for better compression
+        const proxies = [
+          'https://api.codetabs.com/v1/proxy?quest=',
+          'https://corsproxy.io/?',
+        ];
+        
+        let proxyIndex = 0;
+        
+        function tryLoadOptimizedImage() {
+          if (callbackCalled) return;
           
-          // Skip email mode image filtering for testing
-          if (userDetails.emailCompatible) {
-            console.log(`📧 Email mode: Including image for testing: ${imgUrl}`);
-              }
-              
-          // Use the proxy loading mechanism but without optimization
-          let callbackCalled = false; // Prevent multiple callback calls
+          console.log(`🔄 Attempting to load image with proxy ${proxyIndex}: ${imgUrl}`);
           
-          // Load images directly with NO optimization for maximum quality
-          const proxies = [
-            'https://api.codetabs.com/v1/proxy?quest=',
-            'https://corsproxy.io/?',
-          ];
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          let timeoutId = null;
           
-          let proxyIndex = 0;
-          
-          function tryLoadOriginalImage() {
+                  img.onload = function() {
             if (callbackCalled) return;
+            callbackCalled = true;
             
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            let timeoutId = null;
+            if (timeoutId) clearTimeout(timeoutId);
             
-                    img.onload = function() {
-              if (callbackCalled) return;
-              callbackCalled = true;
+            console.log(`✅ Image loaded successfully: ${imgUrl} (${img.width}x${img.height})`);
+            
+                  try {
+                    // Get optimization settings based on current file size estimate
+                    const optimizationSettings = getOptimizedFileSettings(0); // Start with minimal compression for best quality
+                    const maxImageWidth = optimizationSettings.imageMaxWidth;
+                    
+                    console.log(`⚙️ Using optimization settings: maxWidth=${maxImageWidth}, quality=${optimizationSettings.imageQuality}`);
+                    
+                    // Optimize image quality for readability, but display at fixed column size
+                    const pdfMaxW = maxW; // Use layout constraint for display size
+                    const pdfMaxH = maxH; // Use layout constraint for display size
               
-              if (timeoutId) clearTimeout(timeoutId);
-              
-                    try {
-                const pdfMaxW = Math.min(maxW, 120);
-                      const pdfMaxH = Math.min(maxH, 120);
+              // Optimize the already-loaded image directly
+              try {
+                console.log(`🔧 Starting optimization for: ${imgUrl} (${img.width}x${img.height})`);
                 
-                // Add original unprocessed image directly to PDF
-                doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-                console.log(`✅ Added ORIGINAL UNCOMPRESSED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH})`);
-                imageOptimizationStats.optimizedImages++; // Count as processed
-                    } catch (e) {
-                console.warn('Failed to add original image to PDF:', e);
-                      imageOptimizationStats.failedImages++;
-                    }
-                    if (cb) cb();
-                  };
-            
-                    img.onerror = function() {
-              if (callbackCalled) return;
-              if (timeoutId) clearTimeout(timeoutId);
-              
-              console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imgUrl}`);
-              
-              proxyIndex++;
-              if (proxyIndex < proxies.length) {
-                setTimeout(() => {
-                  tryLoadOriginalImage();
-                }, 200);
-              } else {
-                callbackCalled = true;
-                console.warn('All proxies failed, skipping image');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate optimized dimensions - use higher resolution for quality, but display at fixed size
+                const { width: newWidth, height: newHeight } = calculateOptimizedDimensions(
+                  img.width, img.height, maxImageWidth // Use optimization setting for quality, not display size
+                );
+                
+                console.log(`📐 Optimized dimensions: ${newWidth}x${newHeight} (from ${img.width}x${img.height})`);
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // High-quality rendering
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                console.log(`🎨 Canvas drawing completed for: ${imgUrl}`);
+                
+                // Smart format selection
+                let optimizedDataUrl;
+                let imageFormat = 'JPEG';
+                const hasTransparency = detectTransparency(canvas, ctx);
+                const isTechnical = isTechnicalDiagram(img);
+                
+                console.log(`🔍 Image analysis - Transparency: ${hasTransparency}, Technical: ${isTechnical}`);
+                
+                if (hasTransparency || isTechnical) {
+                  // Use PNG for technical diagrams with transparency
+                  optimizedDataUrl = canvas.toDataURL('image/png', optimizationSettings.imageQuality);
+                  imageFormat = 'PNG';
+                  console.log(`📄 Using PNG format for: ${imgUrl} (quality: ${optimizationSettings.imageQuality})`);
+                } else {
+                  // Use JPEG for photos with compression
+                  optimizedDataUrl = canvas.toDataURL('image/jpeg', optimizationSettings.imageQuality);
+                  imageFormat = 'JPEG';
+                  console.log(`📄 Using JPEG format for: ${imgUrl} (quality: ${optimizationSettings.imageQuality})`);
+                }
+                
+                console.log(`💾 Data URL length: ${optimizedDataUrl.length} characters`);
+                
+                // Generate unique alias for image deduplication
+                const imageHash = generateImageHash(imgUrl);
+                const alias = `img_${imageHash}`;
+                
+                console.log(`🏷️ Generated alias: ${alias} for: ${imgUrl}`);
+                
+                // Add optimized image to PDF with alias for deduplication
+                doc.addImage(optimizedDataUrl, imageFormat, x, y, pdfMaxW, pdfMaxH, alias, 'FAST');
+                console.log(`✅ Added OPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH}) with alias: ${alias}`);
+                imageOptimizationStats.optimizedImages++;
+                if (cb) cb();
+              } catch (error) {
+                console.warn(`❌ Failed to optimize image: ${imgUrl}`, error);
+                console.warn(`🔍 Error details:`, error.message, error.stack);
+                // Fallback to original image if optimization fails
+                try {
+                  doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
+                  console.log(`🔄 Fallback: Added original image to PDF: ${imgUrl}`);
+                  imageOptimizationStats.optimizedImages++;
+                  if (cb) cb();
+                } catch (fallbackError) {
+                  console.error(`💥 Fallback also failed for: ${imgUrl}`, fallbackError);
                   imageOptimizationStats.failedImages++;
                   if (cb) cb();
                 }
-            };
+              }
+                  } catch (e) {
+              console.warn('Failed to add image to PDF:', e);
+                    imageOptimizationStats.failedImages++;
+                    if (cb) cb();
+                  }
+                };
+          
+                  img.onerror = function() {
+            if (callbackCalled) return;
+            if (timeoutId) clearTimeout(timeoutId);
             
-            timeoutId = setTimeout(() => {
-              if (callbackCalled) return;
-              
-              console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imgUrl}`);
-              
-              img.src = '';
-              img.onload = null;
-              img.onerror = null;
-              
-              proxyIndex++;
-              if (proxyIndex < proxies.length) {
-                setTimeout(() => {
-                  tryLoadOriginalImage();
-                }, 200);
-              } else {
-                callbackCalled = true;
-                console.warn('All proxies timed out, skipping image');
+            console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imgUrl}`);
+            console.warn(`🔍 Error details for: ${imgUrl} - Proxy: ${proxies[proxyIndex]}`);
+            
+            proxyIndex++;
+            if (proxyIndex < proxies.length) {
+              setTimeout(() => {
+                tryLoadOptimizedImage();
+              }, 200);
+            } else {
+              callbackCalled = true;
+              console.warn('All proxies failed, skipping image');
                 imageOptimizationStats.failedImages++;
                 if (cb) cb();
               }
-            }, 3000);
+          };
+          
+          timeoutId = setTimeout(() => {
+            if (callbackCalled) return;
             
-            let proxiedUrl = imgUrl;
+            console.warn(`⏰ Timeout with proxy ${proxyIndex}: ${imgUrl}`);
+            
+            img.src = '';
+            img.onload = null;
+            img.onerror = null;
+            
+            proxyIndex++;
             if (proxyIndex < proxies.length) {
-              proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imgUrl);
+              setTimeout(() => {
+                tryLoadOptimizedImage();
+              }, 200);
+            } else {
+              callbackCalled = true;
+              console.warn('All proxies timed out, skipping image');
+              imageOptimizationStats.failedImages++;
+              if (cb) cb();
             }
-            
-            console.log(`🔄 Loading ORIGINAL image ${proxyIndex}: ${proxiedUrl}`);
-            img.src = proxiedUrl;
+          }, 3000);
+          
+          let proxiedUrl = imgUrl;
+          if (proxyIndex < proxies.length) {
+            proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imgUrl);
           }
           
-          tryLoadOriginalImage();
+          console.log(`🔄 Loading image for optimization ${proxyIndex}: ${proxiedUrl}`);
+          img.src = proxiedUrl;
+        }
+        
+        tryLoadOptimizedImage();
         };
         // Restore rowsToDraw definition and initialization before drawNextRow
         let rowsToDraw = [];
@@ -555,7 +657,7 @@ export function showPdfFormScreen(userDetails) {
             const pageCount = doc.internal.getNumberOfPages() - 1; // exclude cover
             for (let i = 2; i <= pageCount + 1; i++) { // start from 2 (first product page)
               doc.setPage(i);
-              drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
+              drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
               currentY = footerHeight + 8;
               // Footer bar (reduced height and font size)
               doc.setFillColor('#9B9184'); // Updated footer color
@@ -586,18 +688,8 @@ export function showPdfFormScreen(userDetails) {
             
             // Enhanced PDF download with Samsung compatibility and optimization
             try {
-              // Configure jsPDF for high quality text (compression disabled for testing)
-              const pdfOptions = {
-                compress: false,    // Disabled for crisp text quality during size testing
-                precision: 16,      // High precision for sharp text rendering
-                userUnit: 1.0
-              };
-              
-              // Debug: Get PDF without compression first
-              const uncompressedBlob = doc.output('blob');
-              console.log(`🔍 Debug - Uncompressed PDF size: ${(uncompressedBlob.size / 1024 / 1024).toFixed(2)} MB`);
-              
-              const pdfBlob = doc.output('blob', pdfOptions);
+              // PDF is already configured with compression in constructor
+              const pdfBlob = doc.output('blob');
               console.log(`�� Debug - Compressed PDF size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB`);
               
               // Debug: Analyze PDF structure - with proper null checks
@@ -726,7 +818,7 @@ export function showPdfFormScreen(userDetails) {
           // New page if needed
           if (pageRow >= maxRowsPerPage) {
             doc.addPage();
-            drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
+            drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
             currentY = footerHeight + 8;
             pageRow = 0;
           }
@@ -748,48 +840,56 @@ export function showPdfFormScreen(userDetails) {
             doc.setTextColor('#888');
             doc.text(row.room + ' (' + row.roomCount + ')', leftMargin, y+10);
           }
-          // Product image (maintain aspect ratio)
-          drawImage(doc, row.item.Image_URL || '', colX[0], y+rowPadding+16, imgW, rowHeight-rowPadding*2, function() {
-            // Diagram image (maintain aspect ratio)
-            drawImage(doc, row.item.Diagram_URL || '', colX[0]+imgW+imgPad, y+rowPadding+16, imgW, rowHeight-rowPadding*2, function() {
-              // Code (top-aligned)
+          // Product image (maintain aspect ratio) - use dynamic positioning
+          const imageX = colX[0];
+          const diagramX = imageX + imgW + imgPad;
+          console.log(`🖼️ Drawing images at positions: Image=${imageX}, Diagram=${diagramX}, imgW=${imgW}`);
+          
+          drawImage(doc, row.item.Image_URL || '', imageX, y+rowPadding+16, imgW, rowHeight-rowPadding*2, function() {
+            // Diagram image (maintain aspect ratio) - use dynamic positioning
+            drawImage(doc, row.item.Diagram_URL || '', diagramX, y+rowPadding+16, imgW, rowHeight-rowPadding*2, function() {
+              // Code (top-aligned) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
               const codeY = y+28; // top-aligned
-              doc.text(String(row.item.OrderCode || ''), Number(colX[1])+30, codeY+10, { align: 'center' });
+              const codeX = colX[1];
+              const codeCenterX = codeX + (colW[1] / 2); // Center within the code column
+              doc.text(String(row.item.OrderCode || ''), codeCenterX, codeY+10, { align: 'center' });
+              
               // Datasheet link under code, with padding
               let linkY = codeY+26;
               if (row.item.Datasheet_URL && row.item.Datasheet_URL !== '#') {
                 doc.setFontSize(9);
                 doc.setTextColor(80, 80, 80);
-                doc.textWithLink('Datasheet', Number(colX[1])+30, linkY, { url: row.item.Datasheet_URL, align: 'center' });
+                doc.textWithLink('Datasheet', codeCenterX, linkY, { url: row.item.Datasheet_URL, align: 'center' });
                 // Underline
                 const dsWidth = doc.getTextWidth('Datasheet');
                 doc.setDrawColor(180, 180, 180);
                 doc.setLineWidth(0.7);
-                doc.line(Number(colX[1])+30-dsWidth/2, linkY+1.5, Number(colX[1])+30+dsWidth/2, linkY+1.5);
+                doc.line(codeCenterX-dsWidth/2, linkY+1.5, codeCenterX+dsWidth/2, linkY+1.5);
                 linkY += 14;
               }
               // Website link under datasheet
               if (row.item.Website_URL && row.item.Website_URL !== '#') {
                 doc.setFontSize(9);
                 doc.setTextColor(80, 80, 200);
-                doc.textWithLink('Website', Number(colX[1])+30, linkY, { url: row.item.Website_URL, align: 'center' });
+                doc.textWithLink('Website', codeCenterX, linkY, { url: row.item.Website_URL, align: 'center' });
                 // Underline
                 const wsWidth = doc.getTextWidth('Website');
                 doc.setDrawColor(120, 120, 200);
                 doc.setLineWidth(0.7);
-                doc.line(Number(colX[1])+30-wsWidth/2, linkY+1.5, Number(colX[1])+30+wsWidth/2, linkY+1.5);
+                doc.line(codeCenterX-wsWidth/2, linkY+1.5, codeCenterX+wsWidth/2, linkY+1.5);
                 linkY += 14;
               }
-              // Description (top-aligned with code)
+              // Description (top-aligned with code) - use dynamic positioning
               let descY = codeY+10;
               doc.setFontSize(10);
               doc.setTextColor('#222');
-              // Main description
-              const descColWidth = priceX - descX - 10;
+              // Main description - use dynamic column width
+              const descColWidth = colW[2] - 10; // Use actual column width minus padding
+              const descX = colX[2];
               let descLines = doc.splitTextToSize(String(row.item.Description || ''), descColWidth);
-              doc.text(descLines, Number(colX[2])+5, descY);
+              doc.text(descLines, descX+5, descY);
               descY += descLines.length * 12;
               
               // Long description
@@ -797,7 +897,7 @@ export function showPdfFormScreen(userDetails) {
                 doc.setFontSize(9);
                 doc.setTextColor('#444');
                 let longDescLines = doc.splitTextToSize(String(row.item.LongDescription), descColWidth);
-                doc.text(longDescLines, Number(colX[2])+5, descY);
+                doc.text(longDescLines, descX+5, descY);
                 descY += longDescLines.length * 11;
               }
               
@@ -807,11 +907,11 @@ export function showPdfFormScreen(userDetails) {
                 doc.setFontSize(9);
                 doc.setTextColor('#444');
                 let notesLines = doc.splitTextToSize('Notes: ' + String(row.item.Notes).replace(/\r?\n|\r/g, ' '), descColWidth);
-                doc.text(notesLines, Number(colX[2])+5, descY);
+                doc.text(notesLines, descX+5, descY);
                 descY += notesLines.length * 11;
                 doc.setFont('helvetica', 'normal');
               }
-              // Price ea (top-aligned)
+              // Price ea (top-aligned) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
               // Robust price parsing for PDF
@@ -821,20 +921,23 @@ export function showPdfFormScreen(userDetails) {
               }
               let pdfPriceStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? ('$' + pdfPriceNum.toFixed(2)) : '';
               if (!userDetails.excludePrice && !userDetails.excludeQty) {
-                doc.text(pdfPriceStr, Number(colX[3])+30, codeY+10, { align: 'center' });
+                const priceCenterX = colX[3] + (colW[3] / 2);
+                doc.text(pdfPriceStr, priceCenterX, codeY+10, { align: 'center' });
               }
-              // Qty (top-aligned)
+              // Qty (top-aligned) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
               if (!userDetails.excludeQty) {
-                doc.text(String(row.item.Quantity || 1), Number(colX[4])+20, codeY+10, { align: 'center' });
+                const qtyCenterX = colX[4] + (colW[4] / 2);
+                doc.text(String(row.item.Quantity || 1), qtyCenterX, codeY+10, { align: 'center' });
               }
-              // Total (top-aligned, far right)
+              // Total (top-aligned, far right) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
               let pdfTotalStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? ('$' + (pdfPriceNum * (row.item.Quantity || 1)).toFixed(2)) : '';
               if (!userDetails.excludePrice && !userDetails.excludeQty) {
-                doc.text(pdfTotalStr, Number(colX[5])+20, codeY+10, { align: 'center' });
+                const totalCenterX = colX[5] + (colW[5] / 2);
+                doc.text(pdfTotalStr, totalCenterX, codeY+10, { align: 'center' });
               }
               rowIdx++;
               pageRow++;
@@ -848,7 +951,7 @@ export function showPdfFormScreen(userDetails) {
   });
 }
 
-export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice, excludeQty) {
+export function drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice, excludeQty) {
   const headerHeight = footerHeight + 5.7;
   doc.setFillColor('#8B6C2B'); // Updated header color
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
@@ -864,14 +967,22 @@ export function drawPDFHeader(doc, pageWidth, colX, leftMargin, footerHeight, lo
   doc.setTextColor('#f4f4f4');
   doc.setFont('helvetica', 'normal');
   const colY = headerHeight - 8;
-  doc.text('Code', colX[1]+30, colY, { align: 'center' });
-  doc.text('Description', colX[2]+(colX[3]-colX[2])/2, colY, { align: 'center' });
+  
+  // Use dynamic positioning for headers
+  const codeCenterX = colX[1] + (colW[1] / 2);
+  const descCenterX = colX[2] + (colW[2] / 2);
+  const priceCenterX = colX[3] + (colW[3] / 2);
+  const qtyCenterX = colX[4] + (colW[4] / 2);
+  const totalCenterX = colX[5] + (colW[5] / 2);
+  
+  doc.text('Code', codeCenterX, colY, { align: 'center' });
+  doc.text('Description', descCenterX, colY, { align: 'center' });
   if (!excludePrice && !excludeQty) {
-    doc.text('Price ea inc GST', colX[3]+30, colY, { align: 'center' });
-    doc.text('Qty', colX[4]+20, colY, { align: 'center' });
-    doc.text('Total', colX[5]+20, colY, { align: 'center' });
+    doc.text('Price ea inc GST', priceCenterX, colY, { align: 'center' });
+    doc.text('Qty', qtyCenterX, colY, { align: 'center' });
+    doc.text('Total', totalCenterX, colY, { align: 'center' });
   } else if (excludePrice && !excludeQty) {
-    doc.text('Qty', colX[4]+20, colY, { align: 'center' });
+    doc.text('Qty', qtyCenterX, colY, { align: 'center' });
   }
   // If excludeQty is true, do not show price or qty columns
 }
@@ -911,7 +1022,7 @@ export function loadImageAsDataURL(src, cb) {
     ctx.drawImage(img, 0, 0, newWidth, newHeight);
     
     // Use PNG to preserve transparency (logos need transparent backgrounds)
-    const optimizedDataUrl = canvas.toDataURL('image/png');
+    const optimizedDataUrl = canvas.toDataURL('image/png', 0.9);
     
     console.log(`🖼️  Logo optimized: ${img.width}x${img.height} -> ${newWidth}x${newHeight} (${(optimizedDataUrl.length / 1024).toFixed(1)}KB)`);
     
@@ -1445,11 +1556,95 @@ function attemptStandardDownload(blob, filename) {
   });
 }
 
-          // *** IMAGE OPTIMIZATION COMPLETELY DISABLED - MAXIMUM QUALITY ***
+          // *** SMART IMAGE OPTIMIZATION ENABLED - BALANCED QUALITY & SIZE ***
   export function optimizeImageForPDF(imageUrl, maxWidth = 450, quality = 0.85) {
-    console.log(`🔍 NO OPTIMIZATION: Returning original URL for maximum quality: ${imageUrl}`);
-    return Promise.resolve(imageUrl);
-}
+    return new Promise((resolve) => {
+      if (!imageUrl || imageUrl === 'N/A') {
+        resolve(imageUrl);
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Smart dimension calculation for technical diagrams
+        const { width: newWidth, height: newHeight } = calculateOptimizedDimensions(
+          img.width, img.height, maxWidth
+        );
+        
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        
+        // High-quality rendering for technical diagrams
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        
+        // Smart format selection based on image characteristics
+        let optimizedDataUrl;
+        const hasTransparency = detectTransparency(canvas, ctx);
+        
+        if (hasTransparency || isTechnicalDiagram(img)) {
+          // Use PNG for technical diagrams with transparency or fine details
+          optimizedDataUrl = canvas.toDataURL('image/png', 0.9);
+        } else {
+          // Use JPEG for photos with higher compression
+          optimizedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        
+        console.log(`🖼️ Smart optimization: ${img.width}x${img.height} -> ${newWidth}x${newHeight} (${(optimizedDataUrl.length / 1024).toFixed(1)}KB)`);
+        
+        resolve(optimizedDataUrl);
+      };
+      
+      img.onerror = () => {
+        console.warn('Failed to optimize image:', imageUrl);
+        resolve(imageUrl); // Return original if optimization fails
+      };
+      
+      img.src = imageUrl;
+    });
+  }
+
+  // Detect if image is likely a technical diagram
+  function isTechnicalDiagram(img) {
+    // Technical diagrams often have sharp edges, limited colors, and specific patterns
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = Math.min(100, img.width); // Sample size
+    canvas.height = Math.min(100, img.height);
+    
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Count unique colors (technical diagrams have fewer colors)
+    const colors = new Set();
+    for (let i = 0; i < data.length; i += 4) {
+      const color = `${data[i]},${data[i+1]},${data[i+2]}`;
+      colors.add(color);
+    }
+    
+    return colors.size < 1000; // Technical diagrams typically have < 1000 unique colors
+  }
+
+  // Detect transparency in image
+  function detectTransparency(canvas, ctx) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 255) {
+        return true; // Found transparent pixel
+      }
+    }
+    return false;
+  }
 
 function calculateOptimizedDimensions(originalWidth, originalHeight, maxWidth) {
   if (originalWidth <= maxWidth) {
@@ -1481,14 +1676,24 @@ export function compressPDFBlob(pdfBlob, compressionLevel = 'medium') {
 }
 
 export function getOptimizedFileSettings(fileSize) {
-  // Automatically determine optimization level based on file size - updated for technical images
-  if (fileSize > 20 * 1024 * 1024) { // > 20MB
+  // Smart optimization for technical diagrams - balance quality and size
+  if (fileSize > 25 * 1024 * 1024) { // > 25MB
     return {
-      compressionLevel: 'high',
+      compressionLevel: 'aggressive',
       imageQuality: 0.6,
       imageMaxWidth: 300,
       removeImages: false,
-      message: 'High compression applied - file very large with technical images'
+      usePNG: true, // Preserve technical diagram quality
+      message: 'Aggressive compression - maintaining technical diagram clarity'
+    };
+  } else if (fileSize > 20 * 1024 * 1024) { // > 20MB
+    return {
+      compressionLevel: 'high',
+      imageQuality: 0.65,
+      imageMaxWidth: 350,
+      removeImages: false,
+      usePNG: true,
+      message: 'High compression - preserving technical diagram details'
     };
   } else if (fileSize > 15 * 1024 * 1024) { // > 15MB
     return {
@@ -1496,15 +1701,17 @@ export function getOptimizedFileSettings(fileSize) {
       imageQuality: 0.7,
       imageMaxWidth: 400,
       removeImages: false,
-      message: 'Medium compression applied for technical image optimization'
+      usePNG: true,
+      message: 'Medium compression - optimal for technical documentation'
     };
   } else if (fileSize > 10 * 1024 * 1024) { // > 10MB
     return {
-      compressionLevel: 'low',
+      compressionLevel: 'light',
       imageQuality: 0.75,
       imageMaxWidth: 450,
       removeImages: false,
-      message: 'Light compression applied to maintain technical image quality'
+      usePNG: true,
+      message: 'Light compression - excellent technical diagram quality'
     };
   } else {
     return {
@@ -1512,7 +1719,8 @@ export function getOptimizedFileSettings(fileSize) {
       imageQuality: 0.8,
       imageMaxWidth: 500,
       removeImages: false,
-      message: 'Minimal compression - good size for technical documentation'
+      usePNG: true,
+      message: 'Minimal compression - maximum technical diagram quality'
     };
   }
 }
@@ -1888,6 +2096,21 @@ let imageOptimizationStats = {
   failedImages: 0,
   totalSavings: 0
 };
+
+// Generate hash for image deduplication
+function generateImageHash(imageUrl) {
+  // Simple hash function for image URLs to enable deduplication
+  let hash = 0;
+  if (imageUrl.length === 0) return hash.toString();
+  
+  for (let i = 0; i < imageUrl.length; i++) {
+    const char = imageUrl.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  return Math.abs(hash).toString(36);
+}
 
 export function resetImageOptimizationStats() {
   imageOptimizationStats = {
@@ -2698,8 +2921,12 @@ async function mergeWithTipTail(mainPdfBlob) {
       showTipTailWarning('Tail File Issue', tailError);
     }
 
-    // Output merged PDF as Blob
-    const mergedBytes = await mergedDoc.save();
+    // Output merged PDF as Blob with compression
+    const mergedBytes = await mergedDoc.save({
+      useObjectStreams: true,
+      addDefaultPage: false,
+      objectsPerTick: 20
+    });
     return new Blob([mergedBytes], { type: 'application/pdf' });
     
   } catch (error) {
