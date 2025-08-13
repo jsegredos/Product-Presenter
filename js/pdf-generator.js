@@ -455,7 +455,7 @@ export function showPdfFormScreen(userDetails) {
               
               // Optimize the already-loaded image directly
               try {
-                console.log(`🔧 Starting optimization for: ${imgUrl} (${img.width}x${img.height})`);
+
                 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -465,7 +465,7 @@ export function showPdfFormScreen(userDetails) {
                   img.width, img.height, maxImageWidth // Use optimization setting for quality, not display size
                 );
                 
-                console.log(`📐 Optimized dimensions: ${newWidth}x${newHeight} (from ${img.width}x${img.height})`);
+
                 
                 canvas.width = newWidth;
                 canvas.height = newHeight;
@@ -475,7 +475,7 @@ export function showPdfFormScreen(userDetails) {
                 ctx.imageSmoothingQuality = 'high';
                 
                 ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                console.log(`🎨 Canvas drawing completed for: ${imgUrl}`);
+
                 
                 // Smart format selection
                 let optimizedDataUrl;
@@ -483,44 +483,44 @@ export function showPdfFormScreen(userDetails) {
                 const hasTransparency = detectTransparency(canvas, ctx);
                 const isTechnical = isTechnicalDiagram(img);
                 
-                console.log(`🔍 Image analysis - Transparency: ${hasTransparency}, Technical: ${isTechnical}`);
+
                 
                 if (hasTransparency || isTechnical) {
                   // Use PNG for technical diagrams with transparency
                   optimizedDataUrl = canvas.toDataURL('image/png', optimizationSettings.imageQuality);
                   imageFormat = 'PNG';
-                  console.log(`📄 Using PNG format for: ${imgUrl} (quality: ${optimizationSettings.imageQuality})`);
+
                 } else {
                   // Use JPEG for photos with compression
                   optimizedDataUrl = canvas.toDataURL('image/jpeg', optimizationSettings.imageQuality);
                   imageFormat = 'JPEG';
-                  console.log(`📄 Using JPEG format for: ${imgUrl} (quality: ${optimizationSettings.imageQuality})`);
+
                 }
                 
-                console.log(`💾 Data URL length: ${optimizedDataUrl.length} characters`);
+
                 
                 // Generate unique alias for image deduplication
                 const imageHash = generateImageHash(imgUrl);
                 const alias = `img_${imageHash}`;
                 
-                console.log(`🏷️ Generated alias: ${alias} for: ${imgUrl}`);
+
                 
                 // Add optimized image to PDF with alias for deduplication
                 doc.addImage(optimizedDataUrl, imageFormat, x, y, pdfMaxW, pdfMaxH, alias, 'FAST');
-                console.log(`✅ Added OPTIMIZED image to PDF: ${imgUrl} (${pdfMaxW}x${pdfMaxH}) with alias: ${alias}`);
+
                 imageOptimizationStats.optimizedImages++;
                 if (cb) cb();
               } catch (error) {
-                console.warn(`❌ Failed to optimize image: ${imgUrl}`, error);
-                console.warn(`🔍 Error details:`, error.message, error.stack);
+                console.warn(`Failed to optimize image: ${imgUrl}`, error);
+                console.warn(`Error details:`, error.message, error.stack);
                 // Fallback to original image if optimization fails
                 try {
                   doc.addImage(img, 'JPEG', x, y, pdfMaxW, pdfMaxH);
-                  console.log(`🔄 Fallback: Added original image to PDF: ${imgUrl}`);
+
                   imageOptimizationStats.optimizedImages++;
                   if (cb) cb();
                 } catch (fallbackError) {
-                  console.error(`💥 Fallback also failed for: ${imgUrl}`, fallbackError);
+                  console.error(`Fallback also failed for: ${imgUrl}`, fallbackError);
                   imageOptimizationStats.failedImages++;
                   if (cb) cb();
                 }
@@ -536,8 +536,8 @@ export function showPdfFormScreen(userDetails) {
             if (callbackCalled) return;
             if (timeoutId) clearTimeout(timeoutId);
             
-            console.warn(`❌ Failed to load image with proxy ${proxyIndex}: ${imgUrl}`);
-            console.warn(`🔍 Error details for: ${imgUrl} - Proxy: ${proxies[proxyIndex]}`);
+            console.warn(`Failed to load image with proxy ${proxyIndex}: ${imgUrl}`);
+            console.warn(`Error details for: ${imgUrl} - Proxy: ${proxies[proxyIndex]}`);
             
             proxyIndex++;
             if (proxyIndex < proxies.length) {
@@ -579,7 +579,7 @@ export function showPdfFormScreen(userDetails) {
             proxiedUrl = proxies[proxyIndex] + encodeURIComponent(imgUrl);
           }
           
-          console.log(`🔄 Loading image for optimization ${proxyIndex}: ${proxiedUrl}`);
+
           img.src = proxiedUrl;
         }
         
@@ -682,34 +682,18 @@ export function showPdfFormScreen(userDetails) {
             try {
               // PDF is already configured with compression in constructor
               const pdfBlob = doc.output('blob');
-              console.log(`�� Debug - Compressed PDF size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB`);
+
               
               // Debug: Analyze PDF structure - with proper null checks
               const pdfString = doc.output('string');
-              console.log(`🔍 Debug - PDF string length: ${pdfString ? pdfString.length : 0} characters`);
+
               
               // Count different types of content with null safety
               const imageMatches = pdfString ? pdfString.match(/\/Type\s*\/XObject/g) : null;
               const textMatches = pdfString ? pdfString.match(/Tj\s/g) : null;
               const linkMatches = pdfString ? pdfString.match(/\/A\s*<</g) : null;
               
-              // Enhanced debugging for PDF size investigation
-              console.log(`🔍 Debug - Content analysis:
-                - Images in PDF: ${imageMatches ? imageMatches.length : 0}
-                - Text elements: ${textMatches ? textMatches.length : 0}
-                - Links in PDF: ${linkMatches ? linkMatches.length : 0}
-                - PDF pages: ${doc.internal.getNumberOfPages()}
-                - Logo data size: ${logoDataUrl ? (logoDataUrl.length / 1024).toFixed(1) + 'KB' : 'N/A'}
-                - PDF string size: ${pdfString ? (pdfString.length / 1024 / 1024).toFixed(2) : 0}MB`);
-              
-              // Check for large embedded images with null safety
-              const base64Images = pdfString ? pdfString.match(/\/Filter\s*\/DCTDecode[\s\S]*?stream[\s\S]*?endstream/g) : null;
-              if (base64Images && base64Images.length > 0) {
-                console.log(`🔍 Debug - Found ${base64Images.length} embedded images`);
-                base64Images.forEach((img, idx) => {
-                  console.log(`  Image ${idx}: ${img ? (img.length / 1024).toFixed(1) : 0}KB`);
-                });
-              }
+              // PDF content analysis complete
               
               // Store PDF size for later reference
               userDetails.pdfSize = pdfBlob.size;
@@ -718,12 +702,7 @@ export function showPdfFormScreen(userDetails) {
               const fileInfo = showFileSizeInfo(pdfBlob, pdfFilename);
               
               // Enhanced logging for size analysis
-              console.log(`📊 PDF Analysis:
-                - Final size: ${(pdfBlob.size / 1024 / 1024).toFixed(2)} MB
-                - Products included: ${rowsToDraw ? rowsToDraw.length : 0}
-                - Images included: ${imageOptimizationStats.optimizedImages} (technical quality)
-                - Images skipped: ${imageOptimizationStats.failedImages}
-                - Email compatible mode: ${userDetails.emailCompatible || false}`);
+
               
               // Check if file is too large for email and offer regeneration
               if (userDetails.sendEmail && pdfBlob.size > 15 * 1024 * 1024) {
@@ -772,27 +751,27 @@ export function showPdfFormScreen(userDetails) {
                 }
               } else {
                 // Standard download
-                console.log('📥 Standard download path - not email');
+
                 (async () => {
                   const mergedBlob = await mergeWithTipTail(optimizedBlob);
                   downloadWithFallback(mergedBlob, pdfFilename, 'PDF');
                 })();
                 
                 // Generate and download CSV if requested
-                console.log('🔍 CSV check - exportCsv:', userDetails.exportCsv, 'userDetails:', userDetails);
+
                 if (userDetails.exportCsv) {
                   const csvFilename = pdfFilename.replace(/\.pdf$/, '.csv');
                   // Generate CSV asynchronously to avoid blocking main thread
                   setTimeout(() => {
                     generateCsvBlobAsync(userDetails, csvFilename).then(csvBlob => {
                       if (csvBlob) {
-                        console.log('✅ CSV generated successfully, downloading...');
+
                         downloadWithFallback(csvBlob, csvFilename, 'CSV');
                       } else {
-                        console.warn('⚠️ CSV generation returned null - no products selected?');
+
                       }
                     }).catch(error => {
-                      console.error('❌ CSV generation failed:', error);
+                      console.error('CSV generation failed:', error);
                     });
                   }, 1000);
                 }
@@ -1022,7 +1001,7 @@ export function loadImageAsDataURL(src, cb) {
     // Use PNG to preserve transparency (logos need transparent backgrounds)
     const optimizedDataUrl = canvas.toDataURL('image/png', 0.9);
     
-    console.log(`🖼️  Logo optimized: ${img.width}x${img.height} -> ${newWidth}x${newHeight} (${(optimizedDataUrl.length / 1024).toFixed(1)}KB)`);
+
     
     cb(optimizedDataUrl, newWidth, newHeight);
   };
@@ -1139,17 +1118,14 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
           }
         });
         
-        console.log('📊 Async CSV generated:', {
-          length: csvString.length,
-          preview: csvString.substring(0, 200)
-        });
+        // CSV generated successfully
         
         // Step 4: Handle encoding in next tick for emails
         if (userDetails.sendEmail) {
           setTimeout(() => {
             try {
               const base64Data = btoa(unescape(encodeURIComponent(csvString)));
-              console.log('📧 CSV converted to base64 for EmailJS (length:', base64Data.length, ')');
+
               
               resolve({
                 name: csvFilename,
@@ -1159,7 +1135,7 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
                 base64Size: base64Data.length
               });
             } catch (error) {
-              console.error('❌ CSV base64 encoding failed:', error);
+              console.error('CSV base64 encoding failed:', error);
               resolve(new Blob([csvString], { type: 'text/csv' }));
             }
           }, 0);
@@ -1240,20 +1216,17 @@ export function generateCsvBlob(userDetails, csvFilename) {
     }
   });
   
-  console.log('📊 Enhanced CSV generated:', {
-    length: csvString.length,
-    preview: csvString.substring(0, 200)
-  });
+  // CSV generation complete
   
   // For EmailJS: Return base64-encoded data
   if (userDetails.sendEmail) {
     try {
       const base64Data = btoa(unescape(encodeURIComponent(csvString)));
-      console.log('📧 CSV converted to base64 for EmailJS (length:', base64Data.length, ')');
+
       
       // Test decode to verify integrity
       const decoded = decodeURIComponent(escape(atob(base64Data)));
-      console.log('✅ Base64 decode test successful (first 200 chars):', decoded.substring(0, 200));
+
       
       return {
         name: csvFilename,
@@ -1303,7 +1276,7 @@ export async function generateAndDownloadCsv(userDetails, csvFilename) {
     const fileInfo = showFileSizeInfo(csvBlob, csvFilename);
     downloadWithFallback(csvBlob, csvFilename, 'CSV');
   } catch (error) {
-    console.error('Async CSV generation failed:', error);
+    console.error('CSV generation failed:', error);
     showDetailedErrorMessage(error, 'generating CSV', csvFilename);
   }
   
@@ -1504,18 +1477,18 @@ export async function downloadWithEnhancedFallbacks(blob, filename, fileType = '
   
   // Try File System Access API (Chrome 86+, Edge 86+)
   if (await downloadViaFileSystemAPI(blob, filename, fileType)) {
-    console.log('Downloaded via File System Access API');
+    
     return;
   }
   
   // Try Data URI method for smaller files
   if (downloadViaDataURI(blob, filename, fileType)) {
-    console.log('Downloaded via Data URI');
+    
     return;
   }
   
   // Show manual download options as last resort
-  console.log('Showing manual download options');
+  
   showManualDownloadOption(blob, filename, fileType);
 }
 
@@ -1606,7 +1579,7 @@ function attemptStandardDownload(blob, filename) {
           optimizedDataUrl = canvas.toDataURL('image/jpeg', quality);
         }
         
-        console.log(`🖼️ Smart optimization: ${img.width}x${img.height} -> ${newWidth}x${newHeight} (${(optimizedDataUrl.length / 1024).toFixed(1)}KB)`);
+
         
         resolve(optimizedDataUrl);
       };
@@ -1679,7 +1652,7 @@ export function compressPDFBlob(pdfBlob, compressionLevel = 'medium') {
   
   // Note: Actual PDF compression would require more advanced techniques
   // For now, we'll focus on optimizing the generation process
-  console.log(`PDF compression level: ${compressionLevel}`, settings);
+
   
   return pdfBlob; // Return as-is for now, optimization happens during generation
 }
@@ -1737,7 +1710,7 @@ export function getOptimizedFileSettings(fileSize) {
 export function createOptimizedBlob(originalBlob, optimizationSettings) {
   // This is a placeholder for advanced PDF optimization
   // In a real implementation, you might use PDF-lib or similar library
-  console.log('Optimization settings applied:', optimizationSettings);
+
   
   // For now, return the original blob
   // Future enhancement: implement actual PDF compression
@@ -1748,9 +1721,7 @@ export function showFileSizeInfo(blob, filename) {
   const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
   const settings = getOptimizedFileSettings(blob.size);
   
-  console.log(`File: ${filename}`);
-  console.log(`Size: ${sizeInMB} MB`);
-  console.log(`Optimization: ${settings.message}`);
+
   
   // Show size warning for large files
   if (blob.size > 15 * 1024 * 1024) {
@@ -1785,7 +1756,7 @@ export function showFileSizeInfo(blob, filename) {
       }
     }, 8000);
   } else if (blob.size > 3 * 1024 * 1024) {
-    console.log(`Medium file size (${sizeInMB} MB) - images compressed for better email compatibility`);
+
   }
   
   return {
@@ -2137,12 +2108,7 @@ export function getImageOptimizationStats() {
 export function showImageOptimizationSummary(isEmailCompatible = false) {
   const stats = imageOptimizationStats;
   if (stats.totalImages > 0) {
-    console.log(`🖼️ Image Optimization Summary:`);
-    console.log(`   Total images: ${stats.totalImages}`);
-    console.log(`   Optimized: ${stats.optimizedImages}`);
-    console.log(`   Failed: ${stats.failedImages}`);
-    console.log(`   Success rate: ${((stats.optimizedImages / stats.totalImages) * 100).toFixed(1)}%`);
-    console.log(`   Email compatible mode: ${isEmailCompatible}`);
+    // Image optimization complete
     
     // No UI notification - just console logging for debugging
   }
@@ -2215,7 +2181,7 @@ export function showEmailCompatibleOption(userDetails, originalFilename) {
 
 // Test function for CSV generation and EmailJS compatibility
 export function testCsvGeneration(userDetails = null, showModal = true) {
-  console.log('🧪 Testing Enhanced CSV Generation...');
+
   
   // Use test data if no userDetails provided
   const testUserDetails = userDetails || {
@@ -2254,14 +2220,14 @@ export function testCsvGeneration(userDetails = null, showModal = true) {
         
         // Count rows
         const rows = decoded.split('\r\n').filter(row => row.trim());
-        console.log(`📊 CSV contains ${rows.length} rows (including header)`);
+
         
         if (showModal) {
           showCsvTestModal(csvResult, decoded, rows.length);
         }
         
       } catch (e) {
-        console.error('❌ Base64 decode failed:', e);
+        console.error('Base64 decode failed:', e);
       }
     }
     
@@ -2389,10 +2355,7 @@ export function generateCsvForEmailJS(userDetails, csvFilename) {
   // Generate clean CSV string - NO base64 encoding
   const csvString = generateCleanCSVString(csvData);
   
-  console.log('📊 Clean CSV generated:', {
-    length: csvString.length,
-    preview: csvString.substring(0, 200)
-  });
+  // Clean CSV generated
   
   // Return RAW string for EmailJS - let EmailJS handle encoding
   return {
@@ -2444,13 +2407,7 @@ function generateCleanCSVString(data) {
   // Use \n instead of \r\n for better compatibility
   const csvString = [headerRow, ...dataRows].join('\n');
   
-  console.log('📊 CSV string stats:', {
-    totalLength: csvString.length,
-    headerLength: headerRow.length,
-    dataRows: dataRows.length,
-    hasControlChars: /[\x00-\x1F\x7F]/.test(csvString),
-    hasNonAscii: /[\u0080-\uFFFF]/.test(csvString)
-  });
+  // CSV string stats calculated
   
   return csvString;
 }
@@ -2493,13 +2450,7 @@ export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
   // Final cleanup - remove any remaining control characters
   csvContent = csvContent.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ').replace(/\s+/g, ' ').trim();
   
-  console.log('📊 Simple CSV generated:', {
-    length: csvContent.length,
-    preview: csvContent.substring(0, 200),
-    hasControlChars: /[\x00-\x1F\x7F]/.test(csvContent),
-    hasNonAscii: /[\u0080-\uFFFF]/.test(csvContent),
-    dataRows: selection.length
-  });
+  // Simple CSV generated
   
   return {
     name: csvFilename,
@@ -2662,13 +2613,7 @@ export function generateUltraCleanCsv(userDetails, csvFilename) {
     csvText += ` | ${code},${desc},${qty},${room},${notes}`;
   });
   
-  console.log('🧹 Ultra-clean CSV created:', {
-    length: csvText.length,
-    preview: csvText.substring(0, 200),
-    hasControlChars: /[\x00-\x1F\x7F-\x9F]/.test(csvText),
-    hasNewlines: /[\r\n]/.test(csvText),
-    hasNonAscii: /[^\x00-\x7F]/.test(csvText)
-  });
+  // Ultra-clean CSV created
   
   return {
     name: csvFilename,
@@ -2800,7 +2745,7 @@ async function mergeWithTipTail(mainPdfBlob) {
   
   // If no tip or tail files are selected, return the main PDF as-is
   if (!tipAsset && !tipUpload && !tailAsset && !tailUpload) {
-    console.log('📄 No tip/tail files selected - returning main PDF without merging');
+    // No tip/tail files - returning main PDF
     return mainPdfBlob;
   }
 
@@ -2884,7 +2829,7 @@ async function mergeWithTipTail(mainPdfBlob) {
       const tipPagesIdx = Array.from({length: tipDoc.getPageCount()}, (_,i)=>i);
       const tipPages = await mergedDoc.copyPages(tipDoc, tipPagesIdx);
       tipPages.forEach(p => mergedDoc.addPage(p));
-      console.log(`✅ Successfully merged tip file with ${tipDoc.getPageCount()} pages`);
+
     } else if (tipError) {
       console.warn(`⚠️ Tip file error: ${tipError}`);
       // Show user-friendly warning
@@ -2923,7 +2868,7 @@ async function mergeWithTipTail(mainPdfBlob) {
       const tailPagesIdx = Array.from({length: tailDoc.getPageCount()}, (_,i)=>i);
       const tailPages = await mergedDoc.copyPages(tailDoc, tailPagesIdx);
       tailPages.forEach(p => mergedDoc.addPage(p));
-      console.log(`✅ Successfully merged tail file with ${tailDoc.getPageCount()} pages`);
+
     } else if (tailError) {
       console.warn(`⚠️ Tail file error: ${tailError}`);
       // Show user-friendly warning
