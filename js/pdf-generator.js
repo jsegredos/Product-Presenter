@@ -371,7 +371,7 @@ export function showPdfFormScreen(userDetails) {
         // Fixed column positions - images must fit into predefined space
         const imgW = 90, imgPad = 12; // Fixed image width to maintain consistent layout
         const codeX = leftMargin + imgW*2 + imgPad*2;
-        const descX = codeX + 60;
+        const descX = codeX + 85;
         const priceX = pageWidth - 200;
         const qtyX = pageWidth - 120;
         const totalX = pageWidth - 60;
@@ -893,10 +893,11 @@ export function showPdfFormScreen(userDetails) {
               descY += descLines.length * 12;
               
               // Long description
-              if (row.item.LongDescription) {
+              if (row.item.LongDescription || row.item['Long Description'] || row.item.longDescription) {
+                const longDesc = row.item.LongDescription || row.item['Long Description'] || row.item.longDescription;
                 doc.setFontSize(9);
                 doc.setTextColor('#444');
-                let longDescLines = doc.splitTextToSize(String(row.item.LongDescription), descColWidth);
+                let longDescLines = doc.splitTextToSize(String(longDesc), descColWidth);
                 doc.text(longDescLines, descX+5, descY);
                 descY += longDescLines.length * 11;
               }
