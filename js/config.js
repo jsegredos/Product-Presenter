@@ -13,11 +13,7 @@ export const CONFIG = {
       { name: "Alfresco", icon: "🍽️" }
     ]
   },
-  
-  SCANNER: {
-    DEFAULT_ENGINE: 'zxing',
-    ENGINES: ['zxing', 'quagga']
-  },
+
   
   SEARCH: {
     MAX_RESULTS: 8,
@@ -58,9 +54,7 @@ export const CONFIG = {
   // Performance settings
   PERFORMANCE: {
     MAX_PRODUCTS_PER_SESSION: 1000,
-    IMAGE_CACHE_SIZE: 100,
-    SCANNER_TIMEOUT: 30000,
-    BARCODE_SCAN_INTERVAL: 100
+    IMAGE_CACHE_SIZE: 100
   },
 
   // EmailJS Configuration

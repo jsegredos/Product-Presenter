@@ -156,7 +156,7 @@ export class DataLayer {
         this.searchIndex.set(product.OrderCode.toLowerCase().replace(/[-\s]/g, ''), index);
       }
       
-      // Index by barcode (this is what scanners will find!)
+      // Index by barcode for product lookup
       if (product.BARCODE && product.BARCODE.trim()) {
         this.searchIndex.set(product.BARCODE.toLowerCase(), index);
         this.searchIndex.set(product.BARCODE.toLowerCase().replace(/[-\s]/g, ''), index);
@@ -194,7 +194,7 @@ export class DataLayer {
     
     const product = typeof index === 'number' ? this.products[index] : null;
     
-    // Debug logging for barcode scanning
+    // Debug logging for barcode lookup
     if (code.length > 8) { // Likely a barcode
       console.log(`🔍 Barcode search for "${code}": ${product ? 'FOUND' : 'NOT FOUND'} ${product ? `(${product.OrderCode} - ${product.Description})` : ''}`);
     }

@@ -506,7 +506,7 @@ export class NavigationManager {
   }
 
   setupProductDetailsHandlers(product) {
-    const backBtn = document.getElementById('back-to-scanner');
+    const backBtn = document.getElementById('back-to-grid');
     const addBtn = document.getElementById('add-to-room-btn');
 
     if (backBtn) {
@@ -755,7 +755,7 @@ export class NavigationManager {
   }
 
   setupReviewScreenHandlers() {
-    const backBtn = document.getElementById('back-to-scanner');
+    const backBtn = document.getElementById('back-to-grid');
     const addMoreBtn = document.getElementById('add-more-btn');
     const quickPdfBtn = document.getElementById('quick-pdf-btn');
 
@@ -979,20 +979,7 @@ export class NavigationManager {
     }
   }
 
-  showScanFeedback(message) {
-    const feedback = document.getElementById('scanner-feedback');
-    if (feedback) {
-      feedback.innerHTML = `
-        <div style="color: #16a34a; background: #f0f9ff; padding: 8px; border-radius: 6px; margin: 4px 0;">
-          ${Utils.sanitizeInput(message)}
-        </div>
-      `;
-      
-      setTimeout(() => {
-        feedback.innerHTML = '';
-      }, 3000);
-    }
-  }
+
 
   updateSelectionCount() {
     const countElement = document.getElementById('selection-count');

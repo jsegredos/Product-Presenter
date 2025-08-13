@@ -150,22 +150,9 @@ class SeimaScanner {
       showPdfFormScreen(userDetails);
     });
 
-    // Handle window unload to stop scanner
+    // Handle window unload for cleanup
     window.addEventListener('beforeunload', () => {
-      if (this.navigationManager?.scannerController) {
-        this.navigationManager.scannerController.stopScanning();
-      }
-    });
-
-    // Handle visibility change to manage scanner
-    document.addEventListener('visibilitychange', () => {
-      if (this.navigationManager?.scannerController) {
-        if (document.hidden) {
-          this.navigationManager.scannerController.stopScanning();
-        } else if (this.navigationManager.currentScreen === 'scanner') {
-          this.navigationManager.scannerController.startScanning();
-        }
-      }
+      // Cleanup any active resources
     });
 
     // Monitor memory usage
