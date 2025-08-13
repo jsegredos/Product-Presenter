@@ -133,8 +133,13 @@ export class PDFCore {
           canvas.height = drawHeight;
           ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
           
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          this.doc.addImage(dataUrl, 'JPEG', x, y, drawWidth, drawHeight);
+          // Adaptive quality based on image characteristics
+          const isTechnical = this.detectTechnicalImage(img);
+          const quality = isTechnical ? 0.8 : 0.7; // Balanced quality for better compression
+          const format = isTechnical ? 'PNG' : 'JPEG';
+          
+          const dataUrl = canvas.toDataURL(`image/${format.toLowerCase()}`, quality);
+          this.doc.addImage(dataUrl, format, x, y, drawWidth, drawHeight, undefined, 'FAST');
           
           resolve({ width: drawWidth, height: drawHeight });
         } catch (error) {
@@ -158,6 +163,53 @@ export class PDFCore {
 
   getContentHeight() {
     return this.pageHeight - this.margins.top - this.margins.bottom;
+  }
+
+  detectTechnicalImage(img) {
+    // Technical diagrams typically have:
+    // 1. Sharp edges (high contrast)
+    // 2. Limited color palette
+    // 3. Geometric patterns
+    // 4. Text or symbols
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const sampleSize = Math.min(50, Math.min(img.width, img.height));
+    
+    canvas.width = sampleSize;
+    canvas.height = sampleSize;
+    
+    ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+    const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+    const data = imageData.data;
+    
+    // Count unique colors
+    const colors = new Set();
+    let edgeCount = 0;
+    
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      colors.add(`${r},${g},${b}`);
+      
+      // Simple edge detection (check for high contrast with neighbors)
+      if (i > 0 && i < data.length - 4) {
+        const prevR = data[i - 4];
+        const prevG = data[i - 3];
+        const prevB = data[i - 2];
+        
+        const contrast = Math.abs(r - prevR) + Math.abs(g - prevG) + Math.abs(b - prevB);
+        if (contrast > 50) edgeCount++;
+      }
+    }
+    
+    // Technical diagram indicators
+    const hasLimitedColors = colors.size < 500;
+    const hasSharpEdges = edgeCount > (sampleSize * sampleSize * 0.1);
+    const isSmallImage = img.width < 800 && img.height < 800; // Technical diagrams are often smaller
+    
+    return hasLimitedColors || hasSharpEdges || isSmallImage;
   }
 
   moveY(distance) {
