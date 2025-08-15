@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: config-manager.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: config-manager.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Enhanced Configuration Management System
+ * Centralised, typed, and environment-aware configuration management
+ *
+ * @author Seima Development Team
+ * @version 1.0.0
+ */
+
+import { errorHandler, ErrorCategory, LogLevel } from './error-handler.js';
+
+/**
+ * Environment types
+ * @readonly
+ * @enum {string}
+ */
+export const Environment = {
+  DEVELOPMENT: 'development',
+  STAGING: 'staging',
+  PRODUCTION: 'production'
+};
+
+/**
+ * Configuration schema with validation and defaults
+ */
+const CONFIG_SCHEMA = {
+  // Application metadata
+  app: {
+    name: { type: 'string', default: 'Seima Product Presenter', required: true },
+    version: { type: 'string', default: '1.8.1', required: true },
+    environment: { type: 'string', default: Environment.PRODUCTION, enum: Object.values(Environment) },
+    debug: { type: 'boolean', default: false },
+    buildDate: { type: 'string', default: () => new Date().toISOString() }
+  },
+
+  // API and data sources
+  api: {
+    catalogUrl: {
+      type: 'string',
+      default: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnMqBCqB9L52W6YNgreLHJKvxOanS76CJN8ZUorBl8Iccha6MzUpDkGa0N8GSYFPP2zyql1Tq6aBn8/pub?gid=0&amp;single=true&amp;output=csv',
+      required: true
+    },
+    timeout: { type: 'number', default: 30000, min: 5000, max: 120000 },
+    retryAttempts: { type: 'number', default: 3, min: 1, max: 10 },
+    retryDelay: { type: 'number', default: 1000, min: 500, max: 10000 }
+  },
+
+  // Storage configuration
+  storage: {
+    keys: {
+      type: 'object',
+      default: {
+        customRooms: 'customRooms',
+        selectedProducts: 'selectedProducts',
+        productCatalog: 'productCatalog',
+        userPreferences: 'userPreferences',
+        roomAssignments: 'roomAssignments',
+        criticalLogs: 'criticalLogs'
+      }
+    },
+    maxSize: { type: 'number', default: 5 * 1024 * 1024 }, // 5MB
+    compressionEnabled: { type: 'boolean', default: true }
+  },
+
+  // User interface settings
+  ui: {
+    theme: { type: 'string', default: 'light', enum: ['light', 'dark', 'auto'] },
+    language: { type: 'string', default: 'en-AU' },
+    animationsEnabled: { type: 'boolean', default: true },
+    annotationMaxLength: { type: 'number', default: 140, min: 50, max: 500 },
+    quantityOptions: { type: 'array', default: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    autoSaveInterval: { type: 'number', default: 30000, min: 10000, max: 300000 }, // 30 seconds
+    maxSearchResults: { type: 'number', default: 8, min: 5, max: 50 }
+  },
+
+  // Predefined rooms
+  rooms: {
+    predefined: {
+      type: 'array',
+      default: [
+        { name: 'Bath 1', icon: '🛁', category: 'bathroom' },
+        { name: 'Bath 2', icon: '🛁', category: 'bathroom' },
+        { name: 'Bath 3', icon: '🛁', category: 'bathroom' },
+        { name: 'Ensuite', icon: '🚿', category: 'bathroom' },
+        { name: 'Powder', icon: '🚽', category: 'bathroom' },
+        { name: 'Kitchen', icon: '🍽️', category: 'kitchen' },
+        { name: 'Butlers', icon: '👨‍🍳', category: 'kitchen' },
+        { name: 'Laundry', icon: '🧺', category: 'utility' },
+        { name: 'Alfresco', icon: '🍽️', category: 'outdoor' }
+      ]
+    },
+    maxCustomRooms: { type: 'number', default: 20, min: 5, max: 100 }
+  },
+
+  // File import settings
+  import: {
+    maxFileSize: { type: 'number', default: 10 * 1024 * 1024 }, // 10MB
+    acceptedTypes: { type: 'array', default: ['.csv', '.xlsx', '.xls'] },
+    requiredColumns: { type: 'array', default: ['OrderCode'] },
+    optionalColumns: {
+      type: 'array',
+      default: ['Description', 'RRP_INCGST', 'Image_URL', 'Room', 'Quantity', 'Notes']
+    },
+    batchSize: { type: 'number', default: 100, min: 10, max: 1000 },
+    allowDuplicates: { type: 'boolean', default: false }
+  },
+
+  // PDF generation
+  pdf: {
+    format: { type: 'string', default: 'A4', enum: ['A4', 'Letter', 'A3'] },
+    orientation: { type: 'string', default: 'portrait', enum: ['portrait', 'landscape'] },
+    quality: { type: 'number', default: 1.0, min: 0.1, max: 2.0 },
+    maxFileSize: { type: 'number', default: 50 * 1024 * 1024 }, // 50MB
+    includeImages: { type: 'boolean', default: true },
+    imageCompression: { type: 'number', default: 0.8, min: 0.1, max: 1.0 },
+    watermark: { type: 'boolean', default: false },
+    fonts: {
+      type: 'object',
+      default: {
+        primary: 'SF Pro Display, Segoe UI, Arial, sans-serif',
+        monospace: 'Menlo, Monaco, Consolas, monospace'
+      }
+    }
+  },
+
+  // Email configuration
+  email: {
+    serviceId: { type: 'string', default: 'service_rblizfg', required: true },
+    templateId: { type: 'string', default: 'template_8st9fhk', required: true },
+    publicKey: { type: 'string', default: 'MHAEjvnc_xx8DIRCA', required: true },
+    maxAttachmentSize: { type: 'number', default: 15 * 1024 * 1024 }, // 15MB
+    retryAttempts: { type: 'number', default: 3, min: 1, max: 5 },
+    retryDelay: { type: 'number', default: 2000, min: 1000, max: 10000 },
+    bccEmail: { type: 'string', default: 'jsegredos@gmail.com' }
+  },
+
+  // Browser compatibility
+  compatibility: {
+    minChromeVersion: { type: 'number', default: 80, min: 60 },
+    minFirefoxVersion: { type: 'number', default: 75, min: 60 },
+    minSafariVersion: { type: 'number', default: 13, min: 10 },
+    requiredFeatures: {
+      type: 'array',
+      default: ['localStorage', 'fileReader', 'blob', 'createObjectURL', 'fetch']
+    },
+    minCompatibilityScore: { type: 'number', default: 70, min: 50, max: 100 },
+    memoryWarningThreshold: { type: 'number', default: 0.8, min: 0.5, max: 1.0 },
+    enableSamsungOptimisations: { type: 'boolean', default: true },
+    enableExtendedTimeouts: { type: 'boolean', default: true }
+  },
+
+  // Performance settings
+  performance: {
+    maxProductsPerSession: { type: 'number', default: 1000, min: 100, max: 10000 },
+    imageCacheSize: { type: 'number', default: 100, min: 50, max: 500 },
+    virtualScrollThreshold: { type: 'number', default: 100, min: 50, max: 1000 },
+    debounceDelay: { type: 'number', default: 300, min: 100, max: 1000 },
+    batchUpdateSize: { type: 'number', default: 50, min: 10, max: 200 }
+  },
+
+  // Error handling and logging
+  logging: {
+    maxLogs: { type: 'number', default: 1000, min: 100, max: 10000 },
+    persistCriticalLogs: { type: 'boolean', default: true },
+    enableConsoleLogging: { type: 'boolean', default: true },
+    enableUserNotifications: { type: 'boolean', default: true },
+    logLevel: {
+      type: 'string',
+      default: 'info',
+      enum: ['debug', 'info', 'warn', 'error', 'critical']
+    }
+  }
+};
+
+/**
+ * Enhanced Configuration Manager with validation and environment support
+ */
+export class ConfigManager {
+  constructor() {
+    this.config = {};
+    this.validators = new Map();
+    this.listeners = new Map();
+    this.environment = this.detectEnvironment();
+
+    this.initializeConfig();
+    this.setupValidators();
+  }
+
+  /**
+   * Detect current environment
+   * @private
+   * @returns {Environment} Detected environment
+   */
+  detectEnvironment() {
+    // Check for development indicators
+    if (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.port !== '') {
+      return Environment.DEVELOPMENT;
+    }
+
+    // Check for staging indicators
+    if (window.location.hostname.includes('staging') ||
+        window.location.hostname.includes('test')) {
+      return Environment.STAGING;
+    }
+
+    return Environment.PRODUCTION;
+  }
+
+  /**
+   * Initialize configuration with defaults and environment overrides
+   * @private
+   */
+  initializeConfig() {
+    this.config = this.buildDefaultConfig(CONFIG_SCHEMA);
+
+    // Apply environment-specific overrides
+    this.applyEnvironmentOverrides();
+
+    // Load user preferences
+    this.loadUserPreferences();
+
+    // Validate final configuration
+    this.validateConfig();
+
+    errorHandler.log(`Configuration initialized for ${this.environment} environment`, LogLevel.INFO);
+  }
+
+  /**
+   * Build default configuration from schema
+   * @private
+   * @param {Object} schema - Configuration schema
+   * @returns {Object} Default configuration
+   */
+  buildDefaultConfig(schema) {
+    const config = {};
+
+    for (const [key, value] of Object.entries(schema)) {
+      if (value.type === 'object' &amp;&amp; !value.default) {
+        config[key] = this.buildDefaultConfig(value);
+      } else {
+        config[key] = typeof value.default === 'function' ? value.default() : value.default;
+      }
+    }
+
+    return config;
+  }
+
+  /**
+   * Apply environment-specific configuration overrides
+   * @private
+   */
+  applyEnvironmentOverrides() {
+    switch (this.environment) {
+    case Environment.DEVELOPMENT:
+      this.config.app.debug = true;
+      this.config.logging.logLevel = 'debug';
+      this.config.logging.enableConsoleLogging = true;
+      this.config.api.timeout = 60000; // Longer timeout for development
+      break;
+
+    case Environment.STAGING:
+      this.config.app.debug = true;
+      this.config.logging.logLevel = 'info';
+      this.config.pdf.watermark = true; // Add watermark for staging
+      break;
+
+    case Environment.PRODUCTION:
+      this.config.app.debug = false;
+      this.config.logging.logLevel = 'warn';
+      this.config.logging.enableConsoleLogging = false;
+      break;
+    }
+  }
+
+  /**
+   * Load user preferences from storage
+   * @private
+   */
+  loadUserPreferences() {
+    try {
+      const preferences = JSON.parse(localStorage.getItem('configPreferences') || '{}');
+      this.applyUserPreferences(preferences);
+    } catch (error) {
+      errorHandler.handleError({
+        message: 'Failed to load user preferences',
+        error,
+        category: ErrorCategory.STORAGE,
+        level: LogLevel.WARN
+      });
+    }
+  }
+
+  /**
+   * Apply user preferences with validation
+   * @private
+   * @param {Object} preferences - User preferences
+   */
+  applyUserPreferences(preferences) {
+    for (const [path, value] of Object.entries(preferences)) {
+      try {
+        this.setConfigValue(path, value, false); // Don't persist back to storage
+      } catch (error) {
+        errorHandler.handleError({
+          message: `Invalid user preference: ${path}`,
+          error,
+          category: ErrorCategory.VALIDATION,
+          level: LogLevel.WARN
+        });
+      }
+    }
+  }
+
+  /**
+   * Set up configuration validators
+   * @private
+   */
+  setupValidators() {
+    // Add custom validators
+    this.validators.set('url', (value) => {
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    this.validators.set('email', (value) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(value);
+    });
+
+    this.validators.set('positive', (value) => {
+      return typeof value === 'number' &amp;&amp; value > 0;
+    });
+  }
+
+  /**
+   * Get configuration value by path
+   * @param {string} path - Dot-separated path (e.g., 'ui.theme')
+   * @param {*} [defaultValue] - Default value if path not found
+   * @returns {*} Configuration value
+   */
+  get(path, defaultValue = undefined) {
+    const keys = path.split('.');
+    let current = this.config;
+
+    for (const key of keys) {
+      if (current &amp;&amp; typeof current === 'object' &amp;&amp; key in current) {
+        current = current[key];
+      } else {
+        return defaultValue;
+      }
+    }
+
+    return current;
+  }
+
+  /**
+   * Set configuration value by path
+   * @param {string} path - Dot-separated path
+   * @param {*} value - Value to set
+   * @param {boolean} [persist=true] - Whether to persist to storage
+   */
+  set(path, value, persist = true) {
+    this.setConfigValue(path, value, persist);
+  }
+
+  /**
+   * Internal method to set configuration value
+   * @private
+   * @param {string} path - Configuration path
+   * @param {*} value - Value to set
+   * @param {boolean} persist - Whether to persist
+   */
+  setConfigValue(path, value, persist) {
+    // Validate the value
+    if (!this.validateConfigPath(path, value)) {
+      throw new Error(`Invalid configuration value for ${path}: ${value}`);
+    }
+
+    // Set the value
+    const keys = path.split('.');
+    let current = this.config;
+
+    for (let i = 0; i &lt; keys.length - 1; i++) {
+      const key = keys[i];
+      if (!(key in current) || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+
+    const lastKey = keys[keys.length - 1];
+    const oldValue = current[lastKey];
+    current[lastKey] = value;
+
+    // Notify listeners
+    this.notifyListeners(path, value, oldValue);
+
+    // Persist to storage if requested
+    if (persist) {
+      this.persistUserPreference(path, value);
+    }
+
+    errorHandler.log(`Configuration updated: ${path} = ${JSON.stringify(value)}`, LogLevel.DEBUG);
+  }
+
+  /**
+   * Validate configuration path and value
+   * @private
+   * @param {string} path - Configuration path
+   * @param {*} value - Value to validate
+   * @returns {boolean} Whether value is valid
+   */
+  validateConfigPath(path, value) {
+    const schema = this.getSchemaForPath(path);
+    if (!schema) {return true;} // Allow unknown paths for flexibility
+
+    return this.validateValue(value, schema);
+  }
+
+  /**
+   * Get schema definition for configuration path
+   * @private
+   * @param {string} path - Configuration path
+   * @returns {Object|null} Schema definition
+   */
+  getSchemaForPath(path) {
+    const keys = path.split('.');
+    let current = CONFIG_SCHEMA;
+
+    for (const key of keys) {
+      if (current &amp;&amp; typeof current === 'object' &amp;&amp; key in current) {
+        current = current[key];
+      } else {
+        return null;
+      }
+    }
+
+    return current;
+  }
+
+  /**
+   * Validate value against schema
+   * @private
+   * @param {*} value - Value to validate
+   * @param {Object} schema - Schema definition
+   * @returns {boolean} Whether value is valid
+   */
+  validateValue(value, schema) {
+    // Check type
+    if (schema.type) {
+      if (schema.type === 'array' &amp;&amp; !Array.isArray(value)) {return false;}
+      if (schema.type !== 'array' &amp;&amp; typeof value !== schema.type) {return false;}
+    }
+
+    // Check enum values
+    if (schema.enum &amp;&amp; !schema.enum.includes(value)) {return false;}
+
+    // Check numeric constraints
+    if (typeof value === 'number') {
+      if (schema.min !== undefined &amp;&amp; value &lt; schema.min) {return false;}
+      if (schema.max !== undefined &amp;&amp; value > schema.max) {return false;}
+    }
+
+    // Check string constraints
+    if (typeof value === 'string') {
+      if (schema.minLength &amp;&amp; value.length &lt; schema.minLength) {return false;}
+      if (schema.maxLength &amp;&amp; value.length > schema.maxLength) {return false;}
+    }
+
+    // Check array constraints
+    if (Array.isArray(value)) {
+      if (schema.minItems &amp;&amp; value.length &lt; schema.minItems) {return false;}
+      if (schema.maxItems &amp;&amp; value.length > schema.maxItems) {return false;}
+    }
+
+    // Run custom validators
+    if (schema.validator &amp;&amp; this.validators.has(schema.validator)) {
+      return this.validators.get(schema.validator)(value);
+    }
+
+    return true;
+  }
+
+  /**
+   * Validate entire configuration
+   * @private
+   */
+  validateConfig() {
+    const errors = [];
+    this.validateConfigSection(this.config, CONFIG_SCHEMA, '', errors);
+
+    if (errors.length > 0) {
+      errorHandler.handleError({
+        message: `Configuration validation errors: ${errors.join(', ')}`,
+        category: ErrorCategory.VALIDATION,
+        level: LogLevel.WARN
+      });
+    }
+  }
+
+  /**
+   * Recursively validate configuration section
+   * @private
+   * @param {Object} config - Configuration section
+   * @param {Object} schema - Schema section
+   * @param {string} path - Current path
+   * @param {Array} errors - Error accumulator
+   */
+  validateConfigSection(config, schema, path, errors) {
+    for (const [key, schemaValue] of Object.entries(schema)) {
+      const currentPath = path ? `${path}.${key}` : key;
+      const configValue = config[key];
+
+      if (schemaValue.required &amp;&amp; (configValue === undefined || configValue === null)) {
+        errors.push(`Missing required config: ${currentPath}`);
+        continue;
+      }
+
+      if (configValue !== undefined) {
+        if (schemaValue.type === 'object' &amp;&amp; !schemaValue.default) {
+          this.validateConfigSection(configValue, schemaValue, currentPath, errors);
+        } else if (!this.validateValue(configValue, schemaValue)) {
+          errors.push(`Invalid config value: ${currentPath}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Persist user preference to storage
+   * @private
+   * @param {string} path - Configuration path
+   * @param {*} value - Configuration value
+   */
+  persistUserPreference(path, value) {
+    try {
+      const preferences = JSON.parse(localStorage.getItem('configPreferences') || '{}');
+      preferences[path] = value;
+      localStorage.setItem('configPreferences', JSON.stringify(preferences));
+    } catch (error) {
+      errorHandler.handleError({
+        message: 'Failed to persist user preference',
+        error,
+        category: ErrorCategory.STORAGE,
+        level: LogLevel.WARN
+      });
+    }
+  }
+
+  /**
+   * Add configuration change listener
+   * @param {string} path - Configuration path to watch
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   */
+  addListener(path, callback) {
+    if (!this.listeners.has(path)) {
+      this.listeners.set(path, new Set());
+    }
+
+    this.listeners.get(path).add(callback);
+
+    // Return unsubscribe function
+    return () => {
+      const pathListeners = this.listeners.get(path);
+      if (pathListeners) {
+        pathListeners.delete(callback);
+        if (pathListeners.size === 0) {
+          this.listeners.delete(path);
+        }
+      }
+    };
+  }
+
+  /**
+   * Notify listeners of configuration changes
+   * @private
+   * @param {string} path - Changed configuration path
+   * @param {*} newValue - New value
+   * @param {*} oldValue - Previous value
+   */
+  notifyListeners(path, newValue, oldValue) {
+    // Notify exact path listeners
+    const pathListeners = this.listeners.get(path);
+    if (pathListeners) {
+      pathListeners.forEach(callback => {
+        try {
+          callback(newValue, oldValue, path);
+        } catch (error) {
+          errorHandler.handleError({
+            message: 'Configuration listener error',
+            error,
+            category: ErrorCategory.UI,
+            level: LogLevel.WARN
+          });
+        }
+      });
+    }
+
+    // Notify wildcard listeners (paths ending with '*')
+    for (const [listenerPath, listeners] of this.listeners) {
+      if (listenerPath.endsWith('*')) {
+        const basePath = listenerPath.slice(0, -1);
+        if (path.startsWith(basePath)) {
+          listeners.forEach(callback => {
+            try {
+              callback(newValue, oldValue, path);
+            } catch (error) {
+              errorHandler.handleError({
+                message: 'Configuration wildcard listener error',
+                error,
+                category: ErrorCategory.UI,
+                level: LogLevel.WARN
+              });
+            }
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Reset configuration to defaults
+   * @param {string} [path] - Specific path to reset (optional)
+   */
+  reset(path) {
+    if (path) {
+      const schema = this.getSchemaForPath(path);
+      if (schema &amp;&amp; schema.default !== undefined) {
+        const defaultValue = typeof schema.default === 'function' ? schema.default() : schema.default;
+        this.set(path, defaultValue);
+      }
+    } else {
+      this.config = this.buildDefaultConfig(CONFIG_SCHEMA);
+      this.applyEnvironmentOverrides();
+      localStorage.removeItem('configPreferences');
+      this.validateConfig();
+    }
+
+    errorHandler.log(`Configuration reset: ${path || 'all'}`, LogLevel.INFO);
+  }
+
+  /**
+   * Get current environment
+   * @returns {Environment} Current environment
+   */
+  getEnvironment() {
+    return this.environment;
+  }
+
+  /**
+   * Check if running in development mode
+   * @returns {boolean} Whether in development
+   */
+  isDevelopment() {
+    return this.environment === Environment.DEVELOPMENT;
+  }
+
+  /**
+   * Check if running in production mode
+   * @returns {boolean} Whether in production
+   */
+  isProduction() {
+    return this.environment === Environment.PRODUCTION;
+  }
+
+  /**
+   * Export configuration for debugging
+   * @returns {Object} Configuration export
+   */
+  export() {
+    return {
+      config: this.config,
+      environment: this.environment,
+      schema: CONFIG_SCHEMA,
+      exportTime: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get configuration summary
+   * @returns {Object} Configuration summary
+   */
+  getSummary() {
+    return {
+      environment: this.environment,
+      version: this.get('app.version'),
+      debug: this.get('app.debug'),
+      totalSettings: this.countConfigSettings(this.config),
+      customPreferences: Object.keys(JSON.parse(localStorage.getItem('configPreferences') || '{}')).length
+    };
+  }
+
+  /**
+   * Count total configuration settings
+   * @private
+   * @param {Object} obj - Configuration object
+   * @returns {number} Number of settings
+   */
+  countConfigSettings(obj) {
+    let count = 0;
+    for (const value of Object.values(obj)) {
+      if (typeof value === 'object' &amp;&amp; value !== null &amp;&amp; !Array.isArray(value)) {
+        count += this.countConfigSettings(value);
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+}
+
+// Create and export global configuration instance
+export const config = new ConfigManager();
+
+// Backward compatibility - expose via CONFIG constant
+export const CONFIG = new Proxy({}, {
+  get(target, prop) {
+    // Handle nested property access like CONFIG.ui.theme
+    return config.get(prop.toString());
+  },
+
+  set(target, prop, value) {
+    config.set(prop.toString(), value);
+    return true;
+  }
+});
+
+// Make available globally for debugging
+window.config = config;
+window.CONFIG = CONFIG;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BrowserCompatibilityManager.html">BrowserCompatibilityManager</a></li><li><a href="ConfigManager.html">ConfigManager</a></li><li><a href="ErrorHandler.html">ErrorHandler</a></li><li><a href="ProductGridManager.html">ProductGridManager</a></li><li><a href="SeimaScanner.html">SeimaScanner</a></li><li><a href="StorageManager.html">StorageManager</a></li><li><a href="Utils.html">Utils</a></li></ul><h3>Global</h3><ul><li><a href="global.html#CONFIG_SCHEMA">CONFIG_SCHEMA</a></li><li><a href="global.html#Environment">Environment</a></li><li><a href="global.html#ErrorCategory">ErrorCategory</a></li><li><a href="global.html#LogLevel">LogLevel</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Aug 16 2025 02:34:06 GMT+0930 (Australian Central Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

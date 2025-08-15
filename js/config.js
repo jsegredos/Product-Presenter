@@ -2,28 +2,28 @@
 export const CONFIG = {
   ROOMS: {
     PREDEFINED: [
-      { name: "Bath 1", icon: "🛁" },
-      { name: "Bath 2", icon: "🛁" },
-      { name: "Bath 3", icon: "🛁" },
-      { name: "Ensuite", icon: "🚿" },
-      { name: "Powder", icon: "🚽" },
-      { name: "Kitchen", icon: "🍽️" },
-      { name: "Butlers", icon: "👨‍🍳" },
-      { name: "Laundry", icon: "🧺" },
-      { name: "Alfresco", icon: "🍽️" }
+      { name: 'Bath 1', icon: '🛁' },
+      { name: 'Bath 2', icon: '🛁' },
+      { name: 'Bath 3', icon: '🛁' },
+      { name: 'Ensuite', icon: '🚿' },
+      { name: 'Powder', icon: '🚽' },
+      { name: 'Kitchen', icon: '🍽️' },
+      { name: 'Butlers', icon: '👨‍🍳' },
+      { name: 'Laundry', icon: '🧺' },
+      { name: 'Alfresco', icon: '🍽️' }
     ]
   },
 
-  
+
   SEARCH: {
     MAX_RESULTS: 8,
     SEARCH_FIELDS: ['Description', 'ProductName', 'OrderCode', 'BARCODE']
   },
-  
+
   CSV: {
     URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnMqBCqB9L52W6YNgreLHJKvxOanS76CJN8ZUorBl8Iccha6MzUpDkGa0N8GSYFPP2zyql1Tq6aBn8/pub?gid=0&single=true&output=csv'
   },
-  
+
   STORAGE_KEYS: {
     CUSTOM_ROOMS: 'customRooms',
     SELECTED_PRODUCTS: 'selectedProducts',
@@ -31,12 +31,12 @@ export const CONFIG = {
     USER_PREFERENCES: 'userPreferences',
     ROOM_ASSIGNMENTS: 'roomAssignments'
   },
-  
+
   UI: {
     ANNOTATION_MAX_LENGTH: 140,
     QUANTITY_OPTIONS: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   },
-  
+
   // CSV import configuration
   CSV_CONFIG: {
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
@@ -44,13 +44,13 @@ export const CONFIG = {
     REQUIRED_COLUMNS: ['OrderCode'],
     OPTIONAL_COLUMNS: ['Description', 'RRP_INCGST', 'Image_URL', 'Room', 'Quantity', 'Notes']
   },
-  
+
   // Product catalog API configuration
   CATALOG_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnMqBCqB9L52W6YNgreLHJKvxOanS76CJN8ZUorBl8Iccha6MzUpDkGa0N8GSYFPP2zyql1Tq6aBn8/pub?gid=0&single=true&output=csv',
-  
+
   // Version information
   VERSION: '1.3.0',
-  
+
   // Performance settings
   PERFORMANCE: {
     MAX_PRODUCTS_PER_SESSION: 1000,
@@ -63,22 +63,22 @@ export const CONFIG = {
     PUBLIC_KEY: 'MHAEjvnc_xx8DIRCA',
     SERVICE_ID: 'service_rblizfg',
     TEMPLATE_ID: 'template_8st9fhk',
-    
+
     // Email settings
     MAX_ATTACHMENT_SIZE: 15 * 1024 * 1024, // 15MB (increased for technical PDFs)
     RETRY_ATTEMPTS: 3,
     RETRY_DELAY: 2000, // milliseconds
-    
+
     // BCC for record keeping
     BCC_EMAIL: 'jsegredos@gmail.com' // Company email for BCC copy
   },
-  
+
   // Browser Compatibility Settings
   COMPATIBILITY: {
     MIN_CHROME_VERSION: 80,
     MIN_FIREFOX_VERSION: 75,
     MIN_SAFARI_VERSION: 13,
-    
+
     // Feature requirements
     REQUIRED_FEATURES: [
       'localStorage',
@@ -86,11 +86,11 @@ export const CONFIG = {
       'blob',
       'createObjectURL'
     ],
-    
+
     // Performance thresholds
     MIN_COMPATIBILITY_SCORE: 70,
     MEMORY_WARNING_THRESHOLD: 0.8, // 80% of heap limit
-    
+
     // Samsung-specific settings
     SAMSUNG_OPTIMIZATIONS: true,
     EXTENDED_TIMEOUTS_FOR_SAMSUNG: true
@@ -105,27 +105,27 @@ export const EMAIL_TEMPLATE_CONFIG = {
     to_email: '{{USER_EMAIL}}',
     to_name: '{{USER_NAME}}',
     from_name: 'Seima Scanner App',
-    
+
     // Email content
     subject: 'Your Seima Product Selection',
     message: '{{EMAIL_MESSAGE}}',
-    
+
     // Customer details
     customer_name: '{{CUSTOMER_NAME}}',
     customer_project: '{{CUSTOMER_PROJECT}}',
     customer_address: '{{CUSTOMER_ADDRESS}}',
     customer_telephone: '{{CUSTOMER_TELEPHONE}}',
-    
+
     // Selection info
     total_products: '{{TOTAL_PRODUCTS}}',
     total_rooms: '{{TOTAL_ROOMS}}',
     file_info: '{{FILE_INFO}}',
-    
+
     // Attachment
     attachment: '{{PDF_BASE64}}',
     attachment_name: '{{FILENAME}}'
   },
-  
+
   // Email template HTML (for reference - actual template is created in EmailJS dashboard)
   HTML_TEMPLATE: `
     <!DOCTYPE html>
@@ -168,4 +168,4 @@ export const EMAIL_TEMPLATE_CONFIG = {
     </body>
     </html>
   `
-}; 
+};

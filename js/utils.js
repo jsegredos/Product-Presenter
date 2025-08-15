@@ -1,29 +1,88 @@
-// Utility functions
+/**
+ * Utility Functions Module
+ * Collection of reusable utility functions for common operations
+ *
+ * @author Seima Development Team
+ * @version 1.0.0
+ * @since 1.8.1
+ */
+
+/**
+ * Utility class containing static methods for common operations
+ * @class Utils
+ */
 export class Utils {
+
+  /**
+   * Dynamically load a JavaScript file
+   * @static
+   * @async
+   * @param {string} src - URL of the script to load
+   * @returns {Promise<void>} Promise that resolves when script is loaded
+   * @throws {Error} If script fails to load
+   *
+   * @example
+   * ```javascript
+   * await Utils.loadScript('https://cdn.example.com/library.js');
+   * console.log('Script loaded successfully');
+   * ```
+   */
   static loadScript(src) {
     return new Promise((resolve, reject) => {
+      // Check if script is already loaded
       if (document.querySelector(`script[src="${src}"]`)) {
         resolve();
         return;
       }
-      
+
       const script = document.createElement('script');
       script.src = src;
       script.onload = resolve;
-      script.onerror = reject;
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
       document.head.appendChild(script);
     });
   }
 
+  /**
+   * Load an image and return it when loaded
+   * @static
+   * @async
+   * @param {string} src - Image URL to load
+   * @returns {Promise<HTMLImageElement>} Promise that resolves with loaded image
+   * @throws {Error} If image fails to load
+   *
+   * @example
+   * ```javascript
+   * const img = await Utils.loadImage('/assets/product-image.jpg');
+   * document.body.appendChild(img);
+   * ```
+   */
   static loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => resolve(img);
-      img.onerror = reject;
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
       img.src = src;
     });
   }
 
+  /**
+   * Load image and convert to data URL (base64)
+   * @static
+   * @param {string} src - Image URL to load
+   * @param {Function} callback - Callback function (dataURL, width, height)
+   *
+   * @example
+   * ```javascript
+   * Utils.loadImageAsDataURL('/assets/logo.png', (dataURL, width, height) => {
+   *   if (dataURL) {
+   *     console.log(`Image loaded: ${width}x${height}`);
+   *   } else {
+   *     console.error('Failed to load image');
+   *   }
+   * });
+   * ```
+   */
   static loadImageAsDataURL(src, callback) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -44,14 +103,42 @@ export class Utils {
     img.src = src;
   }
 
+  /**
+   * Format a numeric value as currency (Australian dollars)
+   * @static
+   * @param {string|number} price - Price value to format
+   * @returns {string} Formatted price string (e.g., "$123.45") or empty string if invalid
+   *
+   * @example
+   * ```javascript
+   * Utils.formatPrice(123.456);     // "$123.46"
+   * Utils.formatPrice("123.45");    // "$123.45"
+   * Utils.formatPrice("invalid");   // ""
+   * Utils.formatPrice(null);        // ""
+   * ```
+   */
   static formatPrice(price) {
-    if (!price || price === '') return '';
+    if (!price || price === '') {return '';}
     const numPrice = parseFloat(price.toString().replace(/[^\d.-]/g, ''));
     return isNaN(numPrice) ? '' : `$${numPrice.toFixed(2)}`;
   }
 
+  /**
+   * Sanitise user input by trimming and optionally limiting length
+   * @static
+   * @param {string} input - Input string to sanitise
+   * @param {number|null} [maxLength=null] - Maximum allowed length
+   * @returns {string} Sanitised string
+   *
+   * @example
+   * ```javascript
+   * Utils.sanitizeInput("  hello world  ");        // "hello world"
+   * Utils.sanitizeInput("long text here", 8);      // "long tex"
+   * Utils.sanitizeInput(123);                      // "" (non-string)
+   * ```
+   */
   static sanitizeInput(input, maxLength = null) {
-    if (typeof input !== 'string') return '';
+    if (typeof input !== 'string') {return '';}
     let sanitized = input.trim();
     if (maxLength && sanitized.length > maxLength) {
       sanitized = sanitized.substring(0, maxLength);
@@ -59,6 +146,24 @@ export class Utils {
     return sanitized;
   }
 
+  /**
+   * Create a debounced version of a function that delays execution
+   * @static
+   * @param {Function} func - Function to debounce
+   * @param {number} delay - Delay in milliseconds
+   * @returns {Function} Debounced function
+   *
+   * @example
+   * ```javascript
+   * const debouncedSearch = Utils.debounce((query) => {
+   *   console.log('Searching for:', query);
+   * }, 300);
+   *
+   * debouncedSearch('a');    // Won't execute immediately
+   * debouncedSearch('ab');   // Cancels previous, won't execute immediately
+   * debouncedSearch('abc');  // Will execute after 300ms
+   * ```
+   */
   static debounce(func, delay) {
     let timeoutId;
     return function (...args) {
@@ -67,14 +172,54 @@ export class Utils {
     };
   }
 
+  /**
+   * Generate a unique identifier string
+   * @static
+   * @returns {string} Unique ID combining timestamp and random string
+   *
+   * @example
+   * ```javascript
+   * const id1 = Utils.generateId(); // "l8k9j2h3_abc123def"
+   * const id2 = Utils.generateId(); // "l8k9j2h4_xyz789ghi"
+   * ```
+   */
   static generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
+  /**
+   * Create a deep clone of an object using JSON serialisation
+   * Note: This method won't clone functions, undefined values, or circular references
+   * @static
+   * @param {Object} obj - Object to clone
+   * @returns {Object} Deep clone of the object
+   *
+   * @example
+   * ```javascript
+   * const original = { user: { name: 'John', age: 30 } };
+   * const clone = Utils.deepClone(original);
+   * clone.user.name = 'Jane';
+   * console.log(original.user.name); // Still "John"
+   * ```
+   */
   static deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
 
+  /**
+   * Safely retrieve and parse a localStorage item
+   * @static
+   * @param {string} key - localStorage key
+   * @param {*} [defaultValue=null] - Default value if key doesn't exist or parsing fails
+   * @returns {*} Parsed value or default value
+   *
+   * @example
+   * ```javascript
+   * Utils.setStorageItem('settings', { theme: 'dark' });
+   * const settings = Utils.getStorageItem('settings', {});
+   * const missing = Utils.getStorageItem('nonexistent', 'default');
+   * ```
+   */
   static getStorageItem(key, defaultValue = null) {
     try {
       const item = localStorage.getItem(key);
@@ -85,6 +230,21 @@ export class Utils {
     }
   }
 
+  /**
+   * Safely stringify and store a value in localStorage
+   * @static
+   * @param {string} key - localStorage key
+   * @param {*} value - Value to store (will be JSON stringified)
+   * @returns {boolean} True if successful, false otherwise
+   *
+   * @example
+   * ```javascript
+   * const success = Utils.setStorageItem('user', { name: 'John', id: 123 });
+   * if (success) {
+   *   console.log('User data saved');
+   * }
+   * ```
+   */
   static setStorageItem(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -94,4 +254,4 @@ export class Utils {
       return false;
     }
   }
-} 
+}

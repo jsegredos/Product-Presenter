@@ -43,7 +43,7 @@ export class FileImportManager {
         e.preventDefault();
         dropZone.style.borderColor = '#ccc';
         dropZone.style.background = '#fafafa';
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
           this.handleFileSelection(files[0]);
@@ -63,11 +63,11 @@ export class FileImportManager {
     const processBtn = document.getElementById('import-process-btn');
     const closeBtn = document.getElementById('import-close-btn');
 
-    if (cancelBtn) cancelBtn.onclick = () => this.closeModal();
-    if (nextBtn) nextBtn.onclick = () => this.showImportModeStep();
-    if (backBtn) backBtn.onclick = () => this.showFileSelectionStep();
-    if (processBtn) processBtn.onclick = () => this.processImport();
-    if (closeBtn) closeBtn.onclick = () => this.closeModal();
+    if (cancelBtn) {cancelBtn.onclick = () => this.closeModal();}
+    if (nextBtn) {nextBtn.onclick = () => this.showImportModeStep();}
+    if (backBtn) {backBtn.onclick = () => this.showFileSelectionStep();}
+    if (processBtn) {processBtn.onclick = () => this.processImport();}
+    if (closeBtn) {closeBtn.onclick = () => this.closeModal();}
 
     const importModeInputs = document.querySelectorAll('input[name="import-mode"]');
     importModeInputs.forEach(input => {
@@ -104,84 +104,84 @@ export class FileImportManager {
     this.notFoundProducts = [];
 
     this.showFileSelectionStep();
-    
+
     const fileInput = document.getElementById('file-input');
-    if (fileInput) fileInput.value = '';
-    
+    if (fileInput) {fileInput.value = '';}
+
     const fileInfo = document.getElementById('selected-file-info');
-    if (fileInfo) fileInfo.style.display = 'none';
-    
+    if (fileInfo) {fileInfo.style.display = 'none';}
+
     const nextBtn = document.getElementById('import-next-btn');
-    if (nextBtn) nextBtn.disabled = true;
+    if (nextBtn) {nextBtn.disabled = true;}
 
     const appendRadio = document.querySelector('input[name="import-mode"][value="append"]');
-    if (appendRadio) appendRadio.checked = true;
-    
+    if (appendRadio) {appendRadio.checked = true;}
+
     const warningDiv = document.getElementById('override-warning');
-    if (warningDiv) warningDiv.style.display = 'none';
+    if (warningDiv) {warningDiv.style.display = 'none';}
   }
 
   showFileSelectionStep() {
     this.hideAllSteps();
     const step = document.getElementById('file-selection-step');
-    if (step) step.style.display = 'block';
+    if (step) {step.style.display = 'block';}
   }
 
   showImportModeStep() {
     this.hideAllSteps();
     const step = document.getElementById('import-mode-step');
-    if (step) step.style.display = 'block';
+    if (step) {step.style.display = 'block';}
   }
 
   showProcessingStep() {
     this.hideAllSteps();
     const step = document.getElementById('import-processing-step');
-    if (step) step.style.display = 'block';
+    if (step) {step.style.display = 'block';}
   }
 
   showResultsStep() {
     this.hideAllSteps();
     const step = document.getElementById('import-results-step');
-    if (step) step.style.display = 'block';
+    if (step) {step.style.display = 'block';}
   }
 
   hideAllSteps() {
     const steps = [
       'file-selection-step',
-      'import-mode-step', 
+      'import-mode-step',
       'import-processing-step',
       'import-results-step'
     ];
-    
+
     steps.forEach(stepId => {
       const step = document.getElementById(stepId);
-      if (step) step.style.display = 'none';
+      if (step) {step.style.display = 'none';}
     });
   }
 
   handleFileSelection(file) {
     console.log('File selected:', file.name, file.type, file.size);
-    
+
     const validTypes = [
       'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
-    
-    const isValidExtension = file.name.toLowerCase().endsWith('.csv') || 
+
+    const isValidExtension = file.name.toLowerCase().endsWith('.csv') ||
                            file.name.toLowerCase().endsWith('.xlsx');
-    
+
     if (!validTypes.includes(file.type) && !isValidExtension) {
       alert('Please select a CSV or Excel (.xlsx) file.');
       return;
     }
 
     this.selectedFile = file;
-    
+
     const fileInfo = document.getElementById('selected-file-info');
     const fileName = document.getElementById('selected-file-name');
     const nextBtn = document.getElementById('import-next-btn');
-    
+
     if (fileInfo && fileName && nextBtn) {
       fileName.textContent = file.name;
       fileInfo.style.display = 'block';
@@ -218,7 +218,7 @@ export class FileImportManager {
 
     } catch (error) {
       console.error('Import failed:', error);
-      alert('Import failed: ' + error.message);
+      alert(`Import failed: ${error.message}`);
       this.showFileSelectionStep();
     }
   }
@@ -269,10 +269,10 @@ export class FileImportManager {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          
+
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          
+
           const jsonData = XLSX.utils.sheet_to_json(worksheet, {
             header: 1,
             defval: ''
@@ -285,7 +285,7 @@ export class FileImportManager {
 
           const headers = jsonData[0];
           const rows = jsonData.slice(1);
-          
+
           const objectData = rows.map(row => {
             const obj = {};
             headers.forEach((header, index) => {
@@ -301,11 +301,11 @@ export class FileImportManager {
           reject(error);
         }
       };
-      
+
       reader.onerror = () => {
         reject(new Error('Failed to read Excel file'));
       };
-      
+
       reader.readAsArrayBuffer(file);
     });
   }
@@ -329,7 +329,7 @@ export class FileImportManager {
     for (let i = 0; i < data.length; i += chunkSize) {
       const chunk = data.slice(i, i + chunkSize);
       await this.processChunk(chunk, columnMapping);
-      
+
       await new Promise(resolve => setTimeout(resolve, 10));
     }
 
@@ -350,10 +350,10 @@ export class FileImportManager {
 
   findColumnByPatterns(headers, patterns) {
     for (const pattern of patterns) {
-      const found = headers.find(h => 
+      const found = headers.find(h =>
         h.toLowerCase().includes(pattern.toLowerCase())
       );
-      if (found) return found;
+      if (found) {return found;}
     }
     return null;
   }
@@ -384,12 +384,12 @@ export class FileImportManager {
     }
 
     const quantity = parseInt(quantityStr) || 1;
-    
+
     let price = 0;
     if (priceStr) {
       const cleanPriceStr = String(priceStr).replace(/[^\d.-]/g, '');
       price = parseFloat(cleanPriceStr) || 0;
-      
+
       if (price > 0) {
         price = price * 1.1;
       }
@@ -398,7 +398,7 @@ export class FileImportManager {
     console.log('Processing valid 6-digit product code:', { productCode: codeStr, productName, quantity, price });
 
     const catalogProduct = await this.findProductInCatalog(codeStr, productName);
-    
+
     // Create product using imported data, with catalog data as fallback
     // Use catalog field naming conventions for consistency
     const productToAdd = {
@@ -422,17 +422,17 @@ export class FileImportManager {
       RRP_INCGST: price > 0 ? price.toFixed(2) : (catalogProduct ? (catalogProduct.RRP_INCGST || catalogProduct.rrpIncGst) : '0.00'),
       rrpIncGst: price > 0 ? price.toFixed(2) : (catalogProduct ? (catalogProduct.RRP_INCGST || catalogProduct.rrpIncGst) : '0.00')
     };
-    
+
     if (catalogProduct) {
       console.log('Found product in catalog, using imported data with catalog fallbacks:', codeStr);
     } else {
       console.log('Product not found in catalog, creating with imported data:', codeStr);
-      
+
       // Track products not found in catalog for alert display
       this.notFoundProducts.push({
         orderCode: codeStr,
         productName: productName || 'Unknown Product',
-        quantity: quantity,
+        quantity,
         price: price > 0 ? price.toFixed(2) : 'N/A'
       });
     }
@@ -440,7 +440,7 @@ export class FileImportManager {
     StorageManager.addProductToSelection(productToAdd, '', 'Blank', quantity);
     this.processedData.push({
       ...productToAdd,
-      quantity: quantity,
+      quantity,
       notes: '',
       room: 'Blank'
     });
@@ -448,14 +448,14 @@ export class FileImportManager {
 
   async findProductInCatalog(productCode, productName) {
     const catalog = dataLayer.getAllProducts();
-    
+
     if (productCode) {
       // Convert both to strings for comparison to handle number vs string issues
       const codeStr = String(productCode).trim();
       const byCode = catalog.find(p => {
         // Check various field name patterns for order code
         const orderCodeFields = [p.OrderCode, p.orderCode, p['Order Code'], p.order_code];
-        return orderCodeFields.some(field => 
+        return orderCodeFields.some(field =>
           field && String(field).trim().toLowerCase() === codeStr.toLowerCase()
         );
       });
@@ -470,13 +470,13 @@ export class FileImportManager {
       const byName = catalog.find(p => {
         const fields = [
           p.productName,
-          p['Product Name'], 
+          p['Product Name'],
           p.description,
           p.Description,
           p.LongDescription
         ];
-        
-        return fields.some(field => 
+
+        return fields.some(field =>
           field && String(field).trim().toLowerCase() === nameStr
         );
       });
@@ -492,7 +492,7 @@ export class FileImportManager {
 
   showImportResults() {
     this.showResultsStep();
-    
+
     const summaryElement = document.getElementById('import-summary');
     const notFoundContainer = document.getElementById('not-found-products');
     const notFoundListElement = document.getElementById('not-found-list');
@@ -514,13 +514,13 @@ export class FileImportManager {
           heading.textContent = 'Products added with placeholder information:';
           heading.style.color = '#2563eb'; // Blue instead of red
         }
-        
-        const listHtml = this.notFoundProducts.map(product => 
+
+        const listHtml = this.notFoundProducts.map(product =>
           `<li><strong>${product.orderCode}</strong> - ${product.productName} (Qty: ${product.quantity}, Price: ${product.price})</li>`
         ).join('');
         notFoundListElement.innerHTML = `<ul>${listHtml}</ul>`;
         notFoundContainer.style.display = 'block';
-        
+
         // Change the container styling to be informational
         notFoundContainer.style.borderColor = '#2563eb';
         notFoundContainer.style.backgroundColor = '#eff6ff';
@@ -540,4 +540,4 @@ export class FileImportManager {
 
     console.log('Import results displayed');
   }
-} 
+}

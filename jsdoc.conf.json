@@ -1,0 +1,31 @@
+{
+  "source": {
+    "include": ["./js/"],
+    "includePattern": "\\.js$",
+    "exclude": ["node_modules/"],
+    "excludePattern": ".*\\.min\\.js$"
+  },
+  "opts": {
+    "destination": "./docs/",
+    "recurse": true,
+    "readme": "./README.md"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  },
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "sourceType": "module",
+  "metadata": {
+    "title": "Seima Product Presenter - API Documentation",
+    "description": "Interactive product catalogue and PDF generation tool",
+    "version": "1.8.1",
+    "author": "Seima Development Team"
+  }
+}

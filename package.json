@@ -1,0 +1,60 @@
+{
+  "name": "seima-product-presenter",
+  "version": "1.9.0",
+  "description": "Interactive product catalogue and PDF generation tool for Seima products",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node server.js",
+    "dev:py": "py server.py",
+    "start": "npm run dev",
+    "lint": "eslint js/*.js --ext .js",
+    "lint:fix": "eslint js/*.js --ext .js --fix",
+    "format": "prettier --write \"js/**/*.js\" \"*.html\" \"*.css\" \"*.md\"",
+    "format:check": "prettier --check \"js/**/*.js\" \"*.html\" \"*.css\" \"*.md\"",
+    "docs": "jsdoc -c jsdoc.conf.json",
+    "docs:serve": "npx http-server docs -p 8081",
+    "validate": "npm run lint && npm run format:check",
+    "build": "npm run validate && npm run docs",
+    "clean": "rm -rf docs node_modules package-lock.json",
+    "update-assets": "node generate-assets-list.js",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "keywords": [
+    "product-catalogue",
+    "pdf-generation",
+    "seima",
+    "interactive",
+    "web-app"
+  ],
+  "author": "Seima Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "jsdoc": "^4.0.2",
+    "http-server": "^14.1.1",
+    "eslint-config-prettier": "^9.1.0"
+  },
+  "browserslist": [
+    "Chrome >= 80",
+    "Firefox >= 75",
+    "Safari >= 13",
+    "Edge >= 80"
+  ],
+  "volta": {
+    "node": "18.19.0",
+    "npm": "10.2.3"
+  }
+}

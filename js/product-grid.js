@@ -1,5 +1,6 @@
 import { StorageManager } from './storage.js';
-import { CONFIG, dataLayer } from './modules.js';
+import { dataLayer } from './modules.js';
+import { config } from './config-manager.js';
 import { Utils } from './utils.js';
 
 // --- DROPDOWN MANAGER (Reusable Component) ---
@@ -44,19 +45,19 @@ class DropdownManager {
     if (leftPosition + dropdownWidth > viewportWidth - 8) {
       leftPosition = viewportWidth - dropdownWidth - 8;
     }
-    if (leftPosition < 8) leftPosition = 8;
+    if (leftPosition < 8) {leftPosition = 8;}
     const styles = {
       position: 'fixed',
-      top: topPosition + 'px',
-      left: leftPosition + 'px',
-      width: dropdownWidth + 'px',
-      minWidth: dropdownWidth + 'px',
-      maxWidth: dropdownWidth + 'px',
+      top: `${topPosition}px`,
+      left: `${leftPosition}px`,
+      width: `${dropdownWidth}px`,
+      minWidth: `${dropdownWidth}px`,
+      maxWidth: `${dropdownWidth}px`,
       background: '#fff',
       border: '1px solid #d1d5db',
       borderRadius: '8px',
       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.10)',
-      maxHeight: dropdownHeight + 'px',
+      maxHeight: `${dropdownHeight}px`,
       overflowY: 'auto',
       overflowX: 'hidden',
       zIndex: '10010',
@@ -81,7 +82,7 @@ class DropdownManager {
       dropdown.innerHTML = items.map(item => {
         const orderCode = item.OrderCode || item.Code || '';
         const description = item.Description || item.ProductName || item['Product Name'] || '';
-        return `<li data-product='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+        return `<li data-product='${JSON.stringify(item).replace(/'/g, '&apos;')}'
                      style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f3f4f6; 
                             transition: background-color 0.15s ease; font-size: 14px; line-height: 1.5;
                             margin: 0; display: block; width: 100%; 
@@ -132,12 +133,12 @@ class DropdownManager {
       if (leftPosition + inputRect.width > viewportWidth - 8) {
         leftPosition = viewportWidth - inputRect.width - 8;
       }
-      if (leftPosition < 8) leftPosition = 8;
-      dropdown.style.setProperty('top', topPosition + 'px', 'important');
-      dropdown.style.setProperty('left', leftPosition + 'px', 'important');
-      dropdown.style.setProperty('width', inputRect.width + 'px', 'important');
-      dropdown.style.setProperty('min-width', inputRect.width + 'px', 'important');
-      dropdown.style.setProperty('max-width', inputRect.width + 'px', 'important');
+      if (leftPosition < 8) {leftPosition = 8;}
+      dropdown.style.setProperty('top', `${topPosition}px`, 'important');
+      dropdown.style.setProperty('left', `${leftPosition}px`, 'important');
+      dropdown.style.setProperty('width', `${inputRect.width}px`, 'important');
+      dropdown.style.setProperty('min-width', `${inputRect.width}px`, 'important');
+      dropdown.style.setProperty('max-width', `${inputRect.width}px`, 'important');
     };
     window.addEventListener('scroll', this.updatePositionHandler);
     window.addEventListener('resize', this.updatePositionHandler);
@@ -187,13 +188,13 @@ export class ProductGridManager {
       gridTable.style.removeProperty('overflow');
       gridTable.classList.remove('has-open-dropdown');
     }
-    
+
     // Clean up any leftover global dropdown styles
     const existingDropdown = document.querySelector('.global-search-dropdown');
     if (existingDropdown) {
       existingDropdown.remove();
     }
-    
+
     this.setupEventListeners();
     this.updateAllRoomDropdowns();
     this.loadExistingProducts();
@@ -244,11 +245,11 @@ export class ProductGridManager {
     // Clear All modal events
     const clearAllCancel = document.getElementById('clear-all-cancel');
     const clearAllConfirm = document.getElementById('clear-all-confirm');
-    
+
     if (clearAllCancel) {
       clearAllCancel.onclick = () => this.hideClearAllModal();
     }
-    
+
     if (clearAllConfirm) {
       clearAllConfirm.onclick = () => {
         this.clearAll();
@@ -259,11 +260,11 @@ export class ProductGridManager {
     // Settings modal events
     const settingsCancel = document.getElementById('settings-cancel');
     const settingsSave = document.getElementById('settings-save');
-    
+
     if (settingsCancel) {
       settingsCancel.onclick = () => this.hideSettingsModal();
     }
-    
+
     if (settingsSave) {
       settingsSave.onclick = () => this.saveSettings();
     }
@@ -271,7 +272,7 @@ export class ProductGridManager {
     // Modal click-outside handlers
     const clearAllModal = document.getElementById('clear-all-modal');
     const settingsModal = document.getElementById('settings-modal');
-    
+
     if (clearAllModal) {
       clearAllModal.onclick = (e) => {
         if (e.target === clearAllModal) {
@@ -279,7 +280,7 @@ export class ProductGridManager {
         }
       };
     }
-    
+
     if (settingsModal) {
       settingsModal.onclick = (e) => {
         if (e.target === settingsModal) {
@@ -307,7 +308,7 @@ export class ProductGridManager {
       gridBody.addEventListener('keydown', this.handleGridKeydown.bind(this));
       gridBody.addEventListener('focusin', this.handleGridFocusIn.bind(this));
       gridBody.addEventListener('focusout', this.handleGridFocusOut.bind(this));
-      
+
       // Drag and drop event listeners
       gridBody.addEventListener('dragstart', this.handleDragStart.bind(this));
       gridBody.addEventListener('dragover', this.handleDragOver.bind(this));
@@ -400,7 +401,7 @@ export class ProductGridManager {
         } else if (typeof showPdfFormScreen === 'function') {
           showPdfFormScreen(userDetails);
         }
-        if (pdfModal) pdfModal.style.display = 'none'; // Hide modal after download
+        if (pdfModal) {pdfModal.style.display = 'none';} // Hide modal after download
       };
     }
   }
@@ -409,7 +410,7 @@ export class ProductGridManager {
    * Adds an empty row to the grid for new product entry.
    */
   addEmptyRow() {
-    const rowId = 'row_' + this.nextRowId++;
+    const rowId = `row_${this.nextRowId++}`;
     const row = {
       id: rowId,
       product: null,
@@ -421,7 +422,7 @@ export class ProductGridManager {
 
     this.gridRows.push(row);
     this.renderGrid();
-    
+
     // Focus on the search input of the new row
     setTimeout(() => {
       const searchInput = document.querySelector(`[data-row-id="${rowId}"] .grid-search-input`);
@@ -439,7 +440,7 @@ export class ProductGridManager {
     const index = this.gridRows.findIndex(row => row.id === rowId);
     if (index !== -1) {
       const row = this.gridRows[index];
-      
+
       // Remove from storage if it has a product
       if (row.product && row.storageId) {
         StorageManager.removeProductFromSelection(row.storageId);
@@ -459,7 +460,7 @@ export class ProductGridManager {
    */
   moveRow(rowId, direction) {
     const currentIndex = this.gridRows.findIndex(row => row.id === rowId);
-    if (currentIndex === -1) return;
+    if (currentIndex === -1) {return;}
 
     let newIndex;
     if (direction === 'up') {
@@ -468,7 +469,7 @@ export class ProductGridManager {
       newIndex = Math.min(this.gridRows.length - 1, currentIndex + 1);
     }
 
-    if (newIndex === currentIndex) return; // No movement needed
+    if (newIndex === currentIndex) {return;} // No movement needed
 
     // Move the row in the array
     const row = this.gridRows.splice(currentIndex, 1)[0];
@@ -542,14 +543,14 @@ export class ProductGridManager {
 
     const allProducts = dataLayer.getAllProducts();
     const searchTerm = query.toLowerCase();
-    
+
     return allProducts.filter(product => {
       const orderCode = (product.OrderCode || product.Code || '').toString().toLowerCase();
       const description = (product.Description || product.ProductName || product['Product Name'] || '').toLowerCase();
       const longDescription = (product.LongDescription || '').toLowerCase();
-      
-      return orderCode.includes(searchTerm) || 
-             description.includes(searchTerm) || 
+
+      return orderCode.includes(searchTerm) ||
+             description.includes(searchTerm) ||
              longDescription.includes(searchTerm);
     }); // Removed .slice(0, 10) to show all results
   }
@@ -584,7 +585,7 @@ export class ProductGridManager {
     const rowId = rowElement.dataset.rowId;
     const row = this.gridRows.find(r => r.id === rowId);
 
-    if (!row) return;
+    if (!row) {return;}
 
     // Update row data
     row.product = product;
@@ -616,7 +617,7 @@ export class ProductGridManager {
    * @param {Object} row
    */
   saveRowToStorage(row) {
-    if (!row.product) return;
+    if (!row.product) {return;}
 
     const productData = {
       ...row.product,
@@ -646,7 +647,7 @@ export class ProductGridManager {
    */
   focusNextRowOrCreate(currentRowId) {
     const currentIndex = this.gridRows.findIndex(row => row.id === currentRowId);
-    
+
     if (currentIndex < this.gridRows.length - 1) {
       // Focus next row
       const nextRow = this.gridRows[currentIndex + 1];
@@ -702,7 +703,7 @@ export class ProductGridManager {
    */
   handleGridClick(event) {
     const target = event.target;
-    
+
     if (target.classList.contains('grid-remove-btn')) {
       const rowElement = target.closest('.grid-row');
       const rowId = rowElement.dataset.rowId;
@@ -736,51 +737,51 @@ export class ProductGridManager {
 
   handleDropdownKeyboard(event, dropdown) {
     const globalDropdown = document.querySelector('.global-search-dropdown');
-    if (!globalDropdown) return;
+    if (!globalDropdown) {return;}
     const items = globalDropdown.querySelectorAll('li[data-product]');
-    let activeItem = globalDropdown.querySelector('li.active');
+    const activeItem = globalDropdown.querySelector('li.active');
     let newActive = null;
     switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        if (!activeItem) {
-          newActive = items[0];
-        } else {
-          activeItem.classList.remove('active');
-          const currentIndex = Array.from(items).indexOf(activeItem);
-          const nextIndex = (currentIndex + 1) % items.length;
-          newActive = items[nextIndex];
-        }
-        if (newActive) {
-          newActive.classList.add('active');
-          newActive.scrollIntoView({block: 'nearest'});
-        }
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        if (!activeItem) {
-          newActive = items[items.length - 1];
-        } else {
-          activeItem.classList.remove('active');
-          const currentIndex = Array.from(items).indexOf(activeItem);
-          const prevIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
-          newActive = items[prevIndex];
-        }
-        if (newActive) {
-          newActive.classList.add('active');
-          newActive.scrollIntoView({block: 'nearest'});
-        }
-        break;
-      case 'Enter':
-        event.preventDefault();
-        if (activeItem) {
-          activeItem.click();
-        }
-        break;
-      case 'Escape':
-        event.preventDefault();
-        this.hideGlobalDropdown();
-        break;
+    case 'ArrowDown':
+      event.preventDefault();
+      if (!activeItem) {
+        newActive = items[0];
+      } else {
+        activeItem.classList.remove('active');
+        const currentIndex = Array.from(items).indexOf(activeItem);
+        const nextIndex = (currentIndex + 1) % items.length;
+        newActive = items[nextIndex];
+      }
+      if (newActive) {
+        newActive.classList.add('active');
+        newActive.scrollIntoView({block: 'nearest'});
+      }
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      if (!activeItem) {
+        newActive = items[items.length - 1];
+      } else {
+        activeItem.classList.remove('active');
+        const currentIndex = Array.from(items).indexOf(activeItem);
+        const prevIndex = currentIndex === 0 ? items.length - 1 : currentIndex - 1;
+        newActive = items[prevIndex];
+      }
+      if (newActive) {
+        newActive.classList.add('active');
+        newActive.scrollIntoView({block: 'nearest'});
+      }
+      break;
+    case 'Enter':
+      event.preventDefault();
+      if (activeItem) {
+        activeItem.click();
+      }
+      break;
+    case 'Escape':
+      event.preventDefault();
+      this.hideGlobalDropdown();
+      break;
     }
   }
 
@@ -832,13 +833,13 @@ export class ProductGridManager {
     event.preventDefault();
     const fromRowId = event.dataTransfer.getData('text/plain');
     const toRow = event.target.closest('.grid-row');
-    if (!toRow || !fromRowId) return;
+    if (!toRow || !fromRowId) {return;}
     const toRowId = toRow.dataset.rowId;
-    if (fromRowId === toRowId) return;
+    if (fromRowId === toRowId) {return;}
     // Find indexes
     const fromIdx = this.gridRows.findIndex(r => r.id === fromRowId);
     const toIdx = this.gridRows.findIndex(r => r.id === toRowId);
-    if (fromIdx === -1 || toIdx === -1) return;
+    if (fromIdx === -1 || toIdx === -1) {return;}
     // Move row
     const [movedRow] = this.gridRows.splice(fromIdx, 1);
     this.gridRows.splice(toIdx, 0, movedRow);
@@ -894,9 +895,9 @@ export class ProductGridManager {
           const staffNameInput = document.getElementById('staff-name');
           const staffEmailInput = document.getElementById('staff-email');
           const staffPhoneInput = document.getElementById('staff-telephone');
-          if (staffNameInput) staffNameInput.value = userSettings.staffName || '';
-          if (staffEmailInput) staffEmailInput.value = userSettings.staffEmail || '';
-          if (staffPhoneInput) staffPhoneInput.value = userSettings.staffPhone || '';
+          if (staffNameInput) {staffNameInput.value = userSettings.staffName || '';}
+          if (staffEmailInput) {staffEmailInput.value = userSettings.staffEmail || '';}
+          if (staffPhoneInput) {staffPhoneInput.value = userSettings.staffPhone || '';}
         }
         const versionSpan = document.getElementById('settings-version-info');
         if (versionSpan) {
@@ -965,15 +966,15 @@ export class ProductGridManager {
         const reader = new FileReader();
         reader.onload = (ev) => {
           localStorage.setItem(CUSTOMER_LOGO_KEY, ev.target.result);
-          if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-height:100px;max-width:180px;width:auto;height:auto;object-fit:contain;">`;
+          if (preview) {preview.innerHTML = `<img src="${ev.target.result}" style="max-height:100px;max-width:180px;width:auto;height:auto;object-fit:contain;">`;}
         };
         reader.readAsDataURL(file);
       }
     };
     clear.onclick = () => {
       localStorage.removeItem(CUSTOMER_LOGO_KEY);
-      if (preview) preview.innerHTML = '';
-      if (upload) upload.value = '';
+      if (preview) {preview.innerHTML = '';}
+      if (upload) {upload.value = '';}
     };
   }
 
@@ -994,7 +995,7 @@ export class ProductGridManager {
       // Dynamic fallback: try to detect PDF files in assets directory
       assetPdfs = await this.detectAvailablePdfFiles();
     }
-    assetPdfs = assetPdfs.map(f => 'assets/' + f);
+    assetPdfs = assetPdfs.map(f => `assets/${f}`);
     const tipSelect = document.getElementById('tip-pdf-select');
     const tailSelect = document.getElementById('tail-pdf-select');
     if (tipSelect && tailSelect) {
@@ -1011,7 +1012,7 @@ export class ProductGridManager {
   // Dynamic PDF file detection for live environments
   async detectAvailablePdfFiles() {
     const availableFiles = [];
-    
+
     // First, try to get a list from the server if available (most reliable)
     try {
       const response = await fetch('/assets-list');
@@ -1023,7 +1024,7 @@ export class ProductGridManager {
     } catch (error) {
       console.log('ℹ️ Server endpoint not available, trying assets-list.json...');
     }
-    
+
     // Second, try to read from assets-list.json (for GitHub Pages)
     try {
       const response = await fetch('/assets-list.json');
@@ -1035,23 +1036,23 @@ export class ProductGridManager {
     } catch (error) {
       console.log('ℹ️ assets-list.json not available, using fallback list...');
     }
-    
+
     // Fallback: use a comprehensive list of files that actually exist
     // This ensures the app works even if the JSON file is missing
     const knownFiles = [
       'tip-AandD.pdf',
-      'tip-Builder.pdf', 
+      'tip-Builder.pdf',
       'tip-Merchant.pdf',
       'tip-Volume Merchant.pdf',
       'tail.pdf',
       'tail-generic.pdf',
       'my-sample-tip-file.pdf'
     ];
-    
+
     console.log('🔍 Using fallback file list...');
     console.log(`📋 Including ${knownFiles.length} known PDF files`);
     console.log(`🎯 Final detected PDF files (${knownFiles.length} found):`, knownFiles);
-    
+
     return knownFiles;
   }
 
@@ -1068,7 +1069,7 @@ export class ProductGridManager {
     const tailSelect = document.getElementById('tail-pdf-select');
     const tipUpload = document.getElementById('tip-pdf-upload');
     const tailUpload = document.getElementById('tail-pdf-upload');
-    
+
     // Handle tip selection
     if (tipSelect) {
       if (settings.tipUpload) {
@@ -1084,7 +1085,7 @@ export class ProductGridManager {
         tipSelect.value = settings.tipAsset;
       }
     }
-    
+
     // Handle tail selection
     if (tailSelect) {
       if (settings.tailUpload) {
@@ -1114,11 +1115,11 @@ export class ProductGridManager {
 
     tipSelect.onchange = () => {
       this.saveTipTailSettings({ tipAsset: tipSelect.value, tipUpload: null, tipUploadName: '' });
-      if (tipSelected) tipSelected.textContent = '';
+      if (tipSelected) {tipSelected.textContent = '';}
     };
     tailSelect.onchange = () => {
       this.saveTipTailSettings({ tailAsset: tailSelect.value, tailUpload: null, tailUploadName: '' });
-      if (tailSelected) tailSelected.textContent = '';
+      if (tailSelected) {tailSelected.textContent = '';}
     };
     tipUpload.onchange = (e) => {
       const file = e.target.files[0];
@@ -1252,34 +1253,34 @@ export class ProductGridManager {
     const staffName = document.getElementById('staff-name')?.value || '';
     const staffEmail = document.getElementById('staff-email')?.value || '';
     const staffPhone = document.getElementById('staff-telephone')?.value || '';
-    
+
     const settings = {
       staffName: staffName.trim(),
       staffEmail: staffEmail.trim(),
       staffPhone: staffPhone.trim()
     };
-    
+
     // Save to storage
     StorageManager.saveUserSettings(settings);
-    
+
     // Hide the modal
     this.hideSettingsModal();
-    
+
     // Show success message
     console.log('Settings saved successfully:', settings);
   }
 
   loadSettings() {
     const settings = StorageManager.getUserSettings();
-    
+
     // Populate the form fields
     const staffNameField = document.getElementById('staff-name');
     const staffEmailField = document.getElementById('staff-email');
     const staffPhoneField = document.getElementById('staff-telephone');
-    
-    if (staffNameField) staffNameField.value = settings.staffName || '';
-    if (staffEmailField) staffEmailField.value = settings.staffEmail || '';
-    if (staffPhoneField) staffPhoneField.value = settings.staffPhone || '';
+
+    if (staffNameField) {staffNameField.value = settings.staffName || '';}
+    if (staffEmailField) {staffEmailField.value = settings.staffEmail || '';}
+    if (staffPhoneField) {staffPhoneField.value = settings.staffPhone || '';}
   }
 
   /**
@@ -1291,7 +1292,7 @@ export class ProductGridManager {
     const rowId = rowElement.dataset.rowId;
     const row = this.gridRows.find(r => r.id === rowId);
 
-    if (!row) return;
+    if (!row) {return;}
 
     let shouldUpdateTotal = false;
 
@@ -1306,10 +1307,10 @@ export class ProductGridManager {
             // Successfully added room
             row.room = trimmedName;
             console.log('✅ Added new room:', trimmedName);
-            
+
             // Refresh all room dropdowns in the grid
             this.updateAllRoomDropdowns();
-            
+
             // Set the new room value for this specific dropdown
             input.value = trimmedName;
           } else {
@@ -1372,7 +1373,7 @@ export class ProductGridManager {
     this.gridRows = [];
     this.nextRowId = 1;
     selectedProducts.forEach(item => {
-      const rowId = 'row_' + this.nextRowId++;
+      const rowId = `row_${this.nextRowId++}`;
       const row = {
         id: rowId,
         product: item.product,
@@ -1394,8 +1395,8 @@ export class ProductGridManager {
     const gridBody = document.getElementById('grid-body');
     const emptyState = document.getElementById('product-grid-empty');
     const gridContainer = document.getElementById('product-grid-container');
-    
-    if (!gridBody) return;
+
+    if (!gridBody) {return;}
 
     if (this.gridRows.length === 0) {
       gridContainer.style.display = 'none';
@@ -1408,13 +1409,13 @@ export class ProductGridManager {
 
     // Group by room for organized display
     const groupedRows = this.groupRowsByRoom();
-    
+
     // CREATE PROPER TABLE STRUCTURE - NO DIV WRAPPERS!
     const tableRows = [];
-    
+
     Object.entries(groupedRows).forEach(([room, rows]) => {
       const roomClass = this.getRoomClass(room);
-      
+
       // Room header as a proper table row that spans all columns
       const roomHeaderRow = `
         <div class="grid-row room-header-row ${roomClass}">
@@ -1433,17 +1434,17 @@ export class ProductGridManager {
           <div class="col-actions"></div>
         </div>
       `;
-      
+
       tableRows.push(roomHeaderRow);
-      
+
       // Add product rows
       rows.forEach(row => {
         tableRows.push(this.renderRowHtml(row));
       });
-         });
-     
-     gridBody.innerHTML = tableRows.join('');
-    }
+    });
+
+    gridBody.innerHTML = tableRows.join('');
+  }
 
   /**
    * Returns the HTML for a single row.
@@ -1459,7 +1460,7 @@ export class ProductGridManager {
     const displayOrderCode = productCode ? String(parseInt(productCode, 10)) : '';
     // Always show product's price if product is selected, otherwise row.price
     const displayPrice = product ? (product.RRP_INCGST || product.rrpIncGst || product.Price || row.price || '') : (row.price || '');
-    
+
     // Calculate total price
     const unitPrice = parseFloat((displayPrice || '').toString().replace(/,/g, '')) || 0;
     const quantity = parseInt(row.quantity) || 1;
@@ -1517,55 +1518,55 @@ export class ProductGridManager {
   handleSortChange() {
     const sortSelect = document.getElementById('sort-by');
     const sortBy = sortSelect ? sortSelect.value : 'room';
-    
+
     this.sortGridRows(sortBy);
     this.renderGrid();
   }
 
   sortGridRows(sortBy) {
     switch (sortBy) {
-      case 'room':
-        this.gridRows.sort((a, b) => {
-          const roomA = a.room || 'Blank';
-          const roomB = b.room || 'Blank';
-          return roomA.localeCompare(roomB);
-        });
-        break;
-        
-      case 'product':
-        this.gridRows.sort((a, b) => {
-          const nameA = a.product ? (a.product.Description || a.product.ProductName || '') : '';
-          const nameB = b.product ? (b.product.Description || b.product.ProductName || '') : '';
-          return nameA.localeCompare(nameB);
-        });
-        break;
-        
-      case 'code':
-        this.gridRows.sort((a, b) => {
-          const codeA = a.product ? (a.product.OrderCode || a.product.Code || '') : '';
-          const codeB = b.product ? (b.product.OrderCode || b.product.Code || '') : '';
-          return codeA.localeCompare(codeB);
-        });
-        break;
-        
-      case 'order':
-      default:
-        // Keep original order (no sorting)
-        break;
+    case 'room':
+      this.gridRows.sort((a, b) => {
+        const roomA = a.room || 'Blank';
+        const roomB = b.room || 'Blank';
+        return roomA.localeCompare(roomB);
+      });
+      break;
+
+    case 'product':
+      this.gridRows.sort((a, b) => {
+        const nameA = a.product ? (a.product.Description || a.product.ProductName || '') : '';
+        const nameB = b.product ? (b.product.Description || b.product.ProductName || '') : '';
+        return nameA.localeCompare(nameB);
+      });
+      break;
+
+    case 'code':
+      this.gridRows.sort((a, b) => {
+        const codeA = a.product ? (a.product.OrderCode || a.product.Code || '') : '';
+        const codeB = b.product ? (b.product.OrderCode || b.product.Code || '') : '';
+        return codeA.localeCompare(codeB);
+      });
+      break;
+
+    case 'order':
+    default:
+      // Keep original order (no sorting)
+      break;
     }
   }
 
   groupRowsByRoom() {
     const sortSelect = document.getElementById('sort-by');
     const sortBy = sortSelect ? sortSelect.value : 'room';
-    
+
     if (sortBy !== 'room') {
       // For non-room sorting, return all rows in a single group
       return { 'All Products': this.gridRows };
     }
-    
+
     const grouped = {};
-    
+
     this.gridRows.forEach(row => {
       const room = row.room || 'Blank';
       if (!grouped[room]) {
@@ -1591,14 +1592,15 @@ export class ProductGridManager {
       'Other': 'other-room',
       'All Products': 'all-products'
     };
-    
+
     return roomClasses[roomName] || '';
   }
 
   getRoomOptions(selectedRoom) {
     let options = `<option value="Blank" ${selectedRoom === 'Blank' ? 'selected' : ''}>Blank</option>`;
-    
-    CONFIG.ROOMS.PREDEFINED.forEach(room => {
+
+    const predefinedRooms = config.get('rooms.predefined', []);
+    predefinedRooms.forEach(room => {
       options += `<option value="${room.name}" ${selectedRoom === room.name ? 'selected' : ''}>${room.name}</option>`;
     });
 
@@ -1723,4 +1725,4 @@ export class ProductGridManager {
   refreshUI() {
     this.init();
   }
-} 
+}

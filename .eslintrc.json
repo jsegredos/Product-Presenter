@@ -1,0 +1,72 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "globals": {
+    "window": "readonly",
+    "document": "readonly",
+    "console": "readonly",
+    "localStorage": "readonly",
+    "fetch": "readonly",
+    "FormData": "readonly",
+    "Blob": "readonly",
+    "URL": "readonly",
+    "PDFLib": "readonly",
+    "emailjs": "readonly"
+  },
+  "rules": {
+    "indent": ["error", 2],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single", { "allowTemplateLiterals": true }],
+    "semi": ["error", "always"],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "prefer-const": "error",
+    "no-var": "error",
+    "object-shorthand": "error",
+    "prefer-arrow-callback": "error",
+    "arrow-spacing": "error",
+    "comma-dangle": ["error", "never"],
+    "eol-last": "error",
+    "no-trailing-spaces": "error",
+    "space-before-blocks": "error",
+    "keyword-spacing": "error",
+    "space-infix-ops": "error",
+    "space-unary-ops": "error",
+    "no-multiple-empty-lines": ["error", { "max": 2 }],
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+    "curly": ["error", "all"],
+    "eqeqeq": ["error", "always"],
+    "no-implicit-globals": "error",
+    "no-undef": "error",
+    "no-unused-expressions": "error",
+    "no-useless-return": "error",
+    "prefer-template": "error",
+    "template-curly-spacing": "error"
+  },
+  "overrides": [
+    {
+      "files": ["server.js", "server.py"],
+      "env": {
+        "node": true,
+        "browser": false
+      }
+    },
+    {
+      "files": ["js/**/*.js"],
+      "rules": {
+        "no-restricted-globals": ["error", "event", "fdescribe"]
+      }
+    }
+  ]
+}

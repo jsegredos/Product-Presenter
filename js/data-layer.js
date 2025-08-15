@@ -3,7 +3,7 @@
  * Consolidates product catalog and storage management
  */
 
-import { CONFIG } from './config.js';
+import { config } from './config-manager.js';
 import { StorageManager } from './storage.js';
 
 export class DataLayer {
@@ -29,7 +29,7 @@ export class DataLayer {
     try {
       console.log('📦 Loading product catalog...');
       // 1. Try to load from localStorage for instant display
-      let cached = localStorage.getItem('productCatalogCsv');
+      const cached = localStorage.getItem('productCatalogCsv');
       let products = [];
       if (cached) {
         products = this.parseCSV(cached);
@@ -38,7 +38,8 @@ export class DataLayer {
         console.log(`⚡ Loaded ${products.length} products from cache`);
       }
       // 2. In the background, fetch the latest from Google Sheets
-      const url = CONFIG.CATALOG_URL + (CONFIG.CATALOG_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+      const catalogUrl = config.get('api.catalogUrl');
+      const url = `${catalogUrl + (catalogUrl.includes('?') ? '&' : '?')}t=${Date.now()}`;
       fetch(url)
         .then(response => response.ok ? response.text() : Promise.reject('Failed to fetch catalog'))
         .then(csvText => {
@@ -70,7 +71,7 @@ export class DataLayer {
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) continue;
+      if (!line) {continue;}
 
       try {
         const values = this.parseCSVLine(line);
@@ -121,10 +122,10 @@ export class DataLayer {
     const result = [];
     let current = '';
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         if (inQuotes && line[i + 1] === '"') {
           current += '"';
@@ -139,29 +140,29 @@ export class DataLayer {
         current += char;
       }
     }
-    
+
     result.push(current);
     return result;
   }
 
   buildSearchIndex() {
     console.log('🔍 Building search index...');
-    
+
     this.searchIndex.clear();
-    
+
     this.products.forEach((product, index) => {
       // Index by order code
       if (product.OrderCode) {
         this.searchIndex.set(product.OrderCode.toLowerCase(), index);
         this.searchIndex.set(product.OrderCode.toLowerCase().replace(/[-\s]/g, ''), index);
       }
-      
+
       // Index by barcode for product lookup
       if (product.BARCODE && product.BARCODE.trim()) {
         this.searchIndex.set(product.BARCODE.toLowerCase(), index);
         this.searchIndex.set(product.BARCODE.toLowerCase().replace(/[-\s]/g, ''), index);
       }
-      
+
       // Index by description keywords
       if (product.Description) {
         const words = product.Description.toLowerCase().split(/\s+/);
@@ -178,7 +179,7 @@ export class DataLayer {
         });
       }
     });
-    
+
     // Count barcodes indexed for debugging
     const barcodeCount = this.products.filter(p => p.BARCODE && p.BARCODE.trim()).length;
     console.log(`✅ Search index built with ${this.searchIndex.size} entries (${barcodeCount} barcodes indexed)`);
@@ -186,45 +187,45 @@ export class DataLayer {
 
   // Product search methods
   findProductByCode(code) {
-    if (!code) return null;
-    
+    if (!code) {return null;}
+
     // Search by OrderCode or BARCODE
     const cleanCode = code.toLowerCase().trim();
     const index = this.searchIndex.get(cleanCode) || this.searchIndex.get(cleanCode.replace(/[-\s]/g, ''));
-    
+
     const product = typeof index === 'number' ? this.products[index] : null;
-    
+
     // Debug logging for barcode lookup
     if (code.length > 8) { // Likely a barcode
       console.log(`🔍 Barcode search for "${code}": ${product ? 'FOUND' : 'NOT FOUND'} ${product ? `(${product.OrderCode} - ${product.Description})` : ''}`);
     }
-    
+
     return product;
   }
 
   searchProducts(query) {
-    if (!query || query.length < 2) return [];
-    
+    if (!query || query.length < 2) {return [];}
+
     const queryLower = query.toLowerCase();
     const results = new Set();
-    
+
     // Direct code match (highest priority)
     const directMatch = this.findProductByCode(query);
     if (directMatch) {
       results.add(directMatch);
     }
-    
+
     // Search in descriptions, order codes, and barcodes
     this.products.forEach(product => {
       const description = (product.Description || '').toLowerCase();
       const orderCode = (product.OrderCode || '').toLowerCase();
       const barcode = (product.BARCODE || '').toLowerCase();
-      
+
       if (description.includes(queryLower) || orderCode.includes(queryLower) || barcode.includes(queryLower)) {
         results.add(product);
       }
     });
-    
+
     return Array.from(results);
   }
 
@@ -233,7 +234,7 @@ export class DataLayer {
   }
 
   getProductsByCategory(category) {
-    return this.products.filter(product => 
+    return this.products.filter(product =>
       product.Category && product.Category.toLowerCase().includes(category.toLowerCase())
     );
   }
@@ -241,13 +242,13 @@ export class DataLayer {
   // Selection management methods
   getSelectedProducts() {
     const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-    const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-    
+    const selectedProducts = JSON.parse(localStorage.getItem(config.get('storage.keys.selectedProducts')) || '[]');
+
     // Use the newer format if available
     if (selectedProducts.length > 0) {
       return selectedProducts;
     }
-    
+
     // Convert old format to new format
     return storedSelection.map(item => ({
       product: item,
@@ -260,7 +261,7 @@ export class DataLayer {
 
   addProductToSelection(product, room = '', notes = '', quantity = 1) {
     const selectedProducts = this.getSelectedProducts();
-    
+
     const selectionItem = {
       id: this.generateSelectionId(),
       product: { ...product },
@@ -268,10 +269,10 @@ export class DataLayer {
       notes,
       quantity: Math.max(1, parseInt(quantity) || 1)
     };
-    
+
     selectedProducts.push(selectionItem);
     this.saveSelectedProducts(selectedProducts);
-    
+
     console.log(`✅ Added ${product.OrderCode} to selection`);
     return selectionItem;
   }
@@ -279,9 +280,9 @@ export class DataLayer {
   removeProductFromSelection(selectionId) {
     const selectedProducts = this.getSelectedProducts();
     const filteredProducts = selectedProducts.filter(item => item.id !== selectionId);
-    
+
     this.saveSelectedProducts(filteredProducts);
-    
+
     console.log(`✅ Removed product from selection`);
     return filteredProducts;
   }
@@ -289,26 +290,26 @@ export class DataLayer {
   updateSelectionItem(selectionId, updates) {
     const selectedProducts = this.getSelectedProducts();
     const itemIndex = selectedProducts.findIndex(item => item.id === selectionId);
-    
+
     if (itemIndex !== -1) {
       selectedProducts[itemIndex] = { ...selectedProducts[itemIndex], ...updates };
       this.saveSelectedProducts(selectedProducts);
       console.log(`✅ Updated selection item`);
       return selectedProducts[itemIndex];
     }
-    
+
     return null;
   }
 
   clearSelection() {
     localStorage.removeItem('selection');
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS);
+    localStorage.removeItem(config.get('storage.keys.selectedProducts'));
     console.log('✅ Selection cleared');
   }
 
   saveSelectedProducts(selectedProducts) {
-    localStorage.setItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS, JSON.stringify(selectedProducts));
-    
+    localStorage.setItem(config.get('storage.keys.selectedProducts'), JSON.stringify(selectedProducts));
+
     // Also maintain backward compatibility with old format
     const legacyFormat = selectedProducts.map(item => ({
       ...item.product,
@@ -349,7 +350,7 @@ export class DataLayer {
   getProductsByRoom() {
     const selectedProducts = this.getSelectedProducts();
     const roomGroups = {};
-    
+
     selectedProducts.forEach(item => {
       const room = item.room || 'Unassigned';
       if (!roomGroups[room]) {
@@ -357,7 +358,7 @@ export class DataLayer {
       }
       roomGroups[room].push(item);
     });
-    
+
     return roomGroups;
   }
 
@@ -370,17 +371,17 @@ export class DataLayer {
   validateSelection() {
     const selectedProducts = this.getSelectedProducts();
     const issues = [];
-    
+
     selectedProducts.forEach((item, index) => {
       if (!this.validateProduct(item.product)) {
         issues.push(`Product ${index + 1}: Missing required fields`);
       }
-      
+
       if (!item.quantity || item.quantity < 1) {
         issues.push(`Product ${index + 1}: Invalid quantity`);
       }
     });
-    
+
     return {
       isValid: issues.length === 0,
       issues
@@ -391,7 +392,7 @@ export class DataLayer {
   exportSelectionData() {
     const selectedProducts = this.getSelectedProducts();
     const summary = this.getSelectionSummary();
-    
+
     return {
       selection: selectedProducts,
       summary,
@@ -416,4 +417,4 @@ export class DataLayer {
 }
 
 // Global instance
-export const dataLayer = new DataLayer(); 
+export const dataLayer = new DataLayer();

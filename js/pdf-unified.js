@@ -51,7 +51,7 @@ export class UnifiedPDFGenerator {
 
       // Add product table
       const colWidths = await this.layouts.addProductTableHeader();
-      
+
       // Add product rows
       for (let i = 0; i < selectedProducts.length; i++) {
         const item = selectedProducts[i];
@@ -67,7 +67,7 @@ export class UnifiedPDFGenerator {
 
       // Generate the PDF blob
       const pdfBlob = await this.core.finalize();
-      
+
       console.log('✅ PDF generated successfully');
       return pdfBlob;
 
@@ -87,10 +87,10 @@ export class UnifiedPDFGenerator {
       console.log(`📊 Generating CSV for ${selectedProducts.length} products...`);
 
       const csvLines = [];
-      
+
       // CSV Header - maintaining exact format as required
       csvLines.push('"Code","Description","Quantity","Price ea inc GST","Price Total inc GST","Notes","Room","Image URL","Diagram URL","Datasheet URL","Website URL"');
-      
+
       // Product rows
       selectedProducts.forEach(item => {
         const code = this.cleanForCSV(item.product?.OrderCode || '');
@@ -104,13 +104,13 @@ export class UnifiedPDFGenerator {
         const diagramUrl = this.cleanForCSV(item.product?.Diagram_URL || '');
         const datasheetUrl = this.cleanForCSV(item.product?.Datasheet_URL || '');
         const websiteUrl = this.cleanForCSV(item.product?.Website_URL || '');
-        
+
         csvLines.push(`"${code}","${desc}","${qty}","${priceEa}","${priceTotal}","${notes}","${room}","${imageUrl}","${diagramUrl}","${datasheetUrl}","${websiteUrl}"`);
       });
-      
+
       const csvContent = csvLines.join('\n');
       const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-      
+
       console.log('✅ CSV generated successfully');
       return csvBlob;
 
@@ -138,12 +138,12 @@ export class UnifiedPDFGenerator {
     // Get products from both possible storage locations
     const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
     const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-    
+
     // Use the newer format if available
     if (selectedProducts.length > 0) {
       return selectedProducts;
     }
-    
+
     // Convert old format to new format
     return storedSelection.map(item => ({
       product: item,
@@ -160,7 +160,7 @@ export class UnifiedPDFGenerator {
   }
 
   cleanForCSV(value) {
-    if (!value) return '';
+    if (!value) {return '';}
     return value.toString().replace(/"/g, '""').replace(/[\r\n]/g, ' ');
   }
 
@@ -181,7 +181,7 @@ export class UnifiedPDFGenerator {
     const hh = String(now.getHours()).padStart(2, '0');
     const min = String(now.getMinutes()).padStart(2, '0');
     const projectName = (userDetails.project || 'seima-selection').replace(/[^a-zA-Z0-9\s]/g, '');
-    
+
     return `${projectName}-${dd}${mm}${yy}.${hh}${min}.${extension}`;
   }
 
@@ -235,7 +235,7 @@ export async function generateSimpleCsvForEmailJS(userDetails, filename) {
   const generator = new UnifiedPDFGenerator();
   const csvBlob = await generator.generateCSV(userDetails);
   const csvText = await csvBlob.text();
-  
+
   return {
     name: filename,
     data: csvText,
@@ -244,4 +244,4 @@ export async function generateSimpleCsvForEmailJS(userDetails, filename) {
 }
 
 // Global instance
-export const pdfGenerator = new UnifiedPDFGenerator(); 
+export const pdfGenerator = new UnifiedPDFGenerator();

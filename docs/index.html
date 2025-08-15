@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Seima Product Presenter</h1>
+<blockquote>
+<p>Interactive product catalogue and PDF generation tool for Seima products</p>
+</blockquote>
+<h2>🚀 Features</h2>
+<ul>
+<li><strong>Interactive Product Grid</strong>: Search and select products with real-time filtering</li>
+<li><strong>PDF Generation</strong>: Create professional presentations with custom branding</li>
+<li><strong>File Import</strong>: Import product selections from CSV/Excel files</li>
+<li><strong>Room Management</strong>: Organise products by rooms with predefined and custom options</li>
+<li><strong>Browser Compatibility</strong>: Enhanced support for mobile devices and various browsers</li>
+<li><strong>Offline Capable</strong>: Works with cached product data when internet is unavailable</li>
+</ul>
+<h2>🏗️ Architecture</h2>
+<h3>Modern ES6 Module System</h3>
+<ul>
+<li><strong>Modular Design</strong>: Each feature is contained in focused, reusable modules</li>
+<li><strong>Dependency Management</strong>: Clean import/export structure with minimal circular dependencies</li>
+<li><strong>Error Handling</strong>: Comprehensive error tracking and user feedback system</li>
+<li><strong>Configuration Management</strong>: Centralised, typed configuration with environment support</li>
+</ul>
+<h3>Key Modules</h3>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Purpose</th>
+<th>Documentation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config-manager.js</code></td>
+<td>Centralised configuration with validation</td>
+<td><a href="docs/config-manager.html">📖 Config API</a></td>
+</tr>
+<tr>
+<td><code>error-handler.js</code></td>
+<td>Error tracking and user notifications</td>
+<td><a href="docs/error-handler.html">📖 Error API</a></td>
+</tr>
+<tr>
+<td><code>data-layer.js</code></td>
+<td>Product catalogue and search functionality</td>
+<td><a href="docs/data-layer.html">📖 Data API</a></td>
+</tr>
+<tr>
+<td><code>storage.js</code></td>
+<td>LocalStorage management with error handling</td>
+<td><a href="docs/storage.html">📖 Storage API</a></td>
+</tr>
+<tr>
+<td><code>pdf-generator.js</code></td>
+<td>PDF creation and customisation</td>
+<td><a href="docs/pdf-generator.html">📖 PDF API</a></td>
+</tr>
+<tr>
+<td><code>utils.js</code></td>
+<td>Common utility functions</td>
+<td><a href="docs/utils.html">📖 Utils API</a></td>
+</tr>
+</tbody>
+</table>
+<h2>🛠️ Development Setup</h2>
+<h3>Prerequisites</h3>
+<ul>
+<li><strong>Node.js</strong> 14+ (recommended: 18.19.0)</li>
+<li><strong>Modern Browser</strong> with ES6 module support</li>
+<li><strong>Internet Connection</strong> for initial product catalogue download</li>
+</ul>
+<h3>Quick Start</h3>
+<ol>
+<li>
+<p><strong>Clone and Setup</strong></p>
+<pre class="prettyprint source lang-bash"><code>git clone &lt;repository-url>
+cd seima-product-presenter
+npm install
+</code></pre>
+</li>
+<li>
+<p><strong>Development Server</strong></p>
+<pre class="prettyprint source lang-bash"><code># Using Node.js
+npm run dev
+
+# Or using Python
+npm run dev:py
+</code></pre>
+</li>
+<li>
+<p><strong>Open Browser</strong>
+Navigate to <code>http://localhost:8080</code></p>
+</li>
+</ol>
+<h3>Development Scripts</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run dev</code></td>
+<td>Start development server (Node.js)</td>
+</tr>
+<tr>
+<td><code>npm run lint</code></td>
+<td>Check code quality with ESLint</td>
+</tr>
+<tr>
+<td><code>npm run format</code></td>
+<td>Format code with Prettier</td>
+</tr>
+<tr>
+<td><code>npm run docs</code></td>
+<td>Generate API documentation</td>
+</tr>
+<tr>
+<td><code>npm run validate</code></td>
+<td>Run all quality checks</td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>Full build with validation and docs</td>
+</tr>
+</tbody>
+</table>
+<h2>📱 Browser Compatibility</h2>
+<h3>Fully Supported</h3>
+<ul>
+<li><strong>Chrome</strong> 80+ (recommended)</li>
+<li><strong>Firefox</strong> 75+</li>
+<li><strong>Safari</strong> 13+</li>
+<li><strong>Edge</strong> 80+</li>
+</ul>
+<h3>Mobile Optimisations</h3>
+<ul>
+<li><strong>Samsung Devices</strong>: Enhanced download compatibility</li>
+<li><strong>iOS</strong>: Improved touch interactions and file handling</li>
+<li><strong>Android</strong>: Optimised performance and memory management</li>
+</ul>
+<h3>Feature Detection</h3>
+<p>The application automatically detects browser capabilities and provides:</p>
+<ul>
+<li>Graceful degradation for unsupported features</li>
+<li>User-friendly warnings for compatibility issues</li>
+<li>Alternative download methods for problematic browsers</li>
+</ul>
+<h2>🎨 Configuration</h2>
+<h3>Environment Detection</h3>
+<p>The application automatically detects and configures for:</p>
+<ul>
+<li><strong>Development</strong>: Enhanced logging, longer timeouts, debug mode</li>
+<li><strong>Staging</strong>: Watermarked PDFs, moderate logging</li>
+<li><strong>Production</strong>: Optimised performance, minimal logging</li>
+</ul>
+<h3>User Preferences</h3>
+<p>Settings are automatically saved and include:</p>
+<ul>
+<li>UI preferences (theme, animations)</li>
+<li>Performance settings (cache size, batch sizes)</li>
+<li>PDF generation options (quality, format)</li>
+<li>Staff contact details</li>
+</ul>
+<h3>API Configuration</h3>
+<p>External services are configured through the config system:</p>
+<ul>
+<li><strong>Product Catalogue</strong>: Google Sheets CSV endpoint</li>
+<li><strong>Email Service</strong>: EmailJS integration</li>
+<li><strong>Asset Management</strong>: Automatic asset detection</li>
+</ul>
+<h2>📊 Error Handling &amp; Monitoring</h2>
+<h3>Comprehensive Error Tracking</h3>
+<ul>
+<li><strong>Categorised Errors</strong>: Network, data, UI, PDF, storage, compatibility</li>
+<li><strong>User Notifications</strong>: Toast messages and modal dialogs</li>
+<li><strong>Automatic Recovery</strong>: Smart fallbacks and retry mechanisms</li>
+<li><strong>Debug Information</strong>: Detailed logs for troubleshooting</li>
+</ul>
+<h3>Error Categories</h3>
+<ul>
+<li><code>NETWORK</code>: API failures, connectivity issues</li>
+<li><code>DATA</code>: Product catalogue problems, import errors</li>
+<li><code>UI</code>: Interface errors, user interaction issues</li>
+<li><code>PDF</code>: Generation failures, rendering problems</li>
+<li><code>STORAGE</code>: LocalStorage failures, quota exceeded</li>
+<li><code>COMPATIBILITY</code>: Browser feature detection, device-specific issues</li>
+</ul>
+<h3>Logging Levels</h3>
+<ul>
+<li><code>DEBUG</code>: Detailed development information</li>
+<li><code>INFO</code>: General application flow</li>
+<li><code>WARN</code>: Potential issues that don't break functionality</li>
+<li><code>ERROR</code>: Errors that affect user experience</li>
+<li><code>CRITICAL</code>: Serious errors requiring immediate attention</li>
+</ul>
+<h2>📄 PDF Generation</h2>
+<h3>Features</h3>
+<ul>
+<li><strong>Professional Layouts</strong>: Multiple template options</li>
+<li><strong>Custom Branding</strong>: Customer logos and colour schemes</li>
+<li><strong>Flexible Content</strong>: Include/exclude prices, quantities, notes</li>
+<li><strong>Appendix Support</strong>: Prepend/append additional PDF documents</li>
+<li><strong>Optimised Output</strong>: Compressed images, efficient rendering</li>
+</ul>
+<h3>Customisation Options</h3>
+<ul>
+<li>Paper size (A4, Letter, A3)</li>
+<li>Orientation (Portrait, Landscape)</li>
+<li>Image quality and compression</li>
+<li>Watermarks for staging/demo versions</li>
+<li>Font selection and sizing</li>
+</ul>
+<h2>💾 Data Management</h2>
+<h3>Storage Strategy</h3>
+<ul>
+<li><strong>Primary</strong>: LocalStorage for user selections and preferences</li>
+<li><strong>Caching</strong>: Product catalogue cached for offline access</li>
+<li><strong>Validation</strong>: All stored data validated on read/write</li>
+<li><strong>Cleanup</strong>: Automatic management of storage quotas</li>
+</ul>
+<h3>Import/Export</h3>
+<ul>
+<li><strong>CSV Import</strong>: Product lists with rooms and quantities</li>
+<li><strong>Excel Support</strong>: .xlsx file processing</li>
+<li><strong>Data Validation</strong>: Comprehensive checking of imported data</li>
+<li><strong>Error Reporting</strong>: Detailed feedback on import issues</li>
+</ul>
+<h2>🔧 Debugging &amp; Troubleshooting</h2>
+<h3>Developer Console</h3>
+<p>The application exposes several global objects for debugging:</p>
+<pre class="prettyprint source lang-javascript"><code>// Configuration management
+window.config.get('ui.theme')
+window.config.set('logging.logLevel', 'debug')
+
+// Error tracking
+window.errorHandler.getErrorStats()
+window.errorHandler.exportLogs()
+
+// Browser compatibility
+window.browserCompatibility.getCompatibilityReport()
+</code></pre>
+<h3>Common Issues</h3>
+<p><strong>Product Catalogue Not Loading</strong></p>
+<ul>
+<li>Check internet connection</li>
+<li>Verify Google Sheets URL in config</li>
+<li>Clear browser cache and reload</li>
+</ul>
+<p><strong>PDF Generation Fails</strong></p>
+<ul>
+<li>Check browser compatibility (Chrome recommended)</li>
+<li>Reduce image quality in settings</li>
+<li>Try with fewer products selected</li>
+</ul>
+<p><strong>Storage Quota Exceeded</strong></p>
+<ul>
+<li>Clear application data in browser settings</li>
+<li>Reduce product selection size</li>
+<li>Check available storage space</li>
+</ul>
+<h2>🔄 Version Management</h2>
+<h3>Automatic Updates</h3>
+<ul>
+<li>Version information displayed in UI</li>
+<li>Automatic cache invalidation on version changes</li>
+<li>Graceful handling of configuration migrations</li>
+</ul>
+<h3>Release Process</h3>
+<pre class="prettyprint source lang-bash"><code># Patch version (bug fixes)
+npm run version:patch
+
+# Minor version (new features)
+npm run version:minor
+
+# Major version (breaking changes)
+npm run version:major
+</code></pre>
+<h2>📋 Testing</h2>
+<h3>Quality Assurance</h3>
+<ul>
+<li><strong>Linting</strong>: ESLint with custom rules for quality</li>
+<li><strong>Formatting</strong>: Prettier for consistent code style</li>
+<li><strong>Documentation</strong>: JSDoc for comprehensive API docs</li>
+<li><strong>Validation</strong>: Automated checks in build process</li>
+</ul>
+<h3>Browser Testing</h3>
+<p>Test the application across supported browsers:</p>
+<ol>
+<li>Chrome (primary development browser)</li>
+<li>Firefox (standards compliance)</li>
+<li>Safari (WebKit engine, iOS compatibility)</li>
+<li>Edge (Windows integration)</li>
+<li>Samsung Internet (Android optimisation)</li>
+</ol>
+<h2>🤝 Contributing</h2>
+<h3>Code Style</h3>
+<ul>
+<li><strong>ES6 Modules</strong>: Use import/export syntax</li>
+<li><strong>Documentation</strong>: JSDoc comments for all public APIs</li>
+<li><strong>Error Handling</strong>: Comprehensive try/catch with proper logging</li>
+<li><strong>Configuration</strong>: Use config system instead of hardcoded values</li>
+</ul>
+<h3>Pull Request Process</h3>
+<ol>
+<li>Run <code>npm run validate</code> to ensure code quality</li>
+<li>Update documentation for new features</li>
+<li>Test across multiple browsers</li>
+<li>Include error handling for new functionality</li>
+<li>Update version.txt if needed</li>
+</ol>
+<h2>📜 License</h2>
+<p>MIT License - see LICENSE file for details</p>
+<h2>🆘 Support</h2>
+<ul>
+<li><strong>Documentation</strong>: <a href="docs/index.html">API Docs</a></li>
+<li><strong>Issues</strong>: Create GitHub issue with error logs</li>
+<li><strong>Email</strong>: jsegredos@gmail.com</li>
+</ul>
+<hr>
+<p><em>Built with ❤️ by the Seima Development Team</em></p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BrowserCompatibilityManager.html">BrowserCompatibilityManager</a></li><li><a href="ConfigManager.html">ConfigManager</a></li><li><a href="ErrorHandler.html">ErrorHandler</a></li><li><a href="ProductGridManager.html">ProductGridManager</a></li><li><a href="SeimaScanner.html">SeimaScanner</a></li><li><a href="StorageManager.html">StorageManager</a></li><li><a href="Utils.html">Utils</a></li></ul><h3>Global</h3><ul><li><a href="global.html#CONFIG_SCHEMA">CONFIG_SCHEMA</a></li><li><a href="global.html#Environment">Environment</a></li><li><a href="global.html#ErrorCategory">ErrorCategory</a></li><li><a href="global.html#LogLevel">LogLevel</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Aug 16 2025 02:34:06 GMT+0930 (Australian Central Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

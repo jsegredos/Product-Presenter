@@ -1,15 +1,23 @@
 /**
  * Central Module Coordinator
- * Manages initialization and coordination of all modular components
+ * Manages initialisation and coordination of all modular components
+ *
+ * @author Seima Development Team
+ * @version 2.0.0
+ * @since 1.8.1
  */
 
-import { CONFIG } from './config.js';
+import { config } from './config-manager.js';
+import { errorHandler, ErrorCategory, LogLevel } from './error-handler.js';
 import { dataLayer } from './data-layer.js';
 import { pdfGenerator } from './pdf-unified.js';
 import { pdfCore } from './pdf-core.js';
 import { pdfLayouts } from './pdf-layouts.js';
 import { StorageManager } from './storage.js';
 import * as utils from './utils.js';
+
+// Re-export CONFIG for backward compatibility
+export const CONFIG = config;
 
 export class ModuleCoordinator {
   constructor() {
@@ -28,14 +36,14 @@ export class ModuleCoordinator {
   async init() {
     try {
       console.log('🚀 Initializing modular components...');
-      
+
       const initPromises = [
         this.initModule('dataLayer', this.modules.dataLayer),
         this.initModule('pdfGenerator', this.modules.pdfGenerator)
       ];
 
       const results = await Promise.allSettled(initPromises);
-      
+
       // Check results
       results.forEach((result, index) => {
         const moduleName = ['dataLayer', 'pdfGenerator'][index];
@@ -49,7 +57,7 @@ export class ModuleCoordinator {
 
       this.isInitialized = true;
       console.log('✅ Module initialization complete:', this.initStatus);
-      
+
       return this.initStatus;
     } catch (error) {
       console.error('❌ Module coordinator initialization failed:', error);
@@ -180,11 +188,10 @@ export const moduleCoordinator = new ModuleCoordinator();
 // Backward compatibility exports
 export { dataLayer } from './data-layer.js';
 export { pdfGenerator } from './pdf-unified.js';
-export { CONFIG } from './config.js';
 export { StorageManager } from './storage.js';
 export * from './utils.js';
 
 // Initialize immediately when imported
 moduleCoordinator.init().catch(error => {
   console.error('❌ Auto-initialization failed:', error);
-}); 
+});

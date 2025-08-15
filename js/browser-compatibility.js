@@ -10,7 +10,7 @@ export class BrowserCompatibilityManager {
     this.networkStatus = {};
     this.memoryInfo = {};
     this.compatibilityScore = 0;
-    
+
     this.init();
   }
 
@@ -26,48 +26,48 @@ export class BrowserCompatibilityManager {
 
   detectDevice() {
     const ua = navigator.userAgent;
-    
+
     this.deviceInfo = {
       // Device types
       isMobile: /Mobi|Android/i.test(ua),
       isTablet: /iPad|Android(?=.*Tablet)|(?=.*Mobile)(?=.*Safari)/i.test(ua),
       isDesktop: !/Mobi|Android|iPad/i.test(ua),
-      
+
       // Operating systems
       isIOS: /iPad|iPhone|iPod/.test(ua),
       isAndroid: /Android/i.test(ua),
       isWindows: /Windows/i.test(ua),
       isMacOS: /Macintosh|Mac OS X/i.test(ua),
-      
+
       // Specific devices
       isSamsung: /SM-|SCH-|SPH-|SGH-|GT-|Galaxy|SamsungBrowser/i.test(ua),
       isIPhone: /iPhone/i.test(ua),
       isIPad: /iPad/i.test(ua),
-      
+
       // WebView detection
       isWebView: this.detectWebView(ua),
       isStandalone: window.navigator.standalone === true,
-      
+
       // Screen info
       screenWidth: window.screen.width,
       screenHeight: window.screen.height,
       devicePixelRatio: window.devicePixelRatio || 1,
-      
+
       // Orientation
       orientation: this.getOrientation(),
-      
+
       userAgent: ua
     };
   }
 
   detectBrowser() {
     const ua = navigator.userAgent;
-    
+
     this.deviceInfo.browser = {
       name: this.getBrowserName(ua),
       version: this.getBrowserVersion(ua),
       engine: this.getBrowserEngine(ua),
-      
+
       // Specific browser detection
       isChrome: /Chrome/i.test(ua) && !/Edge|Edg/i.test(ua),
       isFirefox: /Firefox/i.test(ua),
@@ -75,7 +75,7 @@ export class BrowserCompatibilityManager {
       isEdge: /Edge|Edg/i.test(ua),
       isSamsungInternet: /SamsungBrowser/i.test(ua),
       isOpera: /Opera|OPR/i.test(ua),
-      
+
       // Version-specific checks
       chromeVersion: this.getChromeVersion(ua),
       safariVersion: this.getSafariVersion(ua),
@@ -89,44 +89,44 @@ export class BrowserCompatibilityManager {
       localStorage: this.checkLocalStorage(),
       sessionStorage: this.checkSessionStorage(),
       indexedDB: 'indexedDB' in window,
-      
+
       // File APIs
       fileAPI: 'File' in window,
       fileReader: 'FileReader' in window,
       fileSystemAccess: 'showSaveFilePicker' in window,
       downloadAttribute: this.checkDownloadAttribute(),
-      
+
       // Media APIs
       getUserMedia: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
       webRTC: 'RTCPeerConnection' in window,
-      
+
       // Graphics APIs
       canvas: 'HTMLCanvasElement' in window,
       webGL: this.checkWebGL(),
-      
+
       // Network APIs
       fetch: 'fetch' in window,
       xhr: 'XMLHttpRequest' in window,
       serviceWorker: 'serviceWorker' in navigator,
-      
+
       // Modern JS features
       modules: this.checkESModules(),
       asyncAwait: this.checkAsyncAwait(),
       webAssembly: 'WebAssembly' in window,
-      
+
       // PDF-specific features
       createObjectURL: 'URL' in window && 'createObjectURL' in URL,
       revokeObjectURL: 'URL' in window && 'revokeObjectURL' in URL,
       blob: 'Blob' in window,
-      
+
       // Mobile-specific
       touchEvents: 'ontouchstart' in window,
       deviceMotion: 'DeviceMotionEvent' in window,
       deviceOrientation: 'DeviceOrientationEvent' in window,
-      
+
       // Clipboard API
       clipboard: 'clipboard' in navigator,
-      
+
       // Network status
       onlineStatus: 'onLine' in navigator,
       connection: 'connection' in navigator || 'mozConnection' in navigator || 'webkitConnection' in navigator
@@ -139,11 +139,11 @@ export class BrowserCompatibilityManager {
       jsHeapSizeLimit: performance.memory?.jsHeapSizeLimit || null,
       totalJSHeapSize: performance.memory?.totalJSHeapSize || null,
       usedJSHeapSize: performance.memory?.usedJSHeapSize || null,
-      
+
       // Device-specific memory estimates
       estimatedMaxFileSize: this.estimateMaxFileSize(),
       memoryPressure: this.estimateMemoryPressure(),
-      
+
       // Browser-specific limits
       maxBlobSize: this.estimateMaxBlobSize(),
       maxDataURISize: this.estimateMaxDataURISize()
@@ -181,7 +181,7 @@ export class BrowserCompatibilityManager {
 
   calculateCompatibilityScore() {
     let score = 100;
-    let issues = [];
+    const issues = [];
 
     // Critical features
     if (!this.features.localStorage) {
@@ -282,12 +282,12 @@ export class BrowserCompatibilityManager {
   }
 
   getBrowserName(ua) {
-    if (/SamsungBrowser/i.test(ua)) return 'Samsung Internet';
-    if (/Chrome/i.test(ua) && !/Edge|Edg/i.test(ua)) return 'Chrome';
-    if (/Firefox/i.test(ua)) return 'Firefox';
-    if (/Safari/i.test(ua) && !/Chrome|Chromium/i.test(ua)) return 'Safari';
-    if (/Edge|Edg/i.test(ua)) return 'Edge';
-    if (/Opera|OPR/i.test(ua)) return 'Opera';
+    if (/SamsungBrowser/i.test(ua)) {return 'Samsung Internet';}
+    if (/Chrome/i.test(ua) && !/Edge|Edg/i.test(ua)) {return 'Chrome';}
+    if (/Firefox/i.test(ua)) {return 'Firefox';}
+    if (/Safari/i.test(ua) && !/Chrome|Chromium/i.test(ua)) {return 'Safari';}
+    if (/Edge|Edg/i.test(ua)) {return 'Edge';}
+    if (/Opera|OPR/i.test(ua)) {return 'Opera';}
     return 'Unknown';
   }
 
@@ -297,10 +297,10 @@ export class BrowserCompatibilityManager {
   }
 
   getBrowserEngine(ua) {
-    if (/WebKit/i.test(ua)) return 'WebKit';
-    if (/Gecko/i.test(ua)) return 'Gecko';
-    if (/Trident/i.test(ua)) return 'Trident';
-    if (/EdgeHTML/i.test(ua)) return 'EdgeHTML';
+    if (/WebKit/i.test(ua)) {return 'WebKit';}
+    if (/Gecko/i.test(ua)) {return 'Gecko';}
+    if (/Trident/i.test(ua)) {return 'Trident';}
+    if (/EdgeHTML/i.test(ua)) {return 'EdgeHTML';}
     return 'Unknown';
   }
 
@@ -357,7 +357,7 @@ export class BrowserCompatibilityManager {
 
   checkESModules() {
     try {
-      return typeof Symbol !== 'undefined' && 
+      return typeof Symbol !== 'undefined' &&
              typeof Promise !== 'undefined' &&
              typeof Map !== 'undefined';
     } catch (e) {
@@ -375,37 +375,37 @@ export class BrowserCompatibilityManager {
 
   estimateMaxFileSize() {
     // Conservative estimates based on device type and browser
-    if (this.deviceInfo.isDesktop) return 100 * 1024 * 1024; // 100MB
-    if (this.deviceInfo.isTablet) return 50 * 1024 * 1024;   // 50MB
-    if (this.deviceInfo.isMobile) return 20 * 1024 * 1024;   // 20MB
+    if (this.deviceInfo.isDesktop) {return 100 * 1024 * 1024;} // 100MB
+    if (this.deviceInfo.isTablet) {return 50 * 1024 * 1024;}   // 50MB
+    if (this.deviceInfo.isMobile) {return 20 * 1024 * 1024;}   // 20MB
     return 10 * 1024 * 1024; // 10MB fallback
   }
 
   estimateMemoryPressure() {
-    if (!performance.memory) return 'unknown';
-    
+    if (!performance.memory) {return 'unknown';}
+
     const used = performance.memory.usedJSHeapSize;
     const limit = performance.memory.jsHeapSizeLimit;
     const ratio = used / limit;
-    
-    if (ratio > 0.8) return 'high';
-    if (ratio > 0.6) return 'medium';
+
+    if (ratio > 0.8) {return 'high';}
+    if (ratio > 0.6) {return 'medium';}
     return 'low';
   }
 
   estimateMaxBlobSize() {
     // Browser-specific blob size limits
-    if (this.deviceInfo.browser.isChrome) return 500 * 1024 * 1024; // 500MB
-    if (this.deviceInfo.browser.isFirefox) return 200 * 1024 * 1024; // 200MB
-    if (this.deviceInfo.browser.isSafari) return 100 * 1024 * 1024; // 100MB
+    if (this.deviceInfo.browser.isChrome) {return 500 * 1024 * 1024;} // 500MB
+    if (this.deviceInfo.browser.isFirefox) {return 200 * 1024 * 1024;} // 200MB
+    if (this.deviceInfo.browser.isSafari) {return 100 * 1024 * 1024;} // 100MB
     return 50 * 1024 * 1024; // 50MB fallback
   }
 
   estimateMaxDataURISize() {
     // Data URI size limits vary by browser
-    if (this.deviceInfo.browser.isChrome) return 2 * 1024 * 1024; // 2MB
-    if (this.deviceInfo.browser.isFirefox) return 1 * 1024 * 1024; // 1MB
-    if (this.deviceInfo.browser.isSafari) return 512 * 1024; // 512KB
+    if (this.deviceInfo.browser.isChrome) {return 2 * 1024 * 1024;} // 2MB
+    if (this.deviceInfo.browser.isFirefox) {return 1 * 1024 * 1024;} // 1MB
+    if (this.deviceInfo.browser.isSafari) {return 512 * 1024;} // 512KB
     return 512 * 1024; // 512KB fallback
   }
 
@@ -534,7 +534,7 @@ export class BrowserCompatibilityManager {
   }
 
   shouldShowCompatibilityWarning() {
-    return this.compatibilityScore < 80 || 
+    return this.compatibilityScore < 80 ||
            this.compatibilityIssues.length > 0 ||
            this.deviceInfo.isSamsung;
   }
@@ -556,4 +556,4 @@ export const browserCompatibility = new BrowserCompatibilityManager();
 // Export convenience function for backward compatibility
 export function isSamsungDevice() {
   return browserCompatibility.deviceInfo.isSamsung;
-} 
+}

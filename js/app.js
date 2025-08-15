@@ -1,24 +1,52 @@
+/**
+ * Main Application Entry Point
+ * Seima Product Presenter - Interactive product catalogue and PDF generation
+ *
+ * @author Seima Development Team
+ * @version 2.0.0
+ * @since 1.8.1
+ */
+
 import { NavigationManager } from './navigation.js';
-import { moduleCoordinator, pdfGenerator, CONFIG } from './modules.js';
+import { moduleCoordinator, pdfGenerator } from './modules.js';
+import { config } from './config-manager.js';
+import { errorHandler, ErrorCategory, LogLevel } from './error-handler.js';
 import { showPdfFormScreen, ensurePdfSpinner, downloadWithFallback } from './pdf-generator.js';
 import { StorageManager } from './storage.js';
 import { FileImportManager } from './file-import.js';
 import { ProductGridManager } from './product-grid.js';
 import { browserCompatibility, isSamsungDevice } from './browser-compatibility.js';
 
-// Main application class
+/**
+ * Main Application Class
+ * Coordinates all application modules and provides the primary API
+ * @class SeimaScanner
+ */
 class SeimaScanner {
   constructor() {
     this.navigationManager = null;
     this.fileImportManager = new FileImportManager();
     this.productGridManager = new ProductGridManager();
+    this.isInitialized = false;
+
+    // Log application startup
+    errorHandler.log('SeimaScanner application starting', LogLevel.INFO);
   }
 
+  /**
+   * Initialize the application
+   * Sets up all modules, event listeners, and global handlers
+   * @async
+   * @returns {Promise<boolean>} True if initialization was successful
+   */
   async init() {
     try {
+      errorHandler.log('Initializing application modules', LogLevel.INFO);
+
       // Initialize browser compatibility monitoring
-      console.log('Browser Compatibility Report:', browserCompatibility.getCompatibilityReport());
-      
+      const compatReport = browserCompatibility.getCompatibilityReport();
+      errorHandler.log(`Browser compatibility: ${compatReport.score}% (${compatReport.browserName})`, LogLevel.INFO);
+
       // Show compatibility warning if needed
       if (browserCompatibility.shouldShowCompatibilityWarning()) {
         this.showCompatibilityWarning();
@@ -49,20 +77,18 @@ class SeimaScanner {
         console.log('Samsung device detected - enhanced download compatibility enabled');
       }
 
-      console.log('Seima Scanner initialized successfully');
+      this.isInitialized = true;
+      errorHandler.log('Seima Scanner initialized successfully', LogLevel.INFO);
+      return true;
     } catch (error) {
-      console.error('Failed to initialize app:', error);
-      if (error && error.stack) {
-        console.error('Stack trace:', error.stack);
-      }
-      if (typeof error === 'object' && error !== null) {
-        for (const key in error) {
-          if (Object.prototype.hasOwnProperty.call(error, key)) {
-            console.error(`Error property [${key}]:`, error[key]);
-          }
-        }
-      }
-      this.showError('Failed to load application. Please refresh the page.');
+      errorHandler.handleError({
+        message: 'Failed to initialize application',
+        error,
+        category: ErrorCategory.UI,
+        level: LogLevel.CRITICAL,
+        context: 'app-init'
+      });
+      return false;
     }
   }
 
@@ -70,7 +96,7 @@ class SeimaScanner {
     const report = browserCompatibility.getCompatibilityReport();
     const recommendations = report.recommendations;
 
-    if (recommendations.length === 0) return;
+    if (recommendations.length === 0) {return;}
 
     // Show non-blocking compatibility notification
     const notification = document.createElement('div');
@@ -83,7 +109,7 @@ class SeimaScanner {
     `;
 
     const criticalIssues = recommendations.filter(r => r.type === 'critical');
-    const hasCompatibilityIssues = report.score < CONFIG.COMPATIBILITY.MIN_COMPATIBILITY_SCORE;
+    const hasCompatibilityIssues = report.score < config.get('compatibility.minCompatibilityScore', 70);
 
     if (criticalIssues.length > 0 || hasCompatibilityIssues) {
       notification.innerHTML = `
@@ -208,12 +234,12 @@ window.addEventListener('DOMContentLoaded', () => {
     .then(version => {
       const versionSpan = document.getElementById('app-version');
       if (versionSpan) {
-        // Allow numbers, dots, letters, and hyphens (e.g., 1.5.2-beta)
-        const cleanVersion = version.trim().replace(/[^0-9.a-zA-Z-]/g, '');
-        versionSpan.textContent = `Ver: ${cleanVersion}`;
+        // Extract just the version number (before the first space or dash)
+        const versionNumber = version.trim().split(/\s+|-/)[0];
+        versionSpan.textContent = `Ver: ${versionNumber}`;
       }
     });
 });
 
 // Export for module usage
-export default SeimaScanner; 
+export default SeimaScanner;
