@@ -136,6 +136,79 @@ if (document.readyState === 'loading') {
   showBrowserCompatibilityWarning();
 }
 
+// Helper function to detect if long description appears to be a data error
+function appearsToBeDataError(mainDesc, longDesc) {
+  // Convert to lowercase for comparison
+  const main = mainDesc.toLowerCase();
+  const long = longDesc.toLowerCase();
+  
+  // If they're very similar (>80% similarity), it's likely a data error
+  const similarity = calculateStringSimilarity(main, long);
+  if (similarity > 0.8) {
+    return true;
+  }
+  
+  // If main description contains specific product codes/numbers and long description 
+  // has similar structure but different numbers, it's likely a data error
+  const mainNumbers = main.match(/\d+/g) || [];
+  const longNumbers = long.match(/\d+/g) || [];
+  
+  if (mainNumbers.length > 0 && longNumbers.length > 0) {
+    // Check if they have different numbers but similar structure
+    const hasConflictingNumbers = mainNumbers.some(num => 
+      !longNumbers.includes(num) && longNumbers.some(longNum => 
+        Math.abs(parseInt(num) - parseInt(longNum)) < 20
+      )
+    );
+    
+    if (hasConflictingNumbers && similarity > 0.6) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Helper function to calculate string similarity
+function calculateStringSimilarity(str1, str2) {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+// Helper function to calculate Levenshtein distance
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
 export function showPdfFormScreen(userDetails) {
   const spinner = document.getElementById('pdf-spinner');
   if (spinner) {spinner.style.display = 'flex';}
@@ -868,14 +941,26 @@ export function showPdfFormScreen(userDetails) {
               doc.text(descLines, descX + 5, descY);
               descY += descLines.length * 12;
 
-              // Long description (only if not excluded)
+              // Long description (only if not excluded and meaningfully different from main description)
               if (!userDetails.excludeLongDescription && (row.item.LongDescription || row.item['Long Description'] || row.item.longDescription)) {
                 const longDesc = row.item.LongDescription || row.item['Long Description'] || row.item.longDescription;
-                doc.setFontSize(9);
-                doc.setTextColor('#444');
-                const longDescLines = doc.splitTextToSize(String(longDesc), descColWidth);
-                doc.text(longDescLines, descX + 5, descY);
-                descY += longDescLines.length * 11;
+                const mainDesc = String(row.item.Description || '').trim();
+                const longDescTrimmed = String(longDesc).trim();
+                
+                // Only show long description if:
+                // 1. It's different from main description
+                // 2. It's significantly longer (additional information)
+                // 3. It doesn't appear to be a data error (similar but with wrong details)
+                const isSignificantlyLonger = longDescTrimmed.length > (mainDesc.length + 20);
+                const isMeaningfullyDifferent = longDescTrimmed !== mainDesc && !appearsToBeDataError(mainDesc, longDescTrimmed);
+                
+                if (longDescTrimmed && isSignificantlyLonger && isMeaningfullyDifferent) {
+                  doc.setFontSize(9);
+                  doc.setTextColor('#444');
+                  const longDescLines = doc.splitTextToSize(longDescTrimmed, descColWidth);
+                  doc.text(longDescLines, descX + 5, descY);
+                  descY += longDescLines.length * 11;
+                }
               }
 
               // Notes below long description, with padding
