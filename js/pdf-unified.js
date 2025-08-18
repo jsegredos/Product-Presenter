@@ -89,14 +89,14 @@ export class UnifiedPDFGenerator {
       const csvLines = [];
 
       // CSV Header - maintaining exact format as required
-      csvLines.push('"Code","Description","Quantity","Price ea inc GST","Price Total inc GST","Notes","Room","Image URL","Diagram URL","Datasheet URL","Website URL"');
+      csvLines.push('"Code","Description","Quantity","Price ea ex GST","Price Total ex GST","Notes","Room","Image URL","Diagram URL","Datasheet URL","Website URL"');
 
       // Product rows
       selectedProducts.forEach(item => {
         const code = this.cleanForCSV(item.product?.OrderCode || '');
         const desc = this.cleanForCSV(item.product?.Description || '');
         const qty = item.quantity || 1;
-        const priceEa = this.cleanForCSV(item.product?.RRP_INCGST || '');
+        const priceEa = this.cleanForCSV(item.product?.RRP_EX || '');
         const priceTotal = this.calculateTotalPrice(priceEa, qty);
         const notes = this.cleanForCSV(item.notes || '');
         const room = this.cleanForCSV(item.room || '');
@@ -204,7 +204,7 @@ export class UnifiedPDFGenerator {
 
     let totalValue = 0;
     selectedProducts.forEach(item => {
-      const price = parseFloat((item.product?.RRP_INCGST || '0').toString().replace(/[^0-9.]/g, '')) || 0;
+      const price = parseFloat((item.product?.RRP_EX || '0').toString().replace(/[^0-9.]/g, '')) || 0;
       const quantity = item.quantity || 1;
       totalValue += price * quantity;
     });

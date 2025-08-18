@@ -40,8 +40,20 @@ export class DataLayer {
       // 2. In the background, fetch the latest from Google Sheets
       const catalogUrl = config.get('api.catalogUrl');
       const url = `${catalogUrl + (catalogUrl.includes('?') ? '&' : '?')}t=${Date.now()}`;
-      fetch(url)
-        .then(response => response.ok ? response.text() : Promise.reject('Failed to fetch catalog'))
+      
+      // Create a timeout controller for the fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      fetch(url, { 
+        signal: controller.signal,
+        mode: 'cors',
+        cache: 'no-cache'
+      })
+        .then(response => {
+          clearTimeout(timeoutId);
+          return response.ok ? response.text() : Promise.reject(`Failed to fetch catalog: ${response.status}`);
+        })
         .then(csvText => {
           if (!cached || csvText !== cached) {
             localStorage.setItem('productCatalogCsv', csvText);
@@ -55,7 +67,14 @@ export class DataLayer {
             }
           }
         })
-        .catch(err => console.warn('Background catalog update failed:', err));
+        .catch(err => {
+          clearTimeout(timeoutId);
+          if (err.name === 'AbortError') {
+            console.warn('🕐 Background catalog update timed out (using cached data)');
+          } else {
+            console.warn('⚠️ Background catalog update failed (using cached data):', err.message);
+          }
+        });
       // Return cached or empty products for now
       return products;
     } catch (error) {
@@ -87,8 +106,12 @@ export class DataLayer {
           product.Description = product['Description'] || product['Product Name'] || '';
           product['Long Description'] = product['Long Description'] || product['LongDescription'] || '';
           product.OrderCode = product['Order Code'] || product['OrderCode'] || '';
-          product['RRP EX GST'] = product['RRP EX GST'] || product['RRP_EXGST'] || '';
+
+          
+          product['RRP EX GST'] = product['RRP EX'] || product['RRP EX GST'] || product['RRP_EXGST'] || '';
+          product.RRP_EX = product['RRP EX'] || product['RRP EX GST'] || product['RRP_EXGST'] || product.RRP_EX || '';
           product['RRP INC GST'] = product['RRP INC GST'] || product['RRP_INCGST'] || '';
+          product.RRP_INCGST = product['RRP INC GST'] || product['RRP_INCGST'] || product.RRP_INCGST || '';
           product['Release Note'] = product['Release Note'] || '';
           product.Website_URL = product['Website_URL'] || '';
           product.Image_URL = product['Image_URL'] || '';
@@ -333,7 +356,7 @@ export class DataLayer {
 
     let totalValue = 0;
     selectedProducts.forEach(item => {
-      const price = parseFloat((item.product?.RRP_INCGST || '0').toString().replace(/[^0-9.]/g, '')) || 0;
+      const price = parseFloat((item.product?.RRP_EX || '0').toString().replace(/[^0-9.]/g, '')) || 0;
       const quantity = item.quantity || 1;
       totalValue += price * quantity;
     });

@@ -926,7 +926,7 @@ export class ProductGridManager {
         const versionSpan = document.getElementById('settings-version-info');
         if (versionSpan) {
           try {
-            const resp = await fetch('version.txt');
+            const resp = await fetch('./version.txt');
             let version = (await resp.text()).trim();
             // Only use the first line and strip unwanted characters
             version = version.split(/\r?\n/)[0].replace(/[^0-9.v]/g, '');
@@ -1006,7 +1006,7 @@ export class ProductGridManager {
     // Use the robust detection method which handles all fallbacks
     console.log('🔍 Discovering available PDF files...');
     const detectedPdfs = await this.detectAvailablePdfFiles();
-    const assetPdfs = detectedPdfs.map(f => `assets/${f}`);
+    const assetPdfs = detectedPdfs.map(f => `./assets/${f}`);
     const tipSelect = document.getElementById('tip-pdf-select');
     const tailSelect = document.getElementById('tail-pdf-select');
     if (tipSelect && tailSelect) {
@@ -1026,7 +1026,7 @@ export class ProductGridManager {
 
     // First, try to get a list from the server if available (most reliable)
     try {
-      const response = await fetch('/assets-list');
+      const response = await fetch('./assets-list');
       if (response.ok) {
         const serverFiles = await response.json();
         console.log('✅ Server provided files:', serverFiles);
@@ -1038,7 +1038,7 @@ export class ProductGridManager {
 
     // Second, try to read from assets-list.json (for GitHub Pages)
     try {
-      const response = await fetch('/assets-list.json');
+      const response = await fetch('./assets-list.json');
       if (response.ok) {
         const jsonFiles = await response.json();
         console.log('✅ assets-list.json provided files:', jsonFiles);
@@ -1065,7 +1065,7 @@ export class ProductGridManager {
     // Test each file by attempting to fetch it
     for (const filename of possibleFiles) {
       try {
-        const response = await fetch(`/assets/${filename}`, { method: 'HEAD' });
+        const response = await fetch(`./assets/${filename}`, { method: 'HEAD' });
         if (response.ok) {
           existingFiles.push(filename);
           console.log(`✅ Found: ${filename}`);

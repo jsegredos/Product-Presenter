@@ -128,7 +128,7 @@ export class PDFLayouts {
 
     let totalValue = 0;
     selectedProducts.forEach(item => {
-      const price = parseFloat((item.product?.RRP_INCGST || '0').toString().replace(/[^0-9.]/g, '')) || 0;
+      const price = parseFloat((item.product?.RRP_EX || '0').toString().replace(/[^0-9.]/g, '')) || 0;
       const quantity = item.quantity || 1;
       totalValue += price * quantity;
     });
@@ -273,7 +273,7 @@ export class PDFLayouts {
     currentX += colWidths.description;
 
     // Price
-    const price = this.core.formatPrice(item.product?.RRP_INCGST);
+    const price = this.core.formatPrice(item.product?.RRP_EX);
     this.core.addText(price, currentX + 2, startY + 5, {
       fontSize: 8
     });

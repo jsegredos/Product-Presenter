@@ -166,7 +166,7 @@ export function showPdfFormScreen(userDetails) {
     `;
   document.body.appendChild(processingNotification);
 
-  loadImageAsDataURL('assets/seima-logo.png', (coverLogoDataUrl, coverLogoNaturalW, coverLogoNaturalH) => {
+  loadImageAsDataURL('./assets/seima-logo.png', (coverLogoDataUrl, coverLogoNaturalW, coverLogoNaturalH) => {
     // Before PDF export, ensure window.seimaLogoImg is loaded
     function ensureSeimaLogoLoaded(cb) {
       if (window.seimaLogoImg) {return cb();}
@@ -175,7 +175,7 @@ export function showPdfFormScreen(userDetails) {
         window.seimaLogoImg = img;
         cb();
       };
-      img.src = 'assets/seima-logo.png';
+      img.src = './assets/seima-logo.png';
     }
     // PDF export logic with improved layout and CORS proxy for images
     const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
@@ -264,7 +264,7 @@ export function showPdfFormScreen(userDetails) {
       }
     }
     // 2. SEIMA logo image (centered, lower on page)
-    loadImageAsDataURL('assets/seima-logo.png', (seimaLogoDataUrl, seimaLogoNaturalW, seimaLogoNaturalH) => {
+    loadImageAsDataURL('./assets/seima-logo.png', (seimaLogoDataUrl, seimaLogoNaturalW, seimaLogoNaturalH) => {
       const seimaLogoW = 250;
       const seimaLogoH = seimaLogoNaturalH && seimaLogoNaturalW ? (seimaLogoW * seimaLogoNaturalH / seimaLogoNaturalW) : 65;
       const seimaLogoX = (pageWidth - seimaLogoW) / 2;
@@ -361,7 +361,7 @@ export function showPdfFormScreen(userDetails) {
       // Add a new page for the product table
       doc.addPage();
       // Now load the white logo for product pages
-      loadImageAsDataURL('assets/seima-logo-white.png', (logoDataUrl, logoNaturalW, logoNaturalH) => {
+      loadImageAsDataURL('./assets/seima-logo-white.png', (logoDataUrl, logoNaturalW, logoNaturalH) => {
 
         // Debug: Track product page logo size
         // Product page logo loaded successfully

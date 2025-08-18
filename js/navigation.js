@@ -31,41 +31,49 @@ export class NavigationManager {
 
   async loadVersion() {
     try {
-      const response = await fetch('version.txt');
-      const version = await response.text();
+      // Try to load version.txt, but handle GitHub Pages deployment gracefully
+      const response = await fetch('./version.txt');
+      if (response.ok) {
+        const version = await response.text();
+        const versionElement = document.getElementById('version-number');
+        if (versionElement) {
+          const lines = version.trim().split('\n').filter(line => line.trim() !== '');
+          const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
+          // Extract just the version number (before the first dash)
+          const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
+          versionElement.innerText = versionNumber;
+          // Fallback: if still empty, set a default version
+          if (!versionElement.innerText.trim()) {
+            versionElement.innerText = 'v2.1.0';
+          }
+        }
+      } else {
+        throw new Error('Version file not found');
+      }
+    } catch (error) {
+      // For GitHub Pages, use the version from config manager as fallback
       const versionElement = document.getElementById('version-number');
       if (versionElement) {
-        const lines = version.trim().split('\n').filter(line => line.trim() !== '');
-        const latestVersion = lines.length > 0 ? lines[lines.length - 1] : 'Unknown';
-        // Extract just the version number (before the first dash)
-        const versionNumber = latestVersion.split(' - ')[0] || latestVersion;
-        versionElement.innerText = versionNumber;
-        // Fallback: if still empty, set a default version
-        if (!versionElement.innerText.trim()) {
-          versionElement.innerText = 'v2.1.0';
-        }
+        const configVersion = config.get('app.version') || 'v2.1.0';
+        versionElement.innerText = configVersion;
       } else {
         // If element not found, retry after a short delay
         setTimeout(() => {
           const el = document.getElementById('version-number');
           if (el && !el.innerText.trim()) {
-            el.innerText = 'v2.1.0';
+            const configVersion = config.get('app.version') || 'v2.1.0';
+            el.innerText = configVersion;
           }
         }, 1000);
       }
-    } catch (error) {
-      const versionElement = document.getElementById('version-number');
-      if (versionElement) {
-        versionElement.innerText = 'v2.1.0';
-      }
-      console.warn('Could not load version:', error);
+      console.info('Version loaded from config (GitHub Pages mode)');
     }
   }
 
 
   async showProductLookupScreen() {
     try {
-      const response = await fetch('screens/product-grid.html');
+      const response = await fetch('./screens/product-grid.html');
       const html = await response.text();
       document.body.innerHTML = html;
       this.currentScreen = 'product-grid';
@@ -256,7 +264,7 @@ export class NavigationManager {
     }
 
     if (productPrice) {
-      const price = product.Price || product.RRP_INCGST || product.rrpIncGst || 0;
+      const price = product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.RRP_EXGST || product.rrpExGst || product.RRP_INCGST || product['RRP INC GST'] || 0;
       productPrice.textContent = price ? `$${parseFloat(price).toFixed(2)}` : 'Price not available';
     }
 
@@ -291,7 +299,7 @@ export class NavigationManager {
 
   async showProductDetailsScreen(product, options = {}) {
     try {
-      const response = await fetch('screens/product-details.html');
+      const response = await fetch('./screens/product-details.html');
       const html = await response.text();
       document.body.innerHTML = html;
 
@@ -317,14 +325,16 @@ export class NavigationManager {
     document.getElementById('product-name').textContent = product.Description || '';
     document.getElementById('product-code').textContent = product.OrderCode ? `Code: ${product.OrderCode}` : '';
 
-    // Price formatting like original
+    // Price formatting - now defaults to ex GST
     let price = '';
     let priceNum = NaN;
-    if (product.RRP_INCGST) {
-      priceNum = parseFloat(product.RRP_INCGST.toString().replace(/,/g, ''));
+    // Check multiple possible price field names for better compatibility
+    const exGstPrice = product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.RRP_EXGST || product.rrpExGst || product.RRP_INCGST || product['RRP INC GST'];
+    if (exGstPrice) {
+      priceNum = parseFloat(exGstPrice.toString().replace(/,/g, ''));
     }
     if (!isNaN(priceNum) && priceNum > 0) {
-      price = `$${priceNum.toFixed(2)} inc GST`;
+      price = `$${priceNum.toFixed(2)} ex GST`;
     } else {
       price = 'Price unavailable';
     }
@@ -604,7 +614,7 @@ export class NavigationManager {
     // Render table rows
     tableBody.innerHTML = selectedProducts.map((item, index) => {
       const product = item.product;
-      const price = product.Price || product.RRP_INCGST || product.rrpIncGst || 0;
+      const price = product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.RRP_EXGST || product.rrpExGst || product.RRP_INCGST || product['RRP INC GST'] || 0;
       const unitPrice = parseFloat(price) || 0;
       const lineTotal = unitPrice * item.quantity;
       const imageUrl = product.Image || product.Image_URL || product.imageUrl || 'assets/no-image.png';
@@ -740,7 +750,7 @@ export class NavigationManager {
 
   async showReviewScreen() {
     try {
-      const response = await fetch('screens/review.html');
+      const response = await fetch('./screens/review.html');
       const html = await response.text();
       document.body.innerHTML = html;
 
@@ -804,7 +814,7 @@ export class NavigationManager {
     const description = product.Description || product.description || product.productName || product['Product Name'] || 'Product';
     const orderCode = product.OrderCode || product.orderCode || '';
     const imageUrl = product.Image_URL || product.imageUrl || 'assets/no-image.png';
-    const rrpIncGst = product.RRP_INCGST || product.rrpIncGst || product.price || '0';
+    const rrpExGst = product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.rrpExGst || product.RRP_EXGST || product.RRP_INCGST || product['RRP INC GST'] || '0';
 
     return `
           <div class="review-product-card" style="display: flex; flex-direction: column; align-items: stretch;">
@@ -823,7 +833,7 @@ export class NavigationManager {
                 <div class="review-product-title">${description}</div>
                 <div class="review-product-meta">
                   <span class="review-product-code">${orderCode ? `Code: ${orderCode}` : ''}</span>
-                  <span class="review-product-price">${rrpIncGst ? `$${Number(rrpIncGst).toFixed(2)} ea` : ''}</span>
+                  <span class="review-product-price">${rrpExGst ? `$${Number(rrpExGst).toFixed(2)} ea (EX GST)` : ''}</span>
                 </div>
                 <div class="review-product-notes">${item.notes ? `Notes: ${item.notes}` : ''}</div>
               </div>
@@ -935,6 +945,8 @@ export class NavigationManager {
       telephone: formData.get('user-telephone'),
       excludePrice: formData.get('exclude-price') === 'on' || formData.get('exclude-prices') === 'on',
       excludeQty: formData.get('exclude-qty') === 'on',
+      excludeLongDescription: formData.get('exclude-long-description') === 'on',
+      includeGst: formData.get('include-gst') === 'on',
       exportCsv: true // Always true
     };
 

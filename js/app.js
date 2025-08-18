@@ -227,9 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.seimaScanner.init();
 });
 
-// Add version number to home screen
+// Add version number to home screen and changelog functionality
 window.addEventListener('DOMContentLoaded', () => {
-  fetch('version.txt')
+  fetch('./version.txt')
     .then(resp => resp.text())
     .then(version => {
       const versionSpan = document.getElementById('app-version');
@@ -237,9 +237,125 @@ window.addEventListener('DOMContentLoaded', () => {
         // Extract just the version number (before the first space or dash)
         const versionNumber = version.trim().split(/\s+|-/)[0];
         versionSpan.textContent = `Ver: ${versionNumber}`;
+        
+        // Add click handler to show changelog
+        versionSpan.addEventListener('click', () => {
+          showChangelog(version.trim(), versionNumber);
+        });
       }
     });
 });
+
+/**
+ * Show the changelog modal with version information
+ * @param {string} fullVersionText - The complete version text from version.txt
+ * @param {string} versionNumber - Just the version number
+ */
+function showChangelog(fullVersionText, versionNumber) {
+  const modal = document.getElementById('changelog-modal');
+  const versionElement = document.getElementById('changelog-version');
+  const contentElement = document.getElementById('changelog-content');
+  
+  if (!modal || !versionElement || !contentElement) return;
+  
+  // Set version number
+  versionElement.textContent = `v${versionNumber}`;
+  
+  // Parse changelog content from version text
+  const changelogHtml = parseChangelogContent(fullVersionText, versionNumber);
+  contentElement.innerHTML = changelogHtml;
+  
+  // Show modal
+  modal.style.display = 'block';
+  
+  // Add close handler
+  const closeBtn = document.getElementById('changelog-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+    };
+  }
+  
+  // Close on background click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  };
+}
+
+/**
+ * Parse the version text and create formatted changelog HTML
+ * @param {string} fullVersionText - The complete version text
+ * @param {string} versionNumber - The version number
+ * @returns {string} HTML formatted changelog
+ */
+function parseChangelogContent(fullVersionText, versionNumber) {
+  // Split version number and description
+  const parts = fullVersionText.split(/\s*-\s*/, 2);
+  const description = parts.length > 1 ? parts[1] : 'Updates and improvements';
+  
+  // For v1.9.0, provide detailed changelog
+  if (versionNumber === '1.9.0') {
+    return `
+      <div style="margin-bottom: 20px;">
+        <h4 style="color: #2563eb; margin: 0 0 10px 0;">Major Refactoring & Enhanced Architecture</h4>
+        <p style="margin: 0 0 15px 0; color: #666;">${description}</p>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h5 style="color: #059669; margin: 0 0 8px 0;">✨ New Features</h5>
+        <ul style="margin: 0; padding-left: 20px; color: #555;">
+          <li>Enhanced error handling with categorised logging system</li>
+          <li>Modular architecture with centralised configuration management</li>
+          <li>Comprehensive JSDoc documentation across all modules</li>
+          <li>Professional development workflow with ESLint and Prettier</li>
+          <li>Clickable version number to view changelog</li>
+        </ul>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h5 style="color: #dc2626; margin: 0 0 8px 0;">🐛 Bug Fixes</h5>
+        <ul style="margin: 0; padding-left: 20px; color: #555;">
+          <li>Fixed version display to show only version number</li>
+          <li>Resolved configuration loading errors</li>
+          <li>Fixed ES module compatibility issues</li>
+          <li>Improved browser compatibility detection</li>
+        </ul>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h5 style="color: #7c3aed; margin: 0 0 8px 0;">🔧 Developer Experience</h5>
+        <ul style="margin: 0; padding-left: 20px; color: #555;">
+          <li>Added Node.js and Python development servers</li>
+          <li>Configured automated code formatting and linting</li>
+          <li>Enhanced README with setup instructions</li>
+          <li>Created npm scripts for common development tasks</li>
+        </ul>
+      </div>
+      
+      <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-top: 16px;">
+        <p style="margin: 0; font-size: 0.9em; color: #666;">
+          <strong>For developers:</strong> This version includes significant architectural improvements that make the codebase more maintainable and easier to extend with new features.
+        </p>
+      </div>
+    `;
+  }
+  
+  // Generic changelog for other versions
+  return `
+    <div style="margin-bottom: 20px;">
+      <h4 style="color: #2563eb; margin: 0 0 10px 0;">Updates & Improvements</h4>
+      <p style="margin: 0; color: #666;">${description}</p>
+    </div>
+    
+    <div style="background: #f3f4f6; padding: 12px; border-radius: 8px;">
+      <p style="margin: 0; font-size: 0.9em; color: #666;">
+        This version includes various updates and improvements to enhance your experience with the Seima Product Selector.
+      </p>
+    </div>
+  `;
+}
 
 // Export for module usage
 export default SeimaScanner;
