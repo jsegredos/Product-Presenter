@@ -1,1 +1,2 @@
+1.9.2 - Cleanup: Removed unused legacy pricelist.csv file, app now uses only live Google Sheets data
 1.9.1 - UI improvements: enhanced PDF cosmetics (room headers, URL links), added staff position field, fixed tip/tail file discovery, removed hardcoded fallbacks

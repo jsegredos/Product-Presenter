@@ -26,7 +26,7 @@ const CONFIG_SCHEMA = {
   // Application metadata
   app: {
     name: { type: 'string', default: 'Seima Product Presenter', required: true },
-    version: { type: 'string', default: '1.8.1', required: true },
+    version: { type: 'string', default: '1.9.2', required: true },
     environment: { type: 'string', default: Environment.PRODUCTION, enum: Object.values(Environment) },
     debug: { type: 'boolean', default: false },
     buildDate: { type: 'string', default: () => new Date().toISOString() }
