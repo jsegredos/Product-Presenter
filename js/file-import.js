@@ -408,6 +408,8 @@ export class FileImportManager {
       'Product Name': productName || (catalogProduct ? catalogProduct['Product Name'] : 'Unknown Product'),
       Description: productName || (catalogProduct ? catalogProduct.Description : 'Unknown Product'),
       description: productName || (catalogProduct ? catalogProduct.description : 'Unknown Product'),
+      LongDescription: catalogProduct ? (catalogProduct.LongDescription || catalogProduct['Long Description']) : '',
+      'Long Description': catalogProduct ? (catalogProduct.LongDescription || catalogProduct['Long Description']) : '',
       price: price > 0 ? price.toFixed(2) : (catalogProduct ? catalogProduct.price : '0.00'),
       Image_URL: catalogProduct ? (catalogProduct.Image_URL || catalogProduct.imageUrl) : 'assets/no-image.png',
       imageUrl: catalogProduct ? (catalogProduct.Image_URL || catalogProduct.imageUrl) : 'assets/no-image.png',
