@@ -1,6 +1,6 @@
 {
   "name": "seima-product-presenter",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Interactive product catalogue and PDF generation tool for Seima products",
   "type": "module",
   "main": "index.html",

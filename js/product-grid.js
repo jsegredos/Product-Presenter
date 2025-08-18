@@ -346,6 +346,8 @@ export class ProductGridManager {
           pdfForm['user-telephone'].value = saved.telephone || '';
           pdfForm['exclude-prices'].checked = !!saved.excludePrices;
           pdfForm['exclude-qty'].checked = !!saved.excludeQty;
+          pdfForm['exclude-long-description'].checked = !!saved.excludeLongDescription;
+          pdfForm['include-gst'].checked = !!saved.includeGst;
         }
       });
     }
@@ -359,7 +361,9 @@ export class ProductGridManager {
           email: pdfForm['user-email'].value,
           telephone: pdfForm['user-telephone'].value,
           excludePrices: pdfForm['exclude-prices'].checked,
-          excludeQty: pdfForm['exclude-qty'].checked
+          excludeQty: pdfForm['exclude-qty'].checked,
+          excludeLongDescription: pdfForm['exclude-long-description'].checked,
+          includeGst: pdfForm['include-gst'].checked
         });
       });
       pdfForm.addEventListener('change', () => {
@@ -370,7 +374,9 @@ export class ProductGridManager {
           email: pdfForm['user-email'].value,
           telephone: pdfForm['user-telephone'].value,
           excludePrices: pdfForm['exclude-prices'].checked,
-          excludeQty: pdfForm['exclude-qty'].checked
+          excludeQty: pdfForm['exclude-qty'].checked,
+          excludeLongDescription: pdfForm['exclude-long-description'].checked,
+          includeGst: pdfForm['include-gst'].checked
         });
       });
       pdfForm.onsubmit = (e) => {
@@ -382,7 +388,9 @@ export class ProductGridManager {
           email: pdfForm['user-email'].value,
           telephone: pdfForm['user-telephone'].value,
           excludePrices: pdfForm['exclude-prices'].checked,
-          excludeQty: pdfForm['exclude-qty'].checked
+          excludeQty: pdfForm['exclude-qty'].checked,
+          excludeLongDescription: pdfForm['exclude-long-description'].checked,
+          includeGst: pdfForm['include-gst'].checked
         });
         const userDetails = {
           name: pdfForm['user-name']?.value || '',
@@ -394,8 +402,11 @@ export class ProductGridManager {
             ? true
             : (pdfForm['exclude-price']?.checked || pdfForm['exclude-prices']?.checked || false),
           excludeQty: pdfForm['exclude-qty']?.checked || false,
+          excludeLongDescription: pdfForm['exclude-long-description']?.checked || false,
+          includeGst: pdfForm['include-gst']?.checked || false,
           exportCsv: true // Always export CSV
         };
+        console.log('DEBUG: userDetails created for PDF:', userDetails);
         if (window.showPdfFormScreen) {
           window.showPdfFormScreen(userDetails);
         } else if (typeof showPdfFormScreen === 'function') {
@@ -590,7 +601,17 @@ export class ProductGridManager {
     // Update row data
     row.product = product;
     // Set default price
-    const defaultPrice = product.RRP_INCGST || product['RRP INC GST'] || product.rrpIncGst || product.Price || '';
+    // More comprehensive price fallback - check all possible field names
+    const defaultPrice = product.RRP_EX || 
+                         product['RRP EX GST'] || 
+                         product['RRP_EX'] ||
+                         product.RRP_EXGST || 
+                         product.rrpExGst || 
+                         product['RRP_INCGST'] ||  // fallback to inc GST if ex GST not available
+                         product.RRP_INCGST ||
+                         product['RRP INC GST'] ||
+                         product.rrpIncGst ||
+                         '';
     row.price = defaultPrice;
 
     // Update the price input field in the DOM immediately
@@ -624,6 +645,7 @@ export class ProductGridManager {
       // Ensure consistent field naming
       OrderCode: row.product.OrderCode || row.product.Code || '',
       Description: row.product.Description || row.product.ProductName || row.product['Product Name'] || '',
+      RRP_EX: row.price || row.product.RRP_EX || row.product['RRP EX GST'] || row.product['RRP_EX'] || row.product.RRP_EXGST || row.product.rrpExGst || row.product.RRP_INCGST || row.product['RRP INC GST'] || '0',
       RRP_INCGST: row.price || row.product.RRP_INCGST || row.product['RRP INC GST'] || row.product.rrpIncGst || '0',
       Image_URL: row.product.Image_URL || row.product.imageUrl || row.product.Image || 'assets/no-image.png'
     };
@@ -893,9 +915,11 @@ export class ProductGridManager {
         const userSettings = StorageManager.getUserSettings();
         if (userSettings) {
           const staffNameInput = document.getElementById('staff-name');
+          const staffPositionInput = document.getElementById('staff-position');
           const staffEmailInput = document.getElementById('staff-email');
           const staffPhoneInput = document.getElementById('staff-telephone');
           if (staffNameInput) {staffNameInput.value = userSettings.staffName || '';}
+          if (staffPositionInput) {staffPositionInput.value = userSettings.staffPosition || '';}
           if (staffEmailInput) {staffEmailInput.value = userSettings.staffEmail || '';}
           if (staffPhoneInput) {staffPhoneInput.value = userSettings.staffPhone || '';}
         }
@@ -979,23 +1003,10 @@ export class ProductGridManager {
   }
 
   async populateTipTailDropdowns() {
-    // Fetch PDF files from server
-    let assetPdfs = [];
-    try {
-      const resp = await fetch('/assets-list');
-      if (resp.ok) {
-        assetPdfs = await resp.json();
-        console.log('✅ Server assets-list endpoint available, using server-provided files');
-      } else {
-        console.log('ℹ️ Server assets-list endpoint returned error, using dynamic detection');
-        assetPdfs = await this.detectAvailablePdfFiles();
-      }
-    } catch (e) {
-      console.log('ℹ️ Server assets-list endpoint not available (expected in live environments), using dynamic detection');
-      // Dynamic fallback: try to detect PDF files in assets directory
-      assetPdfs = await this.detectAvailablePdfFiles();
-    }
-    assetPdfs = assetPdfs.map(f => `assets/${f}`);
+    // Use the robust detection method which handles all fallbacks
+    console.log('🔍 Discovering available PDF files...');
+    const detectedPdfs = await this.detectAvailablePdfFiles();
+    const assetPdfs = detectedPdfs.map(f => `assets/${f}`);
     const tipSelect = document.getElementById('tip-pdf-select');
     const tailSelect = document.getElementById('tail-pdf-select');
     if (tipSelect && tailSelect) {
@@ -1037,23 +1048,37 @@ export class ProductGridManager {
       console.log('ℹ️ assets-list.json not available, using fallback list...');
     }
 
-    // Fallback: use a comprehensive list of files that actually exist
-    // This ensures the app works even if the JSON file is missing
-    const knownFiles = [
+    // Fallback: dynamically test for actual file existence
+    // Test known possible filenames and only return files that actually exist
+    const possibleFiles = [
       'tip-AandD.pdf',
-      'tip-Builder.pdf',
+      'tip-Builder.pdf', 
       'tip-Merchant.pdf',
       'tip-Volume Merchant.pdf',
       'tail.pdf',
-      'tail-generic.pdf',
-      'my-sample-tip-file.pdf'
+      'tail-generic.pdf'
     ];
 
-    console.log('🔍 Using fallback file list...');
-    console.log(`📋 Including ${knownFiles.length} known PDF files`);
-    console.log(`🎯 Final detected PDF files (${knownFiles.length} found):`, knownFiles);
+    console.log('🔍 Testing individual file availability...');
+    const existingFiles = [];
+    
+    // Test each file by attempting to fetch it
+    for (const filename of possibleFiles) {
+      try {
+        const response = await fetch(`/assets/${filename}`, { method: 'HEAD' });
+        if (response.ok) {
+          existingFiles.push(filename);
+          console.log(`✅ Found: ${filename}`);
+        } else {
+          console.log(`❌ Not found: ${filename} (${response.status})`);
+        }
+      } catch (error) {
+        console.log(`❌ Error checking ${filename}:`, error.message);
+      }
+    }
 
-    return knownFiles;
+    console.log(`🎯 Dynamically detected PDF files (${existingFiles.length} found):`, existingFiles);
+    return existingFiles;
   }
 
   // Refresh PDF file list manually
@@ -1181,17 +1206,8 @@ export class ProductGridManager {
         tipSelect.value = '';
         // Restore original dropdown options for tip only
         tipSelect.innerHTML = '<option value="">(None)</option>';
-        // Get asset PDFs dynamically
-        let assetPdfs = [];
-        try {
-          const resp = await fetch('/assets-list');
-          if (resp.ok) {
-            assetPdfs = await resp.json();
-          }
-        } catch (e) {
-          // Dynamic fallback: try to detect PDF files in assets directory
-          assetPdfs = await this.detectAvailablePdfFiles();
-        }
+        // Get asset PDFs using robust detection
+        const assetPdfs = await this.detectAvailablePdfFiles();
         assetPdfs.forEach(pdf => {
           tipSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
         });
@@ -1209,17 +1225,8 @@ export class ProductGridManager {
         tailSelect.value = '';
         // Restore original dropdown options for tail only
         tailSelect.innerHTML = '<option value="">(None)</option>';
-        // Get asset PDFs dynamically
-        let assetPdfs = [];
-        try {
-          const resp = await fetch('/assets-list');
-          if (resp.ok) {
-            assetPdfs = await resp.json();
-          }
-        } catch (e) {
-          // Dynamic fallback: try to detect PDF files in assets directory
-          assetPdfs = await this.detectAvailablePdfFiles();
-        }
+        // Get asset PDFs using robust detection
+        const assetPdfs = await this.detectAvailablePdfFiles();
         assetPdfs.forEach(pdf => {
           tailSelect.innerHTML += `<option value="assets/${pdf}">${pdf}</option>`;
         });
@@ -1251,11 +1258,13 @@ export class ProductGridManager {
 
   saveSettings() {
     const staffName = document.getElementById('staff-name')?.value || '';
+    const staffPosition = document.getElementById('staff-position')?.value || '';
     const staffEmail = document.getElementById('staff-email')?.value || '';
     const staffPhone = document.getElementById('staff-telephone')?.value || '';
 
     const settings = {
       staffName: staffName.trim(),
+      staffPosition: staffPosition.trim(),
       staffEmail: staffEmail.trim(),
       staffPhone: staffPhone.trim()
     };
@@ -1275,10 +1284,12 @@ export class ProductGridManager {
 
     // Populate the form fields
     const staffNameField = document.getElementById('staff-name');
+    const staffPositionField = document.getElementById('staff-position');
     const staffEmailField = document.getElementById('staff-email');
     const staffPhoneField = document.getElementById('staff-telephone');
 
     if (staffNameField) {staffNameField.value = settings.staffName || '';}
+    if (staffPositionField) {staffPositionField.value = settings.staffPosition || '';}
     if (staffEmailField) {staffEmailField.value = settings.staffEmail || '';}
     if (staffPhoneField) {staffPhoneField.value = settings.staffPhone || '';}
   }
@@ -1379,7 +1390,7 @@ export class ProductGridManager {
         product: item.product,
         room: item.room || 'Blank',
         quantity: item.quantity || 1,
-        price: item.product?.RRP_INCGST || item.product?.rrpIncGst || item.product?.Price || '',
+        price: item.product?.RRP_EX || item.product?.['RRP EX GST'] || item.product?.['RRP_EX'] || item.product?.rrpExGst || item.product?.RRP_EXGST || item.product?.RRP_INCGST || item.product?.['RRP INC GST'] || '',
         notes: item.notes || '',
         storageId: item.id
       };
@@ -1459,7 +1470,7 @@ export class ProductGridManager {
     // Ensure order code is shown as a plain integer (no decimals, no commas)
     const displayOrderCode = productCode ? String(parseInt(productCode, 10)) : '';
     // Always show product's price if product is selected, otherwise row.price
-    const displayPrice = product ? (product.RRP_INCGST || product.rrpIncGst || product.Price || row.price || '') : (row.price || '');
+    const displayPrice = product ? (product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.rrpExGst || product.RRP_EXGST || product.RRP_INCGST || product['RRP INC GST'] || row.price || '') : (row.price || '');
 
     // Calculate total price
     const unitPrice = parseFloat((displayPrice || '').toString().replace(/,/g, '')) || 0;
@@ -1691,6 +1702,8 @@ export class ProductGridManager {
     this.updateTotals();
     this.ensureAtLeastOneEmptyRow();
   }
+
+
 
   /**
    * Shows the import modal for importing products.

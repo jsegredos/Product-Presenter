@@ -62,6 +62,31 @@ function serveFile(res, filePath) {
 }
 
 const server = http.createServer((req, res) => {
+  // Handle /assets-list endpoint to return available PDF files
+  if (req.url === '/assets-list') {
+    const assetsDir = path.join(__dirname, 'assets');
+    fs.readdir(assetsDir, (err, files) => {
+      if (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Could not read assets directory' }));
+        return;
+      }
+      
+      // Filter for PDF files only
+      const pdfFiles = files.filter(file => file.toLowerCase().endsWith('.pdf'));
+      
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Cache-Control': 'no-cache'
+      });
+      res.end(JSON.stringify(pdfFiles));
+    });
+    return;
+  }
+
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
   
   // Security: prevent directory traversal

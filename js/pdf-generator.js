@@ -330,19 +330,24 @@ export function showPdfFormScreen(userDetails) {
       // 5. Thank you/info message (centered just above footer, using actual staff details)
       const staffSettings = StorageManager.getUserSettings();
       const staffName = staffSettings.staffName || '';
+      const staffPosition = staffSettings.staffPosition || '';
       const staffEmail = staffSettings.staffEmail || '';
       const staffPhone = staffSettings.staffPhone || '';
       let infoMsg = 'For more information';
       if (staffName && staffPhone && staffEmail) {
-        infoMsg = `For more information, please contact ${staffName} on ${staffPhone} or email ${staffEmail}`;
+        const nameWithPosition = staffPosition ? `${staffName}, ${staffPosition}` : staffName;
+        infoMsg = `For more information, please contact ${nameWithPosition} on ${staffPhone} or email ${staffEmail}`;
       } else if (staffName && staffPhone) {
-        infoMsg = `For more information, please contact ${staffName} on ${staffPhone}`;
+        const nameWithPosition = staffPosition ? `${staffName}, ${staffPosition}` : staffName;
+        infoMsg = `For more information, please contact ${nameWithPosition} on ${staffPhone}`;
       } else if (staffName && staffEmail) {
-        infoMsg = `For more information, please contact ${staffName} or email ${staffEmail}`;
+        const nameWithPosition = staffPosition ? `${staffName}, ${staffPosition}` : staffName;
+        infoMsg = `For more information, please contact ${nameWithPosition} or email ${staffEmail}`;
       } else if (staffPhone && staffEmail) {
         infoMsg = `For more information, please call ${staffPhone} or email ${staffEmail}`;
       } else if (staffName) {
-        infoMsg = `For more information, please contact ${staffName}`;
+        const nameWithPosition = staffPosition ? `${staffName}, ${staffPosition}` : staffName;
+        infoMsg = `For more information, please contact ${nameWithPosition}`;
       } else if (staffPhone) {
         infoMsg = `For more information, please call ${staffPhone}`;
       } else if (staffEmail) {
@@ -642,7 +647,7 @@ export function showPdfFormScreen(userDetails) {
             const pageCount = doc.internal.getNumberOfPages() - 1; // exclude cover
             for (let i = 2; i <= pageCount + 1; i++) { // start from 2 (first product page)
               doc.setPage(i);
-              drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
+              drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails);
               currentY = footerHeight + 8;
               // Footer bar (reduced height and font size)
               doc.setFillColor('#9B9184'); // Updated footer color
@@ -787,7 +792,7 @@ export function showPdfFormScreen(userDetails) {
           // New page if needed
           if (pageRow >= maxRowsPerPage) {
             doc.addPage();
-            drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails.excludePrice, userDetails.excludeQty);
+            drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails);
             currentY = footerHeight + 8;
             pageRow = 0;
           }
@@ -805,9 +810,11 @@ export function showPdfFormScreen(userDetails) {
           const y = currentY + (rowHeight * pageRow);
           // Room header (always above first product in each room, on every page)
           if (row.isFirstInRoom) {
-            doc.setFontSize(9);
-            doc.setTextColor('#888');
+            doc.setFontSize(12);  // Increased from 9 to 12
+            doc.setFont('helvetica', 'bold');  // Make it bold
+            doc.setTextColor('#333');  // Darker color for better prominence
             doc.text(`${row.room} (${row.roomCount})`, leftMargin, y + 10);
+            doc.setFont('helvetica', 'normal');  // Reset font style
           }
           // Product image (maintain aspect ratio) - use dynamic positioning
           const imageX = colX[0];
@@ -825,30 +832,30 @@ export function showPdfFormScreen(userDetails) {
               const codeCenterX = codeX + (colW[1] / 2); // Center within the code column
               doc.text(String(row.item.OrderCode || ''), codeCenterX, codeY + 10, { align: 'center' });
 
-              // Datasheet link under code, with padding
-              let linkY = codeY + 26;
+              // Datasheet link under code, with more spacing
+              let linkY = codeY + 35;  // Increased from 26 to 35 for more space
               if (row.item.Datasheet_URL && row.item.Datasheet_URL !== '#') {
                 doc.setFontSize(9);
-                doc.setTextColor(80, 80, 80);
+                doc.setTextColor(0, 102, 204);  // Blue color (RGB: 0, 102, 204)
                 doc.textWithLink('Datasheet', codeCenterX, linkY, { url: row.item.Datasheet_URL, align: 'center' });
-                // Underline
+                // Blue underline
                 const dsWidth = doc.getTextWidth('Datasheet');
-                doc.setDrawColor(180, 180, 180);
-                doc.setLineWidth(0.7);
+                doc.setDrawColor(0, 102, 204);  // Matching blue underline
+                doc.setLineWidth(0.8);  // Slightly thicker underline
                 doc.line(codeCenterX - dsWidth / 2, linkY + 1.5, codeCenterX + dsWidth / 2, linkY + 1.5);
-                linkY += 14;
+                linkY += 16;  // Increased spacing between links
               }
               // Website link under datasheet
               if (row.item.Website_URL && row.item.Website_URL !== '#') {
                 doc.setFontSize(9);
-                doc.setTextColor(80, 80, 200);
+                doc.setTextColor(0, 102, 204);  // Blue color (RGB: 0, 102, 204)
                 doc.textWithLink('Website', codeCenterX, linkY, { url: row.item.Website_URL, align: 'center' });
-                // Underline
+                // Blue underline
                 const wsWidth = doc.getTextWidth('Website');
-                doc.setDrawColor(120, 120, 200);
-                doc.setLineWidth(0.7);
+                doc.setDrawColor(0, 102, 204);  // Matching blue underline
+                doc.setLineWidth(0.8);  // Slightly thicker underline
                 doc.line(codeCenterX - wsWidth / 2, linkY + 1.5, codeCenterX + wsWidth / 2, linkY + 1.5);
-                linkY += 14;
+                linkY += 16;  // Increased spacing
               }
               // Description (top-aligned with code) - use dynamic positioning
               let descY = codeY + 10;
@@ -861,8 +868,8 @@ export function showPdfFormScreen(userDetails) {
               doc.text(descLines, descX + 5, descY);
               descY += descLines.length * 12;
 
-              // Long description
-              if (row.item.LongDescription || row.item['Long Description'] || row.item.longDescription) {
+              // Long description (only if not excluded)
+              if (!userDetails.excludeLongDescription && (row.item.LongDescription || row.item['Long Description'] || row.item.longDescription)) {
                 const longDesc = row.item.LongDescription || row.item['Long Description'] || row.item.longDescription;
                 doc.setFontSize(9);
                 doc.setTextColor('#444');
@@ -884,10 +891,16 @@ export function showPdfFormScreen(userDetails) {
               // Price ea (top-aligned) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
-              // Robust price parsing for PDF
+              // Robust price parsing for PDF - defaults to ex-GST
               let pdfPriceNum = NaN;
-              if (row.item.RRP_INCGST) {
-                pdfPriceNum = parseFloat(row.item.RRP_INCGST.toString().replace(/,/g, ''));
+              const exGstPrice = row.item.RRP_EX || row.item['RRP EX GST'] || row.item['RRP_EX'] || row.item.RRP_EXGST || row.item.RRP_INCGST || row.item['RRP INC GST'];
+              if (exGstPrice) {
+                // Use ex-GST pricing as default
+                pdfPriceNum = parseFloat(exGstPrice.toString().replace(/,/g, ''));
+                // If user wants GST included, add 10%
+                if (userDetails.includeGst) {
+                  pdfPriceNum = pdfPriceNum * 1.1;
+                }
               }
               const pdfPriceStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? (`$${pdfPriceNum.toFixed(2)}`) : '';
               if (!userDetails.excludePrice && !userDetails.excludeQty) {
@@ -921,7 +934,7 @@ export function showPdfFormScreen(userDetails) {
   });
 }
 
-export function drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, excludePrice, excludeQty) {
+export function drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeight, logoDataUrl, logoNaturalW, logoNaturalH, userDetails) {
   const headerHeight = footerHeight + 5.7;
   doc.setFillColor('#8B6C2B'); // Updated header color
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
@@ -947,11 +960,39 @@ export function drawPDFHeader(doc, pageWidth, colX, colW, leftMargin, footerHeig
 
   doc.text('Code', codeCenterX, colY, { align: 'center' });
   doc.text('Description', descCenterX, colY, { align: 'center' });
-  if (!excludePrice && !excludeQty) {
-    doc.text('Price ea inc GST', priceCenterX, colY, { align: 'center' });
+  if (!userDetails.excludePrice && !userDetails.excludeQty) {
+    // Change header text based on GST inclusion with proper formatting
+    if (userDetails.includeGst) {
+      // Draw "Price ea " in normal font
+      doc.setFont('helvetica', 'normal');
+      const priceTextWidth = doc.getTextWidth('Price ea ');
+      const startX = priceCenterX - (doc.getTextWidth('Price ea INC GST') / 2);
+      doc.text('Price ea ', startX, colY);
+      
+      // Draw "INC GST" in bold
+      doc.setFont('helvetica', 'bold');
+      doc.text('INC GST', startX + priceTextWidth, colY);
+      
+      // Reset font for other headers
+      doc.setFont('helvetica', 'normal');
+    } else {
+      // Draw "Price ea " in normal font
+      doc.setFont('helvetica', 'normal');
+      const priceTextWidth = doc.getTextWidth('Price ea ');
+      const startX = priceCenterX - (doc.getTextWidth('Price ea EX GST') / 2);
+      doc.text('Price ea ', startX, colY);
+      
+      // Draw "EX GST" in bold
+      doc.setFont('helvetica', 'bold');
+      doc.text('EX GST', startX + priceTextWidth, colY);
+      
+      // Reset font for other headers
+      doc.setFont('helvetica', 'normal');
+    }
+    
     doc.text('Qty', qtyCenterX, colY, { align: 'center' });
     doc.text('Total', totalCenterX, colY, { align: 'center' });
-  } else if (excludePrice && !excludeQty) {
+  } else if (userDetails.excludePrice && !userDetails.excludeQty) {
     doc.text('Qty', qtyCenterX, colY, { align: 'center' });
   }
   // If excludeQty is true, do not show price or qty columns
@@ -1070,17 +1111,25 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
     // Step 2: Process data in next tick to avoid blocking
     setTimeout(() => {
       const csvData = selection.map(item => {
-        const priceStr = (item.RRP_INCGST || '').toString().replace(/,/g, '');
-        const priceNum = parseFloat(priceStr);
-        const total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
+        let priceStr, priceNum, total, priceHeader, totalHeader;
         const excludePrice = userDetails.excludePrice;
+        
+        // Default to ex-GST pricing with fallbacks
+        const exGstPrice = item.RRP_EX || item['RRP EX GST'] || item['RRP_EX'] || item.RRP_EXGST || item.RRP_INCGST || item['RRP INC GST'] || '';
+        priceStr = exGstPrice.toString().replace(/,/g, '');
+        priceNum = parseFloat(priceStr);
+        
+        // CSV always uses EX GST for consistency across systems
+        priceHeader = 'Price ea ex GST';
+        totalHeader = 'Price Total ex GST';
+        // Note: priceNum is already EX GST, no multiplication needed
+        
+        total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
 
-        return {
+        const csvRow = {
           Code: sanitizeCSVField(item.OrderCode || ''),
           Description: sanitizeCSVField(item.Description || ''),
           Quantity: item.Quantity || 1,
-          'Price ea inc GST': excludePrice ? '0.00' : (item.RRP_INCGST || ''),
-          'Price Total inc GST': excludePrice ? '0.00' : total,
           Notes: sanitizeCSVField(item.Notes || ''),
           Room: sanitizeCSVField(item.Room || ''),
           'Image URL': sanitizeCSVField(item.Image_URL || ''),
@@ -1088,6 +1137,12 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
           'Datasheet URL': sanitizeCSVField(item.Datasheet_URL || ''),
           'Website URL': sanitizeCSVField(item.Website_URL || '')
         };
+
+        // Add price columns dynamically with correct headers
+        csvRow[priceHeader] = excludePrice ? '0.00' : priceNum.toFixed(2);
+        csvRow[totalHeader] = excludePrice ? '0.00' : total;
+
+        return csvRow;
       });
 
       // Step 3: Generate CSV string in next tick
@@ -1140,103 +1195,7 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
   });
 }
 
-// SYNCHRONOUS VERSION: Keep for backward compatibility
-export function generateCsvBlob(userDetails, csvFilename) {
-  // Use same logic as PDF generation to handle both storage formats
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
 
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    // New format: convert to old format for CSV generation
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity,
-      Timestamp: new Date(item.timestamp).toISOString()
-    }));
-  } else {
-    // Old format: use directly
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Prepare CSV data with enhanced formatting
-  const csvData = selection.map(item => {
-    const priceStr = (item.RRP_INCGST || '').toString().replace(/,/g, '');
-    const priceNum = parseFloat(priceStr);
-    const total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
-    const excludePrice = userDetails.excludePrice;
-
-    return {
-      Code: sanitizeCSVField(item.OrderCode || ''),
-      Description: sanitizeCSVField(item.Description || ''),
-      Quantity: item.Quantity || 1,
-      'Price ea inc GST': excludePrice ? '0.00' : (item.RRP_INCGST || ''),
-      'Price Total inc GST': excludePrice ? '0.00' : total,
-      Notes: sanitizeCSVField(item.Notes || ''),
-      Room: sanitizeCSVField(item.Room || ''),
-      'Image URL': sanitizeCSVField(item.Image_URL || ''),
-      'Diagram URL': sanitizeCSVField(item.Diagram_URL || ''),
-      'Datasheet URL': sanitizeCSVField(item.Datasheet_URL || ''),
-      'Website URL': sanitizeCSVField(item.Website_URL || '')
-    };
-  });
-
-  // Use PapaParse with EmailJS-optimized configuration
-  const csvString = window.Papa.unparse(csvData, {
-    quotes: true,        // Always quote fields to prevent corruption
-    quoteChar: '"',      // Use double quotes
-    delimiter: ',',      // Use comma delimiter
-    header: true,        // Include headers
-    newline: '\r\n',     // Use Windows line endings for better email compatibility
-    skipEmptyLines: false,
-    escapeChar: '"',     // Escape quotes with double quotes
-    transform: {
-      // Clean up any problematic characters
-      value(value, field) {
-        if (typeof value === 'string') {
-          // Remove null bytes and control characters that can corrupt CSV
-          return value.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-        }
-        return value;
-      }
-    }
-  });
-
-  // CSV generation complete
-
-  // For EmailJS: Return base64-encoded data
-  if (userDetails.sendEmail) {
-    try {
-      const base64Data = btoa(unescape(encodeURIComponent(csvString)));
-
-
-      // Test decode to verify integrity
-      const decoded = decodeURIComponent(escape(atob(base64Data)));
-
-
-      return {
-        name: csvFilename,
-        data: base64Data,
-        contentType: 'text/csv',
-        originalSize: csvString.length,
-        base64Size: base64Data.length
-      };
-    } catch (error) {
-      console.error('❌ CSV base64 encoding failed:', error);
-      // Fallback to blob
-      return new Blob([csvString], { type: 'text/csv' });
-    }
-  } else {
-    // For downloads: Return standard blob
-    return new Blob([csvString], { type: 'text/csv' });
-  }
-}
 
 // Helper function to sanitize CSV fields and prevent corruption
 function sanitizeCSVField(field) {
@@ -2169,561 +2128,11 @@ export function showEmailCompatibleOption(userDetails, originalFilename) {
   };
 }
 
-// Test function for CSV generation and EmailJS compatibility
-export function testCsvGeneration(userDetails = null, showModal = true) {
 
 
-  // Use test data if no userDetails provided
-  const testUserDetails = userDetails || {
-    name: 'Test User',
-    email: 'test@example.com',
-    sendEmail: true,
-    exportCsv: true,
-    excludePrice: false
-  };
 
-  const testFilename = `test-csv-${Date.now()}.csv`;
 
-  try {
-    // Test the enhanced CSV generation
-    const csvResult = generateCsvBlob(testUserDetails, testFilename);
 
-    if (!csvResult) {
-      console.warn('⚠️ No CSV data generated (empty selection?)');
-      return null;
-    }
-
-    console.log('✅ CSV Generation Test Results:', {
-      format: csvResult.data ? 'Enhanced (Base64)' : 'Legacy (Blob)',
-      filename: csvResult.name || 'blob',
-      contentType: csvResult.contentType || csvResult.type,
-      originalSize: csvResult.originalSize || csvResult.size,
-      base64Size: csvResult.base64Size || 'N/A'
-    });
-
-    // Test base64 decoding if available
-    if (csvResult.data) {
-      try {
-        const decoded = decodeURIComponent(escape(atob(csvResult.data)));
-        console.log('📋 Base64 Decode Test - First 300 chars:');
-        console.log(decoded.substring(0, 300));
-
-        // Count rows
-        const rows = decoded.split('\r\n').filter(row => row.trim());
-
-
-        if (showModal) {
-          showCsvTestModal(csvResult, decoded, rows.length);
-        }
-
-      } catch (e) {
-        console.error('Base64 decode failed:', e);
-      }
-    }
-
-    return csvResult;
-
-  } catch (error) {
-    console.error('❌ CSV generation test failed:', error);
-    return null;
-  }
-}
-
-// Show a modal with CSV test results
-function showCsvTestModal(csvResult, csvContent, rowCount) {
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.8); z-index: 10001; display: flex; 
-    align-items: center; justify-content: center; padding: 20px;
-  `;
-
-  const content = document.createElement('div');
-  content.style.cssText = `
-    background: white; border-radius: 8px; padding: 30px; max-width: 700px; 
-    width: 100%; max-height: 80vh; overflow-y: auto;
-  `;
-
-  content.innerHTML = `
-    <h3 style="color: #059669; margin: 0 0 20px 0; display: flex; align-items: center;">
-      <span style="margin-right: 8px;">🧪</span>
-      CSV Generation Test Results
-    </h3>
-    
-    <div style="background: #ecfdf5; padding: 16px; border-radius: 6px; margin: 16px 0;">
-      <h4 style="margin: 0 0 12px 0; color: #047857;">Generation Summary</h4>
-      <ul style="margin: 0; padding-left: 20px; color: #065f46; font-size: 14px;">
-        <li><strong>Format:</strong> Enhanced (Base64 encoded for EmailJS)</li>
-        <li><strong>Filename:</strong> ${csvResult.name}</li>
-        <li><strong>Rows:</strong> ${rowCount} (including header)</li>
-        <li><strong>Original Size:</strong> ${(csvResult.originalSize / 1024).toFixed(2)} KB</li>
-        <li><strong>Base64 Size:</strong> ${(csvResult.base64Size / 1024).toFixed(2)} KB</li>
-      </ul>
-    </div>
-    
-    <div style="background: #f3f4f6; padding: 16px; border-radius: 6px; margin: 16px 0;">
-      <h4 style="margin: 0 0 12px 0; color: #1f2937;">CSV Content Preview</h4>
-      <textarea readonly style="
-        width: 100%; height: 200px; font-family: monospace; font-size: 11px;
-        border: 1px solid #d1d5db; border-radius: 4px; padding: 8px;
-        background: white; resize: vertical;
-      ">${csvContent.substring(0, 1000)}${csvContent.length > 1000 ? '\n... (content truncated)' : ''}</textarea>
-    </div>
-    
-    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-      <button id="csv-test-close" style="
-        padding: 10px 20px; border: 1px solid #d1d5db; background: white; 
-        border-radius: 4px; cursor: pointer; font-weight: bold;
-      ">Close</button>
-      <button id="csv-download-test" style="
-        padding: 10px 20px; border: none; background: #059669; color: white; 
-        border-radius: 4px; cursor: pointer; font-weight: bold;
-      ">Download Test CSV</button>
-    </div>
-  `;
-
-  modal.appendChild(content);
-  document.body.appendChild(modal);
-
-  // Event handlers
-  document.getElementById('csv-test-close').onclick = () => modal.remove();
-
-  document.getElementById('csv-download-test').onclick = () => {
-    // Create a test download
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    downloadWithFallback(blob, csvResult.name, 'CSV');
-    modal.remove();
-  };
-}
-
-// --- CSV GENERATION FOR EMAILJS (RAW STRING) ---
-
-// Fixed CSV generation - NO base64 encoding for EmailJS
-export function generateCsvForEmailJS(userDetails, csvFilename) {
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity,
-      Timestamp: new Date(item.timestamp).toISOString()
-    }));
-  } else {
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Prepare CSV data - clean strings only
-  const csvData = selection.map(item => {
-    const priceStr = (item.RRP_INCGST || '').toString().replace(/,/g, '');
-    const priceNum = parseFloat(priceStr);
-    const total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
-    const excludePrice = userDetails.excludePrice;
-
-    return {
-      Code: sanitizeCSVField(item.OrderCode || ''),
-      Description: sanitizeCSVField(item.Description || ''),
-      Quantity: item.Quantity || 1,
-      'Price ea inc GST': excludePrice ? '0.00' : (item.RRP_INCGST || ''),
-      'Price Total inc GST': excludePrice ? '0.00' : total,
-      Notes: sanitizeCSVField(item.Notes || ''),
-      Room: sanitizeCSVField(item.Room || ''),
-      'Image URL': sanitizeCSVField(item.Image_URL || ''),
-      'Diagram URL': sanitizeCSVField(item.Diagram_URL || ''),
-      'Datasheet URL': sanitizeCSVField(item.Datasheet_URL || ''),
-      'Website URL': sanitizeCSVField(item.Website_URL || '')
-    };
-  });
-
-  // Generate clean CSV string - NO base64 encoding
-  const csvString = generateCleanCSVString(csvData);
-
-  // Clean CSV generated
-
-  // Return RAW string for EmailJS - let EmailJS handle encoding
-  return {
-    name: csvFilename,
-    data: csvString,  // RAW string, NOT base64
-    contentType: 'text/csv'
-  };
-}
-
-// Clean string function to remove problematic characters
-function cleanString(field) {
-  if (typeof field !== 'string') {
-    field = String(field);
-  }
-
-  // Remove problematic characters and normalize line breaks
-  field = field
-    .replace(/\0/g, '')                    // Remove null bytes
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // Remove control characters
-    .replace(/\r?\n|\r/g, ' ')             // Replace line breaks with spaces
-    .trim();                               // Remove leading/trailing whitespace
-
-  return field;
-}
-
-// Generate CSV with strict ASCII compliance
-function generateCleanCSVString(data) {
-  if (!data || data.length === 0) {
-    return '';
-  }
-
-  const headers = Object.keys(data[0]);
-
-  // Create header row - clean headers
-  const headerRow = headers.map(header => {
-    const cleaned = cleanString(header);
-    return `"${cleaned}"`;
-  }).join(',');
-
-  // Create data rows - clean all values
-  const dataRows = data.map(row => {
-    return headers.map(header => {
-      const value = row[header];
-      const cleaned = cleanString(String(value || ''));
-      return `"${cleaned}"`;
-    }).join(',');
-  });
-
-  // Use \n instead of \r\n for better compatibility
-  const csvString = [headerRow, ...dataRows].join('\n');
-
-  // CSV string stats calculated
-
-  return csvString;
-}
-
-// Alternative: Use simple format without quotes if still having issues
-export function generateSimpleCsvForEmailJS(userDetails, csvFilename) {
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity
-    }));
-  } else {
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Ultra-simple CSV format - NO NEWLINES, use pipe separator
-  let csvContent = 'Code|Description|Quantity|Room|Notes ';
-
-  // Data rows - NO newlines, use double space as row separator
-  selection.forEach(item => {
-    const code = cleanFieldForCSV(item.OrderCode || '');
-    const desc = cleanFieldForCSV(item.Description || '');
-    const qty = item.Quantity || 1;
-    const room = cleanFieldForCSV(item.Room || '');
-    const notes = cleanFieldForCSV(item.Notes || '');
-
-    csvContent += `${code}|${desc}|${qty}|${room}|${notes}  `;
-  });
-
-  // Final cleanup - remove any remaining control characters
-  csvContent = csvContent.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ').replace(/\s+/g, ' ').trim();
-
-  // Simple CSV generated
-
-  return {
-    name: csvFilename,
-    data: csvContent,
-    contentType: 'text/plain'  // Plain text for maximum compatibility
-  };
-}
-
-// Ultra-aggressive field cleaning for CSV
-function cleanFieldForCSV(field) {
-  if (!field) {return '';}
-
-  // Convert to string and clean aggressively
-  let cleaned = String(field)
-    .replace(/[\x00-\x1F\x7F-\xFF]/g, ' ')    // Remove ALL control chars and non-ASCII
-    .replace(/[|,\r\n\t]/g, ' ')              // Replace separators with spaces
-    .replace(/\s+/g, ' ')                     // Normalize whitespace
-    .trim();                                  // Remove leading/trailing spaces
-
-  // Limit length to prevent issues
-  if (cleaned.length > 50) {
-    cleaned = `${cleaned.substring(0, 50)}...`;
-  }
-
-  return cleaned;
-}
-
-// Test function to debug CSV encoding
-export function testCsvEncoding(userDetails, csvFilename) {
-  console.log('🧪 Testing CSV encoding methods...');
-
-  // Test method 1: Clean CSV
-  const cleanCsv = generateCsvForEmailJS(userDetails, csvFilename);
-  if (cleanCsv) {
-    console.log('✅ Clean CSV method:', {
-      name: cleanCsv.name,
-      length: cleanCsv.data.length,
-      preview: cleanCsv.data.substring(0, 150),
-      hasControlChars: /[\x00-\x1F\x7F]/.test(cleanCsv.data),
-      hasNonAscii: /[\u0080-\uFFFF]/.test(cleanCsv.data)
-    });
-  }
-
-  // Test method 2: Simple CSV
-  const simpleCsv = generateSimpleCsvForEmailJS(userDetails, csvFilename);
-  if (simpleCsv) {
-    console.log('✅ Simple CSV method:', {
-      name: simpleCsv.name,
-      length: simpleCsv.data.length,
-      preview: simpleCsv.data.substring(0, 150),
-      hasControlChars: /[\x00-\x1F\x7F]/.test(simpleCsv.data),
-      hasNonAscii: /[\u0080-\uFFFF]/.test(simpleCsv.data)
-    });
-  }
-
-  return cleanCsv || simpleCsv;
-}
-
-// Test function to verify CSV generation works correctly
-export function testEmailCSVGeneration() {
-  console.log('🧪 Testing Email CSV Generation...');
-
-  // Create test user details
-  const testUserDetails = {
-    name: 'Test User',
-    email: 'test@example.com',
-    project: 'Test Project',
-    address: '123 Test Street',
-    excludePrice: false
-  };
-
-  try {
-    // Test the new email CSV generation
-    const csvFilename = 'test-email-output.csv';
-    const emailCsvData = generateCsvForEmailJS(testUserDetails, csvFilename);
-
-    if (emailCsvData) {
-      console.log('✅ Email CSV Generation Test Results:', {
-        filename: emailCsvData.name,
-        contentType: emailCsvData.contentType,
-        dataLength: emailCsvData.data.length,
-        dataType: typeof emailCsvData.data,
-        hasControlChars: /[\x00-\x1F\x7F]/.test(emailCsvData.data),
-        hasNonAscii: /[\u0080-\uFFFF]/.test(emailCsvData.data),
-        preview: emailCsvData.data.substring(0, 300)
-      });
-
-      // Test the simple CSV generation too
-      const simpleCsvData = generateSimpleCsvForEmailJS(testUserDetails, csvFilename);
-      if (simpleCsvData) {
-        console.log('✅ Simple CSV Generation Test Results:', {
-          filename: simpleCsvData.name,
-          contentType: simpleCsvData.contentType,
-          dataLength: simpleCsvData.data.length,
-          dataType: typeof simpleCsvData.data,
-          hasControlChars: /[\x00-\x1F\x7F]/.test(simpleCsvData.data),
-          hasNonAscii: /[\u0080-\uFFFF]/.test(simpleCsvData.data),
-          preview: simpleCsvData.data.substring(0, 300)
-        });
-      }
-
-      console.log('🎉 Email CSV generation test completed successfully!');
-      console.log('📧 Ready to test email sending with clean CSV data.');
-
-      return {
-        success: true,
-        emailCsv: emailCsvData,
-        simpleCsv: simpleCsvData
-      };
-    } else {
-      console.warn('⚠️  No CSV data generated - make sure you have products selected');
-      return { success: false, error: 'No CSV data generated' };
-    }
-  } catch (error) {
-    console.error('❌ Email CSV generation test failed:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-// Make test function globally available for console testing
-window.testEmailCSVGeneration = testEmailCSVGeneration;
-
-// FINAL FIX: Ultra-clean CSV with zero control characters
-export function generateUltraCleanCsv(userDetails, csvFilename) {
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity
-    }));
-  } else {
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Create CSV rows using ONLY spaces - NO control characters whatsoever
-  let csvText = '';
-
-  // Header (single line, no \n)
-  csvText += 'Code,Description,Quantity,Room,Notes';
-
-  // Data rows (append with space separator instead of \n)
-  selection.forEach(item => {
-    // Clean ALL strings to remove ANY control characters
-    const code = cleanForEmail(item.OrderCode || '');
-    const desc = cleanForEmail(item.Description || '');
-    const qty = cleanForEmail(item.Quantity || 1);
-    const room = cleanForEmail(item.Room || '');
-    const notes = cleanForEmail(item.Notes || '');
-
-    // Use pipe separator instead of newline to avoid control chars
-    csvText += ` | ${code},${desc},${qty},${room},${notes}`;
-  });
-
-  // Ultra-clean CSV created
-
-  return {
-    name: csvFilename,
-    data: csvText,
-    contentType: 'text/plain'
-  };
-}
-
-// Even more aggressive cleaning function
-function cleanForEmail(field) {
-  if (!field) {return '';}
-
-  // Convert to string and clean aggressively
-  let cleaned = String(field)
-    .replace(/[\x00-\x1F\x7F-\xFF]/g, ' ')    // Remove ALL control chars and non-ASCII
-    .replace(/[|,\r\n\t]/g, ' ')              // Replace separators with spaces
-    .replace(/\s+/g, ' ')                     // Normalize whitespace
-    .trim();                                  // Remove leading/trailing spaces
-
-  // Limit length to prevent issues
-  if (cleaned.length > 50) {
-    cleaned = `${cleaned.substring(0, 50)}...`;
-  }
-
-  return cleaned;
-}
-
-// Alternative: Send as JSON string instead of CSV
-export function generateJsonForEmail(userDetails, filename) {
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity
-    }));
-  } else {
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Create clean JSON data
-  const cleanData = selection.map(item => ({
-    Code: cleanForEmail(item.OrderCode || ''),
-    Description: cleanForEmail(item.Description || ''),
-    Quantity: cleanForEmail(item.Quantity || 1),
-    Room: cleanForEmail(item.Room || ''),
-    Notes: cleanForEmail(item.Notes || '')
-  }));
-
-  // Convert to JSON string (no control characters in JSON)
-  const jsonString = JSON.stringify(cleanData, null, 2);
-
-  console.log('📊 JSON data created:', {
-    length: jsonString.length,
-    preview: jsonString.substring(0, 200),
-    hasControlChars: /[\x00-\x1F\x7F-\x9F]/.test(jsonString)
-  });
-
-  return {
-    name: filename.replace('.csv', '.json'),
-    data: jsonString,
-    contentType: 'application/json'
-  };
-}
-
-// Simplest possible format: Space-separated values
-export function generateSpaceSeparatedData(userDetails, filename) {
-  const storedSelection = JSON.parse(localStorage.getItem('selection') || '[]');
-  const selectedProducts = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PRODUCTS) || '[]');
-
-  let selection = [];
-  if (selectedProducts.length > 0) {
-    selection = selectedProducts.map(item => ({
-      ...item.product,
-      Room: item.room,
-      Notes: item.notes,
-      Quantity: item.quantity
-    }));
-  } else {
-    selection = storedSelection;
-  }
-
-  if (!selection.length) {
-    return null;
-  }
-
-  // Create space-separated data (absolutely no control characters)
-  let dataText = 'SEIMA_PRODUCT_SELECTION ';
-
-  selection.forEach((item, index) => {
-    const code = cleanForEmail(item.OrderCode || '');
-    const desc = cleanForEmail(item.Description || '');
-    const qty = cleanForEmail(item.Quantity || 1);
-    const room = cleanForEmail(item.Room || '');
-
-    dataText += `ITEM${index + 1} CODE:${code} DESC:${desc} QTY:${qty} ROOM:${room} `;
-  });
-
-  console.log('📊 Space-separated data:', {
-    length: dataText.length,
-    preview: dataText.substring(0, 200),
-    hasControlChars: /[\x00-\x1F\x7F-\x9F]/.test(dataText)
-  });
-
-  return {
-    name: filename.replace('.csv', '.txt'),
-    data: dataText,
-    contentType: 'text/plain'
-  };
-}
-
-// Alternative: Use simple format without quotes if still having issues
 
 // Add at the top, after imports
 const TIP_TAIL_STORAGE_KEY = 'tipTailSettings';

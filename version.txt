@@ -1,1 +1,1 @@
-1.9.0 - Major refactoring: enhanced error handling, modular architecture, comprehensive documentation, improved developer experience, configuration management system
+1.9.1 - UI improvements: enhanced PDF cosmetics (room headers, URL links), added staff position field, fixed tip/tail file discovery, removed hardcoded fallbacks

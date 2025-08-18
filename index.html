@@ -38,7 +38,7 @@
       <div class="header-bottom">
         <div class="selection-summary">
           <span id="total-items">0 items</span>, <span id="total-rooms">0 Rooms</span>. Total <span id="total-value">$0.00</span>
-          <span id="app-version" style="margin-left: 2em; color: #888; font-size: 0.95em;"></span>
+          <span id="app-version" style="margin-left: 2em; color: #2563eb; font-size: 0.95em; cursor: pointer; text-decoration: underline;" title="Click to view what's new"></span>
         </div>
       </div>
     </div>
@@ -57,8 +57,8 @@
             <div class="col-product">Product</div>
             <div class="col-room">Room</div>
             <div class="col-qty">Qty</div>
-            <div class="col-price">Price</div>
-            <div class="col-total">Total</div>
+            <div class="col-price">Price (EX GST)</div>
+            <div class="col-total">Total (EX GST)</div>
             <div class="col-notes">Notes</div>
             <div class="col-actions">Actions</div>
           </div>
@@ -175,12 +175,24 @@
             <span style="font-size: 1rem;">Exclude prices from PDF</span>
           </label>
         </div>
-        <div style="margin-bottom: 15px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="exclude-qty" name="exclude-qty" style="width: 18px; height: 18px;">
-            <span style="font-size: 1rem;">Exclude Price and Qty from PDF</span>
-          </label>
-        </div>
+                 <div style="margin-bottom: 15px;">
+           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+             <input type="checkbox" id="exclude-qty" name="exclude-qty" style="width: 18px; height: 18px;">
+             <span style="font-size: 1rem;">Exclude Price and Qty from PDF</span>
+           </label>
+         </div>
+         <div style="margin-bottom: 15px;">
+           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+             <input type="checkbox" id="exclude-long-description" name="exclude-long-description" style="width: 18px; height: 18px;">
+             <span style="font-size: 1rem;">Exclude long descriptions from PDF</span>
+           </label>
+         </div>
+         <div style="margin-bottom: 15px;">
+           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+             <input type="checkbox" id="include-gst" name="include-gst" style="width: 18px; height: 18px;">
+             <span style="font-size: 1rem;">Include GST in pricing (add 10% to all prices)</span>
+           </label>
+         </div>
         <div style="margin-bottom: 20px;">
           <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Customer Logo</h4>
           <input type="file" id="customer-logo-upload" accept="image/png, image/jpeg" style="margin-bottom: 8px;">
@@ -227,12 +239,16 @@
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal" style="display:none;">
     <div class="modal-content">
-      <h3 style="margin: 0 0 20px 0; color: #333; display: flex; align-items: center; gap: 10px;">Settings <span id="settings-version-info" class="version-display" style="font-size:0.75em;color:#aaa;font-weight:400;vertical-align:middle;"></span></h3>
+      <h3 style="margin: 0 0 20px 0; color: #333;">Settings</h3>
       <div style="margin-bottom: 20px;">
         <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Staff Contact Details</h4>
         <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">These details will appear on the presentation title page.</p>
         <label for="staff-name">Name</label>
         <input type="text" id="staff-name" name="staff-name" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
+
+        <label for="staff-position">Position</label>
+        <input type="text" id="staff-position" name="staff-position" maxlength="60" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
+
         <label for="staff-email">Email</label>
         <input type="email" id="staff-email" name="staff-email" maxlength="100" style="width:100%;margin-bottom:10px;font-size:1rem;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;">
         <label for="staff-telephone">Phone</label>
@@ -244,6 +260,21 @@
         <button id="settings-save" class="primary-btn">Save Settings</button>
       </div>
       <div style="margin-top: 32px; text-align: right;"></div>
+    </div>
+  </div>
+
+  <!-- Changelog Modal -->
+  <div id="changelog-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <h3 style="margin: 0 0 20px 0; color: #333; display: flex; align-items: center; gap: 10px;">
+        What's New in <span id="changelog-version" style="color: #2563eb;"></span>
+      </h3>
+      <div id="changelog-content" style="max-height: 400px; overflow-y: auto; line-height: 1.6; color: #555;">
+        <!-- Changelog content will be populated here -->
+      </div>
+      <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 20px;">
+        <button id="changelog-close" class="primary-btn">Got it!</button>
+      </div>
     </div>
   </div>
 
@@ -261,19 +292,41 @@
 
   <script type="module" src="js/app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var priceBox = document.getElementById('exclude-prices');
-      var qtyBox = document.getElementById('exclude-qty');
-      if (priceBox && qtyBox) {
-        priceBox.addEventListener('change', function() {
-          if (priceBox.checked) qtyBox.checked = false;
-        });
-        qtyBox.addEventListener('change', function() {
-          if (qtyBox.checked) priceBox.checked = false;
-        });
-      }
-    });
-  </script>
+     <script>
+     document.addEventListener('DOMContentLoaded', function() {
+       var priceBox = document.getElementById('exclude-prices');
+       var qtyBox = document.getElementById('exclude-qty');
+       var includeGstBox = document.getElementById('include-gst');
+       
+       if (priceBox && qtyBox) {
+         // Mutual exclusion between price and qty options
+         priceBox.addEventListener('change', function() {
+           if (priceBox.checked) {
+             qtyBox.checked = false;
+             // If excluding all prices, can't include GST pricing
+             if (includeGstBox) includeGstBox.checked = false;
+           }
+         });
+         qtyBox.addEventListener('change', function() {
+           if (qtyBox.checked) {
+             priceBox.checked = false;
+             // If excluding all prices, can't include GST pricing
+             if (includeGstBox) includeGstBox.checked = false;
+           }
+         });
+       }
+       
+       // Handle include GST option conflicts
+       if (includeGstBox && priceBox && qtyBox) {
+         includeGstBox.addEventListener('change', function() {
+           if (includeGstBox.checked) {
+             // If including GST prices, can't exclude all prices
+             priceBox.checked = false;
+             qtyBox.checked = false;
+           }
+         });
+       }
+     });
+   </script>
 </body>
 </html> 
