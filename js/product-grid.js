@@ -645,8 +645,10 @@ export class ProductGridManager {
       // Ensure consistent field naming
       OrderCode: row.product.OrderCode || row.product.Code || '',
       Description: row.product.Description || row.product.ProductName || row.product['Product Name'] || '',
-      RRP_EX: row.price || row.product.RRP_EX || row.product['RRP EX GST'] || row.product['RRP_EX'] || row.product.RRP_EXGST || row.product.rrpExGst || row.product.RRP_INCGST || row.product['RRP INC GST'] || '0',
-      RRP_INCGST: row.price || row.product.RRP_INCGST || row.product['RRP INC GST'] || row.product.rrpIncGst || '0',
+      // Store user-edited price separately and preserve original RRP values
+      UserEditedPrice: row.price, // User's grid price (always ex-GST)
+      RRP_EX: row.product.RRP_EX || row.product['RRP EX GST'] || row.product['RRP_EX'] || row.product.RRP_EXGST || row.product.rrpExGst || '0',
+      RRP_INCGST: row.product.RRP_INCGST || row.product['RRP INC GST'] || row.product.rrpIncGst || '0',
       Image_URL: row.product.Image_URL || row.product.imageUrl || row.product.Image || 'assets/no-image.png'
     };
 
@@ -1360,7 +1362,12 @@ export class ProductGridManager {
       StorageManager.updateProductQuantity(row.storageId, row.quantity);
       StorageManager.updateProductRoom(row.storageId, row.room);
       StorageManager.updateProductNotes(row.storageId, row.notes);
-      // Note: Price updates would need additional storage method
+      
+      // Update price in storage when changed (use proper update method, not add)
+      if (shouldUpdateTotal && input.name === 'price') {
+        StorageManager.updateProductPrice(row.storageId, row.price);
+      }
+      
       this.updateTotals();
     }
   }
@@ -1371,7 +1378,9 @@ export class ProductGridManager {
       const unitPrice = parseFloat((row.price || '').toString().replace(/,/g, '')) || 0;
       const quantity = parseInt(row.quantity) || 1;
       const totalPrice = unitPrice * quantity;
-      totalDisplay.textContent = totalPrice > 0 ? totalPrice.toFixed(2) : '';
+      // Format total with commas and 2 decimal places
+      totalDisplay.textContent = totalPrice > 0 ? 
+        totalPrice.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '';
     }
   }
 
@@ -1385,12 +1394,20 @@ export class ProductGridManager {
     this.nextRowId = 1;
     selectedProducts.forEach(item => {
       const rowId = `row_${this.nextRowId++}`;
+      // Use the user-edited price if available, otherwise fallback to catalog price
+      let price = '';
+      if (item.product?.UserEditedPrice !== undefined && item.product?.UserEditedPrice !== null && item.product?.UserEditedPrice !== '') {
+        price = item.product.UserEditedPrice;
+      } else {
+        price = item.product?.RRP_EX || item.product?.['RRP EX GST'] || item.product?.['RRP_EX'] || item.product?.rrpExGst || item.product?.RRP_EXGST || item.product?.RRP_INCGST || item.product?.['RRP INC GST'] || '';
+      }
+      
       const row = {
         id: rowId,
         product: item.product,
         room: item.room || 'Blank',
         quantity: item.quantity || 1,
-        price: item.product?.RRP_EX || item.product?.['RRP EX GST'] || item.product?.['RRP_EX'] || item.product?.rrpExGst || item.product?.RRP_EXGST || item.product?.RRP_INCGST || item.product?.['RRP INC GST'] || '',
+        price: price,
         notes: item.notes || '',
         storageId: item.id
       };
@@ -1469,14 +1486,16 @@ export class ProductGridManager {
     const productCode = product ? (product.OrderCode || product.Code || '') : '';
     // Ensure order code is shown as a plain integer (no decimals, no commas)
     const displayOrderCode = productCode ? String(parseInt(productCode, 10)) : '';
-    // Always show product's price if product is selected, otherwise row.price
-    const displayPrice = product ? (product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.rrpExGst || product.RRP_EXGST || product.RRP_INCGST || product['RRP INC GST'] || row.price || '') : (row.price || '');
+    // Show user-edited price first, then fallback to product's catalog price
+    const displayPrice = row.price || (product ? (product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.rrpExGst || product.RRP_EXGST || product.RRP_INCGST || product['RRP INC GST'] || '') : '');
 
     // Calculate total price
     const unitPrice = parseFloat((displayPrice || '').toString().replace(/,/g, '')) || 0;
     const quantity = parseInt(row.quantity) || 1;
     const totalPrice = unitPrice * quantity;
-    const displayTotal = totalPrice > 0 ? totalPrice.toFixed(2) : '';
+    // Format total with commas and 2 decimal places
+    const displayTotal = totalPrice > 0 ? 
+      totalPrice.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '';
 
     return `
       <div class="grid-row" data-row-id="${row.id}">
@@ -1685,7 +1704,9 @@ export class ProductGridManager {
       totalRoomsElement.textContent = `${uniqueRooms.size} Rooms`;
     }
     if (totalValueElement) {
-      totalValueElement.textContent = `$${totalValue.toFixed(2)}`;
+      // Format total value with commas and 2 decimal places
+      totalValueElement.textContent = totalValue > 0 ? 
+        `$${totalValue.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$0.00';
     }
   }
 

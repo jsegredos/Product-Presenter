@@ -231,7 +231,7 @@ export class PDFLayouts {
     return colWidths;
   }
 
-  async addProductRow(item, colWidths, isEven = false) {
+  async addProductRow(item, colWidths, isEven = false, userDetails = null) {
     const doc = this.core.getDocument();
     const margins = this.core.margins;
     const rowHeight = 20;
@@ -272,8 +272,22 @@ export class PDFLayouts {
     });
     currentX += colWidths.description;
 
-    // Price
-    const price = this.core.formatPrice(item.product?.RRP_EX);
+    // Price - use user-edited price if available, otherwise catalog price
+    let priceValue = 0;
+    if (item.product?.UserEditedPrice !== undefined && item.product?.UserEditedPrice !== null && item.product?.UserEditedPrice !== '') {
+      priceValue = parseFloat(item.product.UserEditedPrice.toString().replace(/,/g, '')) || 0;
+    } else {
+      priceValue = parseFloat((item.product?.RRP_EX || '0').toString().replace(/,/g, '')) || 0;
+    }
+    
+    // Apply GST if user wants it included (add 10% to the ex-GST price)
+    if (priceValue > 0 && userDetails?.includeGst) {
+      priceValue = priceValue * 1.1;
+    }
+    
+    // Format price with commas and 2 decimal places (include zero prices)
+    const price = priceValue >= 0 ? 
+      `$${priceValue.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '';
     this.core.addText(price, currentX + 2, startY + 5, {
       fontSize: 8
     });

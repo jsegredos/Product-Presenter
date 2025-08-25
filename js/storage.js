@@ -172,6 +172,18 @@ export class StorageManager {
     return false;
   }
 
+  static updateProductPrice(productId, newPrice) {
+    const selectedProducts = this.getSelectedProducts();
+    const productIndex = selectedProducts.findIndex(p => p.id === productId);
+
+    if (productIndex !== -1) {
+      // Update the UserEditedPrice field in the product data
+      selectedProducts[productIndex].product.UserEditedPrice = newPrice;
+      return this.setSelectedProducts(selectedProducts);
+    }
+    return false;
+  }
+
   static removeProductFromSelection(productId) {
     const selectedProducts = this.getSelectedProducts();
     const filteredProducts = selectedProducts.filter(p => p.id !== productId);

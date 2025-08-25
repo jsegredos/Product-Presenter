@@ -56,7 +56,7 @@ export class UnifiedPDFGenerator {
       for (let i = 0; i < selectedProducts.length; i++) {
         const item = selectedProducts[i];
         const isEven = i % 2 === 0;
-        await this.layouts.addProductRow(item, colWidths, isEven);
+        await this.layouts.addProductRow(item, colWidths, isEven, userDetails);
       }
 
       // Add quick access section

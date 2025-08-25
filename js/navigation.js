@@ -602,20 +602,36 @@ export class NavigationManager {
 
     selectedProducts.forEach(item => {
       itemCount += item.quantity;
-      const price = item.product.Price || item.product.RRP_INCGST || item.product.rrpIncGst || 0;
-      if (price) {
-        totalPrice += parseFloat(price) * item.quantity;
+      // Use user-edited price if available, otherwise fallback to catalog price
+      let price = 0;
+      if (item.product.UserEditedPrice !== undefined && item.product.UserEditedPrice !== null && item.product.UserEditedPrice !== '') {
+        price = parseFloat(item.product.UserEditedPrice.toString().replace(/,/g, '')) || 0;
+      } else {
+        price = parseFloat((item.product.RRP_EX || item.product['RRP EX GST'] || item.product['RRP_EX'] || item.product.RRP_EXGST || 0).toString().replace(/,/g, '')) || 0;
+      }
+      
+      if (price > 0) {
+        totalPrice += price * item.quantity;
       }
     });
 
     if (totalItems) {totalItems.textContent = `${itemCount} items`;}
-    if (totalValue) {totalValue.textContent = `$${totalPrice.toFixed(2)}`;}
+    if (totalValue) {
+      // Format total value with commas and 2 decimal places
+      totalValue.textContent = totalPrice > 0 ? 
+        `$${totalPrice.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '$0.00';
+    }
 
     // Render table rows
     tableBody.innerHTML = selectedProducts.map((item, index) => {
       const product = item.product;
-      const price = product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.RRP_EXGST || product.rrpExGst || product.RRP_INCGST || product['RRP INC GST'] || 0;
-      const unitPrice = parseFloat(price) || 0;
+      // Use user-edited price if available, otherwise fallback to catalog price
+      let unitPrice = 0;
+      if (product.UserEditedPrice !== undefined && product.UserEditedPrice !== null && product.UserEditedPrice !== '') {
+        unitPrice = parseFloat(product.UserEditedPrice.toString().replace(/,/g, '')) || 0;
+      } else {
+        unitPrice = parseFloat((product.RRP_EX || product['RRP EX GST'] || product['RRP_EX'] || product.RRP_EXGST || 0).toString().replace(/,/g, '')) || 0;
+      }
       const lineTotal = unitPrice * item.quantity;
       const imageUrl = product.Image || product.Image_URL || product.imageUrl || 'assets/no-image.png';
 
@@ -637,13 +653,13 @@ export class NavigationManager {
             </select>
           </div>
           <div class="col-price-ea">
-            <div class="price-display">${unitPrice ? `$${unitPrice.toFixed(2)}` : 'N/A'}</div>
+            <div class="price-display">${unitPrice ? `$${unitPrice.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'N/A'}</div>
           </div>
           <div class="col-qty">
             <input type="number" class="quantity-input" data-index="${index}" value="${item.quantity}" min="1" step="1">
           </div>
           <div class="col-total">
-            <div class="price-display">${unitPrice ? `$${lineTotal.toFixed(2)}` : 'N/A'}</div>
+            <div class="price-display">${unitPrice ? `$${lineTotal.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'N/A'}</div>
           </div>
           <div class="col-actions">
             <button class="remove-btn" data-index="${index}" title="Remove">×</button>

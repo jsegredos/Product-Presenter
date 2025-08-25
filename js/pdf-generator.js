@@ -378,10 +378,10 @@ export function showPdfFormScreen(userDetails) {
         const descX = codeX + 85;
         const priceX = pageWidth - 200;
         const qtyX = pageWidth - 120;
-        const totalX = pageWidth - 60;
+        const totalX = pageWidth - 80; // Move total column 20pt left from edge
 
         const colX = [leftMargin, codeX, descX, priceX, qtyX, totalX];
-        const colW = [imgW, imgW, priceX - descX, qtyX - priceX, totalX - qtyX, 60];
+        const colW = [imgW, imgW, priceX - descX, qtyX - priceX, totalX - qtyX, 80];
 
         // Layout calculations complete
 
@@ -891,18 +891,27 @@ export function showPdfFormScreen(userDetails) {
               // Price ea (top-aligned) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
-              // Robust price parsing for PDF - defaults to ex-GST
+              // Use user-edited price from grid if available, otherwise fallback to catalog price
               let pdfPriceNum = NaN;
-              const exGstPrice = row.item.RRP_EX || row.item['RRP EX GST'] || row.item['RRP_EX'] || row.item.RRP_EXGST || row.item.RRP_INCGST || row.item['RRP INC GST'];
-              if (exGstPrice) {
-                // Use ex-GST pricing as default
-                pdfPriceNum = parseFloat(exGstPrice.toString().replace(/,/g, ''));
-                // If user wants GST included, add 10%
-                if (userDetails.includeGst) {
-                  pdfPriceNum = pdfPriceNum * 1.1;
+              
+              // Priority 1: User-edited price from grid (always ex-GST)
+              if (row.item.UserEditedPrice !== undefined && row.item.UserEditedPrice !== null && row.item.UserEditedPrice !== '') {
+                pdfPriceNum = parseFloat(row.item.UserEditedPrice.toString().replace(/,/g, ''));
+              } else {
+                // Priority 2: Original catalog price (ex-GST)
+                const exGstPrice = row.item.RRP_EX || row.item['RRP EX GST'] || row.item['RRP_EX'] || row.item.RRP_EXGST;
+                if (exGstPrice) {
+                  pdfPriceNum = parseFloat(exGstPrice.toString().replace(/,/g, ''));
                 }
               }
-              const pdfPriceStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? (`$${pdfPriceNum.toFixed(2)}`) : '';
+              
+              // Apply GST if user wants it included (add 10% to the ex-GST price, but not for zero prices)
+              if (!isNaN(pdfPriceNum) && pdfPriceNum > 0 && userDetails.includeGst) {
+                pdfPriceNum = pdfPriceNum * 1.1;
+              }
+              // Format price with commas and 2 decimal places (include zero prices)
+              const pdfPriceStr = !isNaN(pdfPriceNum) && pdfPriceNum >= 0 ? 
+                (`$${pdfPriceNum.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`) : '';
               if (!userDetails.excludePrice && !userDetails.excludeQty) {
                 const priceCenterX = colX[3] + (colW[3] / 2);
                 doc.text(pdfPriceStr, priceCenterX, codeY + 10, { align: 'center' });
@@ -917,7 +926,10 @@ export function showPdfFormScreen(userDetails) {
               // Total (top-aligned, far right) - use dynamic positioning
               doc.setFontSize(10);
               doc.setTextColor('#222');
-              const pdfTotalStr = pdfPriceNum && !isNaN(pdfPriceNum) && pdfPriceNum > 0 ? (`$${(pdfPriceNum * (row.item.Quantity || 1)).toFixed(2)}`) : '';
+              // Format total with commas and 2 decimal places (include zero totals)
+              const totalAmount = pdfPriceNum * (row.item.Quantity || 1);
+              const pdfTotalStr = !isNaN(pdfPriceNum) && pdfPriceNum >= 0 ? 
+                (`$${totalAmount.toLocaleString('en-AU', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`) : '';
               if (!userDetails.excludePrice && !userDetails.excludeQty) {
                 const totalCenterX = colX[5] + (colW[5] / 2);
                 doc.text(pdfTotalStr, totalCenterX, codeY + 10, { align: 'center' });
@@ -1114,17 +1126,23 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
         let priceStr, priceNum, total, priceHeader, totalHeader;
         const excludePrice = userDetails.excludePrice;
         
-        // Default to ex-GST pricing with fallbacks
-        const exGstPrice = item.RRP_EX || item['RRP EX GST'] || item['RRP_EX'] || item.RRP_EXGST || item.RRP_INCGST || item['RRP INC GST'] || '';
-        priceStr = exGstPrice.toString().replace(/,/g, '');
-        priceNum = parseFloat(priceStr);
+        // Priority 1: Use user-edited price if available, otherwise fallback to catalog price
+        let csvPriceNum = 0;
+        if (item.UserEditedPrice !== undefined && item.UserEditedPrice !== null && item.UserEditedPrice !== '') {
+          csvPriceNum = parseFloat(item.UserEditedPrice.toString().replace(/,/g, ''));
+        } else {
+          // Fallback to catalog price (ex-GST)
+          const exGstPrice = item.RRP_EX || item['RRP EX GST'] || item['RRP_EX'] || item.RRP_EXGST || '';
+          csvPriceNum = parseFloat((exGstPrice || '0').toString().replace(/,/g, ''));
+        }
+        
+        priceNum = csvPriceNum;
         
         // CSV always uses EX GST for consistency across systems
         priceHeader = 'Price ea ex GST';
         totalHeader = 'Price Total ex GST';
-        // Note: priceNum is already EX GST, no multiplication needed
         
-        total = (!isNaN(priceNum) ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
+        total = (!isNaN(priceNum) && priceNum >= 0 ? (priceNum * (item.Quantity || 1)).toFixed(2) : '');
 
         const csvRow = {
           Code: sanitizeCSVField(item.OrderCode || ''),
@@ -1138,8 +1156,8 @@ export async function generateCsvBlobAsync(userDetails, csvFilename) {
           'Website URL': sanitizeCSVField(item.Website_URL || '')
         };
 
-        // Add price columns dynamically with correct headers
-        csvRow[priceHeader] = excludePrice ? '0.00' : priceNum.toFixed(2);
+        // Add price columns dynamically with correct headers (include zero prices)
+        csvRow[priceHeader] = excludePrice ? '0.00' : (priceNum >= 0 ? priceNum.toFixed(2) : '');
         csvRow[totalHeader] = excludePrice ? '0.00' : total;
 
         return csvRow;
